@@ -88,7 +88,7 @@ def list_files(source_loc, n_files = None):
     files = []
 
     for idx, file in enumerate(source_path.iterdir()):
-        if n_files is not None and idx is n_files:
+        if n_files is not None and idx == n_files:
             break
         
         files.append(file.name)

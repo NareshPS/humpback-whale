@@ -9,6 +9,9 @@ import numpy as np
 #To generate one-hot vectors for labels.
 from keras.utils import to_categorical
 
+#To shuffle the dataset for each pass
+from random import shuffle
+
 #Local imports
 from utils import load_images_batch
 from common import constants
@@ -51,7 +54,7 @@ def get_all_labels():
     image_labels = get_image_labels()
     return set(image_labels.values())
 
-def load_training_batch(source_loc, img_files, batch_size, image_labels, label_ids):
+def load_training_batch(requestor, source_loc, img_files, batch_size, image_labels, label_ids):
     """It loads training data in batches.
     
     Arguments:
@@ -63,12 +66,27 @@ def load_training_batch(source_loc, img_files, batch_size, image_labels, label_i
     """
 
     num_classes = len(label_ids)
-    for img_files, imgs in load_images_batch(source_loc, img_files, batch_size = batch_size):
+    for batch_img_files, imgs in load_images_batch(source_loc, img_files, batch_size = batch_size):
         #Normalize image data
         x = np.asarray(imgs)/255
 
         #Assign label indices.
-        y = [label_ids[image_labels[img_file]] for img_file in img_files]
+        y = [label_ids[image_labels[img_file]] for img_file in batch_img_files]
         y = to_categorical(y, num_classes = num_classes)
 
         yield [x], y
+
+def model_fit_data_feeder(requestor, source_loc, img_files, batch_size, image_labels, label_ids):
+    """It is used in fit_generator() to supply the training and the validation data.
+    
+    Arguments:
+        source_loc {string} -- Location of preprocessed image files.
+        img_files {[type]} -- List of image file names.
+        batch_size {[type]} -- Number of images to load in a batch.
+        image_labels {{string:string}} -- A mapping of image file name to their labels.
+        label_ids {{string:int}} -- A mapping of label to a unique index.
+    """
+    while True:
+        shuffle(img_files)
+        for x, y in load_training_batch(requestor, source_loc, img_files, batch_size, image_labels, label_ids):
+            yield x, y
