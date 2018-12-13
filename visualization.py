@@ -3,18 +3,21 @@
 #Plotting
 from matplotlib import pyplot as plt
 
-class TrainingInsights:
-    """Support to analyze keras models, and history to gain better insight into the training.
+class HistoryInsights:
+    """Support to analyze the training history to gain better insight.
     """
-    def __init__(self, model, history = None):
-        self._model = model
+    def __init__(self, history):
+        #History object must exist to plot accuracy.
+        if history is None:
+            raise ValueError("History object must exist to plot accuracy.")
+
         self._history = history
 
         #Create a figure to accomodate accuracy and loss plots.
-        self._history_figure, self._history_axes = plt.subplots(1, 2, figsize = (10, 3))
+        self._figure, self._axes = plt.subplots(1, 2, figsize = (10, 3))
         
     def accuracy(self):
-        self._plot_history(
+        self._plot(
                 0, #plot_id
                 ['acc', 'val_acc'],
                 ['Training', 'Validation'],
@@ -22,24 +25,22 @@ class TrainingInsights:
                 ylabel = 'Accuracy')
     
     def loss(self):
-        self._plot_history(
+        self._plot(
                 1, #plot_id
                 ['loss', 'val_loss'],
                 ['Training', 'Validation'],
                 title = 'Training and validation losses',
                 ylabel = 'Loss')
         
-    def _plot_history(self, plot_id, params, legend, title = None, ylabel = None):
-        #History object must exist to plot accuracy.
-        if self._history is None:
-            raise ValueError("History object must exist to plot accuracy.")
+    def _plot(self, plot_id, params, legend, title = None, ylabel = None):
+        
             
         if len(params) == 0:
             raise ValueError("params must contain a list of history items.")
 
         #Initialize figure and axes variables.
-        figure = self._history_figure
-        axes = self._history_axes[plot_id]
+        figure = self._figure
+        axes = self._axes[plot_id]
  
         #Set axes data
         for param in params:

@@ -9,7 +9,7 @@ from pickle import load as pickle_load
 from keras.models import load_model
 
 #Local imports
-from visualization import TrainingInsights
+from visualization import HistoryInsights
 
 if __name__ == "__main__":
     n_args = len(argv)
@@ -30,6 +30,6 @@ if __name__ == "__main__":
     with open(history_file, 'rb') as handle:
         history = pickle_load(handle)
         
-    insights = TrainingInsights(model, history)
+    insights = HistoryInsights(history)
     insights.accuracy()
     insights.loss()
