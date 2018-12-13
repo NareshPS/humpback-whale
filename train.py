@@ -40,6 +40,7 @@ if __name__ == "__main__":
     split_marker = int(n_images*(1 - validation_split))
     train_set = img_files[:split_marker]
     validation_set = img_files[split_marker:]
+    print("Training set: {t_size} validation set: {v_size}".format(t_size = len(train_set), v_size = len(validation_set)))
 
     #Initialize the model
     model = model_1(input_shape, num_classes)
