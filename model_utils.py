@@ -105,6 +105,9 @@ def model_fit(model, source_loc, input_set, input_labels, label_ids, batch_size,
         n_epochs {int} -- The number of epochs to train the model.
         l_rate {float} -- The gradient descent learning rate.
         validation_split {float} -- A float between [0, 1] indicating the split of train and validation sets.
+
+    Returns:
+        A keras history object -- A keras history object returned by fit_generator()
     """
 
     n_images = len(input_set)
@@ -115,9 +118,11 @@ def model_fit(model, source_loc, input_set, input_labels, label_ids, batch_size,
     validation_set = input_set[split_marker:]
     print("Training set: {t_size} validation set: {v_size}".format(t_size = len(train_set), v_size = len(validation_set)))
 
-    model.fit_generator(
-        _model_fit_data_feeder("training", source_loc, train_set, batch_size, input_labels, label_ids),
-        steps_per_epoch = int((len(train_set) + batch_size - 1)/batch_size),
-        epochs = n_epochs,
-        validation_data=_model_fit_data_feeder("validation", source_loc, validation_set, batch_size, input_labels, label_ids),
-        validation_steps=int((len(validation_set) + batch_size - 1)/batch_size))
+    history = model.fit_generator(
+                _model_fit_data_feeder("training", source_loc, train_set, batch_size, input_labels, label_ids),
+                steps_per_epoch = int((len(train_set) + batch_size - 1)/batch_size),
+                epochs = n_epochs,
+                validation_data=_model_fit_data_feeder("validation", source_loc, validation_set, batch_size, input_labels, label_ids),
+                validation_steps=int((len(validation_set) + batch_size - 1)/batch_size))
+    
+    return history

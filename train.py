@@ -5,6 +5,9 @@
 #Basic imports
 from sys import argv, stdout
 
+#To save training data
+from pickle import dump as pickle_dump
+
 #Local imports
 from common import constants
 from models import cnn_gray_model_1
@@ -38,16 +41,20 @@ if __name__ == "__main__":
     num_classes = len(label_ids)
     input_set = list_files(source_loc, n_images)
 
-    #Output model file
-    model_file = "{o_model}.h5".format(o_model = o_model)
-
     #Initialize the model
     model = cnn_gray_model_1(input_shape, num_classes, l_rate)
     model.summary()
 
     #Train the model
-    model_fit(model, source_loc, input_set, input_labels, label_ids, batch_size, n_epochs, validation_split)
+    history = model_fit(model, source_loc, input_set, input_labels, label_ids, batch_size, n_epochs, validation_split)
 
-    #Save model
-    print("Saving model {model_file}".format(model_file = model_file))
+    #Output model file
+    model_file = "{o_model}.h5".format(o_model = o_model)
+    history_file = "{o_model}.hist".format(o_model = o_model)
+
+    #Save model data
+    print("Saving model: {model_file} and history: {history_file}".format(model_file = model_file, history_file = history_file))
     model.save(model_file, overwrite=True)
+
+    with open(history_file, 'wb') as handle:
+        pickle_dump(history.history, handle)
