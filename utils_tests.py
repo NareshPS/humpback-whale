@@ -1,4 +1,6 @@
 from common import constants
 import utils
 
-utils.list_files(constants.DATASET_MAPPINGS["train"], 5)
+files = utils.list_files(constants.RAW_DATASET_MAPPINGS["train"], 5)
+print("Count: {count}".format(count = len(files)))
+print(files)
