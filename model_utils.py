@@ -103,6 +103,7 @@ def model_fit(model, source_loc, input_set, input_labels, label_ids, batch_size,
         label_ids {[int]} -- A mapping from input label to its id.
         batch_size {int} -- The batch size.
         n_epochs {int} -- The number of epochs to train the model.
+        l_rate {float} -- The gradient descent learning rate.
         validation_split {float} -- A float between [0, 1] indicating the split of train and validation sets.
     """
 

@@ -1,30 +1,32 @@
 """Trains a model and save it to the disk.
 
-    Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <[int] Size of training set. If not specified, process all.>
+    Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <learning_rate> <[int] Size of training set. If not specified, process all.>
 """
 #Basic imports
 from sys import argv, stdout
 
 #Local imports
 from common import constants
-from models import model_1
+from models import cnn_gray_model_1
 from model_utils import get_input_labels, get_label_ids, model_fit
 from utils import list_files
 
 if __name__ == "__main__":
     """Entry point to train the model.
 
-    Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <[int] Size of training set. If not specified, process all.>
+    Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <learning_rate> <[int] Size of training set. If not specified, process all.>
     """
     n_args = len(argv)
-    if n_args not in [4, 5]:
-        print("Syntax error. Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <[int] Size of training set. If not specified, process all.>") 
+    if n_args not in [5, 6]:
+        print("Syntax error. Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <learning_rate> <[int] Size of training set. If not specified, process all.>") 
+        print("Example:: python train.py \"model_1\" 16 5 0.001 64")
         exit(-1)
     
     o_model = argv[1]
     batch_size = int(argv[2])
     n_epochs = int(argv[3])
-    n_images = int(argv[4]) if len(argv) == 5 else None
+    l_rate = float(argv[4])
+    n_images = int(argv[5]) if len(argv) == 6 else None
 
     dataset = "train"
     validation_split = 0.2
@@ -40,7 +42,7 @@ if __name__ == "__main__":
     model_file = "{o_model}.h5".format(o_model = o_model)
 
     #Initialize the model
-    model = model_1(input_shape, num_classes)
+    model = cnn_gray_model_1(input_shape, num_classes, l_rate)
     model.summary()
 
     #Train the model
