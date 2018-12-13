@@ -4,6 +4,9 @@ dataset/
 # Ignore kaggle.json
 kaggle.json
 
+# Ignore generated model files
+*.h5
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
