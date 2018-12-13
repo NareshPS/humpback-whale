@@ -1,6 +1,6 @@
 """Entry point to train the model.
 
-    Usage:: python train.py <batch_size> <[int] Size of training set. If not specified, process all.>
+    Usage:: python train.py <batch_size> <num_epochs> <[int] Size of training set. If not specified, process all.>
 """
 #Basic imports
 from sys import argv, stdout
@@ -14,16 +14,17 @@ from utils import list_files
 if __name__ == "__main__":
     """Entry point to train the model.
 
-    Usage:: python train.py <batch_size> <[int] Size of training set. If not specified, process all.>
+    Usage:: python train.py <batch_size> <num_epochs> <[int] Size of training set. If not specified, process all.>
     """
     n_args = len(argv)
-    if n_args not in [2, 3]:
-        print("Syntax error. Usage:: python train.py <batch_size> <[int] Size of training set. If not specified, process all.>") 
+    if n_args not in [3, 4]:
+        print("Syntax error. Usage:: python train.py <batch_size> <num_epochs> <[int] Size of training set. If not specified, process all.>") 
         exit(-1)
     
     
     batch_size = int(argv[1])
-    n_images = int(argv[2]) if len(argv) == 3 else None
+    n_epochs = int(argv[2])
+    n_images = int(argv[3]) if len(argv) == 4 else None
 
     dataset = "train"
     validation_split = 0.2
@@ -50,6 +51,6 @@ if __name__ == "__main__":
     model.fit_generator(
         model_fit_data_feeder("training", source_loc, train_set, batch_size, image_labels, label_ids),
         steps_per_epoch = int((len(train_set) + batch_size - 1)/batch_size),
-        epochs = 2,
+        epochs = n_epochs,
         validation_data=model_fit_data_feeder("validation", source_loc, validation_set, batch_size, image_labels, label_ids),
         validation_steps=int((len(validation_set) + batch_size - 1)/batch_size))
