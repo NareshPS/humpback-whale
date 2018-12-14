@@ -9,11 +9,18 @@ import numpy as np
 #To generate one-hot vectors for labels.
 from keras.utils import to_categorical
 
+#TensorBoard callbacks
+from keras.callbacks import TensorBoard
+
 #To shuffle the dataset for each pass
 from random import shuffle
 
+#Basic imports
+from os import path
+from time import time
+
 #Local imports
-from utils import load_images_batch
+from utils import load_images_batch, locate_file
 from common import constants
 
 def get_input_labels():
@@ -58,9 +65,9 @@ def load_training_batch(requestor, source_loc, img_files, batch_size, input_labe
     """It loads training data in batches.
     
     Arguments:
-        source_loc {string} -- Location of preprocessed image files.
-        img_files {[type]} -- List of image file names.
-        batch_size {[type]} -- Number of images to load in a batch.
+        source_loc {string} -- The location of preprocessed image files.
+        img_files {[string]} -- The list of image file names.
+        batch_size {[int]} -- The number of images to load in a batch.
         input_labels {{string:string}} -- A mapping of image file name to their labels.
         label_ids {{string:int}} -- A mapping of label to a unique index.
     """
@@ -76,53 +83,87 @@ def load_training_batch(requestor, source_loc, img_files, batch_size, input_labe
 
         yield [x], y
 
-def _model_fit_data_feeder(requestor, source_loc, img_files, batch_size, image_labels, label_ids):
-    """It is used in fit_generator() to supply the training and the validation data.
+def load_training_data(source_loc, input_set, input_labels, label_ids):
+    """It loads the input set.
     
     Arguments:
         source_loc {string} -- Location of preprocessed image files.
-        img_files {[type]} -- List of image file names.
+        input_set {[string]} -- List of image file names.
+        input_labels {{string:string}} -- A mapping of image file name to their labels.
+        label_ids {{string:int}} -- A mapping of label to a unique index.
+    """
+    x = []
+    y = []
+    batch_size = 32
+
+    for data, labels in list(load_training_batch("test", source_loc, input_set, batch_size, input_labels, label_ids)):
+        x.append(data[0])
+        y.append(labels)
+
+    return np.vstack(x), np.vstack(y)
+
+def _model_fit_data_feeder(requestor, source_loc, input_set, batch_size, image_labels, label_ids):
+    """It is used in fit_generator() to supply the training and the validation data.
+    
+    Arguments:
+        source_loc {string} -- The location of the image files.
+        input_set {[type]} -- The list of input set file names.
         batch_size {[type]} -- Number of images to load in a batch.
         image_labels {{string:string}} -- A mapping of image file name to their labels.
         label_ids {{string:int}} -- A mapping of label to a unique index.
     """
     while True:
-        shuffle(img_files)
-        for x, y in load_training_batch(requestor, source_loc, img_files, batch_size, image_labels, label_ids):
+        shuffle(input_set)
+        for x, y in load_training_batch(requestor, source_loc, input_set, batch_size, image_labels, label_ids):
             yield x, y
 
-def model_fit(model, source_loc, input_set, input_labels, label_ids, batch_size, n_epochs, validation_split):
+def _create_summary_callback(logs_loc, source_loc, validation_set, input_labels, label_ids):
+    """Creates a callback to collect training statistics.
+
+    Arguments:
+        logs_loc {string} -- The output location of summary statistics.
+        source_loc {string} -- The location of the validation set files.
+        validation_set {[string]} -- Validation set file names.
+        input_labels {[string]} -- A mapping from input item name to its label.
+        label_ids {[int]} -- A mapping from input label to its id.
+    
+    Returns:
+        A keras callback object -- A keras callback object configured to collect training insights.
+    """
+    logs_loc = path.join(logs_loc, str(time()))
+    callback = TensorBoard(log_dir=logs_loc, histogram_freq = 1, write_graph=True, write_images=True)
+    return callback
+
+def model_fit(model, source_loc, train_set, validation_set, input_labels, label_ids, batch_size, n_epochs):
     """Splits the data into two sets. Training set is used for training the model. Validation set validates it.
     Training is conducted in batches.
     
     Arguments:
         model {keras model object} -- Keras model objects.
         source_loc {string} -- The location of input set.
-        input_set {[string]} -- A list of items in the input set.
+        train_set {[string]} -- A list of items in the training set.
+        validation_set {[string]} -- A list of items in the validation set.
         input_labels {[string]} -- A mapping from input item name to its label.
         label_ids {[int]} -- A mapping from input label to its id.
         batch_size {int} -- The batch size.
         n_epochs {int} -- The number of epochs to train the model.
-        l_rate {float} -- The gradient descent learning rate.
-        validation_split {float} -- A float between [0, 1] indicating the split of train and validation sets.
 
     Returns:
         A keras history object -- A keras history object returned by fit_generator()
     """
+    #Generate validation data
+    validation_data = load_training_data(source_loc, validation_set, input_labels, label_ids)
 
-    n_images = len(input_set)
-
-    #Training and validation sets
-    split_marker = int(n_images*(1 - validation_split))
-    train_set = input_set[:split_marker]
-    validation_set = input_set[split_marker:]
-    print("Training set: {t_size} validation set: {v_size}".format(t_size = len(train_set), v_size = len(validation_set)))
+    #Training summary collection callback
+    summary_callback = _create_summary_callback(constants.TENSORBOARD_LOGS_LOC, source_loc, validation_set, input_labels, label_ids)
 
     history = model.fit_generator(
                 _model_fit_data_feeder("training", source_loc, train_set, batch_size, input_labels, label_ids),
                 steps_per_epoch = int((len(train_set) + batch_size - 1)/batch_size),
                 epochs = n_epochs,
-                validation_data=_model_fit_data_feeder("validation", source_loc, validation_set, batch_size, input_labels, label_ids),
-                validation_steps=int((len(validation_set) + batch_size - 1)/batch_size))
-    
+                validation_data = validation_data,
+                #validation_data=_model_fit_data_feeder("validation", source_loc, validation_set, batch_size, input_labels, label_ids),
+                #validation_steps=int((len(validation_set) + batch_size - 1)/batch_size),
+                callbacks = [summary_callback])
+ 
     return history

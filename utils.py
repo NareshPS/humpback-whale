@@ -13,17 +13,17 @@ from skimage import transform
 #Progress bar
 from tqdm import tqdm
 
-def locate_img(source_loc, img_name):
-    """Generates the full image path given a source location and image name.
+def locate_file(source_loc, file_name):
+    """Generates the file path given a source location and file name.
 
     Arguments:
-        source_loc {string} -- Indicates the relative path of the image.
-        img_name {string} -- Name of the image.
+        source_loc {string} -- Indicates the relative path to the location of file.
+        file_name {string} -- Name of the file.
 
     Returns:
-        string -- Full path of image.
+        string -- Relative path of the file.
     """
-    return path.join(source_loc, img_name)
+    return path.join(source_loc, file_name)
    
 def batch(iterable, batch_size = 1):
     """Creates a batch iterator to iterate over the iterable in batches.
@@ -49,7 +49,7 @@ def _load_images(source_loc, img_files):
     Returns:
         [string] -- A list of images as numpy array.
     """
-    return [cv2.imread(locate_img(source_loc, image), cv2.IMREAD_GRAYSCALE) for image in img_files]
+    return [cv2.imread(locate_file(source_loc, image), cv2.IMREAD_GRAYSCALE) for image in img_files]
 
 def resize_images(images, target_size):
     """It loads the list of input image files from source location.
@@ -73,7 +73,20 @@ def store_dataset(target_loc, img_files, imgs):
         imgs {[Numpy array]} -- List of numpy arrays containing the image data.
     """
     for idx, img_file in enumerate(img_files):
-        cv2.imwrite(locate_img(target_loc, img_file), (imgs[idx]*255).astype('uint8'))
+        cv2.imwrite(locate_file(target_loc, img_file), (imgs[idx]*255).astype('uint8'))
+
+def split_dataset(input_set, split_ratio = 0.2):
+    """Split the input set into two fragments. First fragment gets (1 - split_ratio) items. Second one gets the rest.
+    
+    Arguments:
+        input_set {[string]} -- A list of input items.
+    
+    Keyword Arguments:
+        split_ratio {float} -- A float between (0, 1]) to use as split marker. (default: {0.2})
+    """
+    n_images = len(input_set)
+    split_marker = int(n_images*(1 - split_ratio))
+    return input_set[:split_marker], input_set[split_marker:]
 
 def list_files(source_loc, n_files = None):
     """Creates a list of files in a given directory.

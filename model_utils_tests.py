@@ -1,24 +1,35 @@
-from common import constants
-from utils import list_files
-from model_utils import get_image_labels, get_label_ids, load_training_batch
+#Basic imports
+from sys import argv, stdout
 
+#To save training data
+from pickle import dump as pickle_dump
+
+#Data adjustment
 import numpy as np
 
-image_labels = get_image_labels()
-label_ids = get_label_ids()
-source_loc = constants.PROCESSED_DATASET_MAPPINGS["train"]
-n_images = 50
-batch_size = 32
-img_files = list_files(source_loc, n_images)
+#Local imports
+from common import constants
+from models import cnn_gray_model_1
+from model_utils import get_input_labels, get_label_ids, model_fit, load_training_batch, load_training_data
+from utils import list_files
 
-for batch_id, train_data in enumerate(load_training_batch(source_loc, img_files, batch_size, image_labels, label_ids)):
-    x, y = train_data
-    l_index = 10
-    g_index = batch_id*batch_size + l_index
-    img_file = img_files[g_index]
-    image_label = image_labels[img_file]
-    print(x[0].shape)
-    print(np.nonzero(y[l_index])[0][0])
-    print(label_ids[image_label])
-    print(img_file)
-    print(image_label)
+batch_size = 2
+n_images = 3
+n_epochs = 30
+o_model = "model_1"
+l_rate = 0.001
+
+dataset = "train"
+validation_split = 0.2
+input_shape = constants.IMG_SHAPE
+source_loc = constants.PROCESSED_DATASET_MAPPINGS[dataset]
+
+input_labels = get_input_labels()
+label_ids = get_label_ids()
+n_classes = len(label_ids)
+input_set = list_files(source_loc, n_images)
+
+x, y = load_training_data(source_loc, input_set, input_labels, label_ids)
+
+print(x.shape)
+print(y.shape)

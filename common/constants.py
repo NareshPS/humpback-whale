@@ -15,6 +15,8 @@ if platform.startswith("win"):
         "test" : "..\\Humpback Whale\\dataset\\test_preprocessed",
         "labels" : "..\\Humpback Whale\\dataset\\train.csv"
     }
+
+    TENSORBOARD_LOGS_LOC = "logs\\"
 else:
     RAW_DATASET_MAPPINGS = {
         "train" : "dataset/train",
@@ -27,6 +29,8 @@ else:
         "test" : "dataset/test_preprocessed",
         "labels" : "dataset/train.csv"
     }
+
+    TENSORBOARD_LOGS_LOC = "logs/"
 
 DATASET_NAMES = ["train", "test", "train_preprocessed", "test_preprocessed"]
 

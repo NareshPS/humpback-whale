@@ -8,10 +8,10 @@ sudo pip3 install -U virtualenv  # system-wide install
 sudo apt install python3-notebook jupyter-core python3-ipykernel jupyter-notebook
 
 #Create a new virtual environment.
-virtualenv --system-site-packages -p python3 ./venv
+virtualenv --system-site-packages -p python3 ~/venv
 
 #Activate virtual environment
-source ./venv/bin/activate  # sh, bash, ksh, or zsh
+source ~/venv/bin/activate  # sh, bash, ksh, or zsh
 
 #Upgrade pip3
 pip install --upgrade pip

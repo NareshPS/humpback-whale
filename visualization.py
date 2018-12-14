@@ -47,7 +47,7 @@ class HistoryInsights:
             axes.plot(self._history[param])
 
         #Set axes parameters
-        axes.legend(legend, loc='upper left')
+        axes.legend(legend, loc='lower right')
         axes.set_xlabel('Epoch')
         
         if title is not None:
