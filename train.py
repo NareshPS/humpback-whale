@@ -10,7 +10,7 @@ from pickle import dump as pickle_dump
 
 #Local imports
 from common import constants
-from models import cnn_gray_model_1
+from models import cnn_model_1d_1, cnn_model_2d_1
 from model_utils import get_input_labels, get_label_ids, model_fit
 from utils import list_files, split_dataset
 
@@ -52,13 +52,13 @@ if __name__ == "__main__":
     print("Training set: {t_size} validation set: {v_size}".format(t_size = len(train_set), v_size = len(validation_set)))
 
     #Initialize the model
-    model = cnn_gray_model_1(input_shape, n_classes, l_rate)
+    model = cnn_model_2d_1(input_shape, n_classes, l_rate)
     model.summary()
 
     #load_training_batch(requestor, source_loc, img_files, batch_size, input_labels, label_ids)
 
     #Train the model
-    history = model_fit(model, source_loc, train_set, validation_set, input_labels, label_ids, batch_size, n_epochs)
+    history = model_fit(model, source_loc, train_set, validation_set, input_labels, label_ids, input_shape, batch_size, n_epochs)
 
     #Output model file
     model_file = "{o_model}.h5".format(o_model = o_model)

@@ -34,4 +34,4 @@ else:
 
 DATASET_NAMES = ["train", "test", "train_preprocessed", "test_preprocessed"]
 
-IMG_SHAPE = (400, 700)
+IMG_SHAPE = (400, 700, 1)

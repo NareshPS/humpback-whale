@@ -39,17 +39,26 @@ def batch(iterable, batch_size = 1):
     for batch_idx in range(0, count, batch_size):
         yield iterable[batch_idx:min(batch_idx + batch_size, count)]
 
-def _load_images(source_loc, img_files):
+def _load_images(source_loc, img_names, img_shape):
     """It loads the list of input image files from source location.
 
     Arguments:
         source_loc {string} -- Indicates the relative path of the image.
-        img_files {[string]} -- A list of image file names.
+        img_names {[string]} -- A list of image file names.
+        img_shape {(int, int, int)} -- The target image shape.
 
     Returns:
         [string] -- A list of images as numpy array.
     """
-    return [cv2.imread(locate_file(source_loc, image), cv2.IMREAD_GRAYSCALE) for image in img_files]
+    imgs = []
+    for img in img_names:
+        data = cv2.imread(locate_file(source_loc, img), cv2.IMREAD_GRAYSCALE)
+        if img_shape is not None:
+            data = np.reshape(data, img_shape)
+
+        imgs.append(data)
+
+    return imgs
 
 def resize_images(images, target_size):
     """It loads the list of input image files from source location.
@@ -108,12 +117,13 @@ def list_files(source_loc, n_files = None):
     
     return files
 
-def load_images_batch(source_loc, img_files, batch_size = 1, progress_bar = None):
+def load_images_batch(source_loc, img_files, img_shape, batch_size = 1, progress_bar = None):
     """It loads the list of input image files from source location in batches.
 
     Arguments:
         source_loc {string} -- Indicates the relative path of the image.
         img_files {[string]} -- A list of image file names.
+        img_shape {(int, int, int)} -- The target image shape.
         batch_size {int} -- Indicates the size of the batch of images to be fetches per call.
 
     Returns:
@@ -123,7 +133,7 @@ def load_images_batch(source_loc, img_files, batch_size = 1, progress_bar = None
         if progress_bar is not None:
             progress_bar.set_description("Processing batch: {batch_id}".format(batch_id = batch_id))
 
-        imgs = _load_images(source_loc, img_batch)
+        imgs = _load_images(source_loc, img_batch, img_shape)
 
         if progress_bar is not None:
             progress_bar.update(len(imgs))
