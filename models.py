@@ -76,6 +76,6 @@ def cnn_model_2d_1(input_shape, n_classes, l_rate = 0.01):
     model.add(Dense(n_classes, activation='softmax'))
 
     sgd = SGD(lr=l_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd)
+    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics = ['accuracy'])
 
     return model
