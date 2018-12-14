@@ -1,5 +1,6 @@
 # Ignore dataset directories
 dataset/
+dataset
 
 # Ignore kaggle.json
 kaggle.json
@@ -8,6 +9,7 @@ kaggle.json
 *.h5
 *.hist
 logs/
+logs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
