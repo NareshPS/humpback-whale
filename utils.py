@@ -13,6 +13,9 @@ from skimage import transform
 #Progress bar
 from tqdm import tqdm
 
+#Batch iteration
+from funcy import chunks
+
 def locate_file(source_loc, file_name):
     """Generates the file path given a source location and file name.
 
@@ -24,41 +27,36 @@ def locate_file(source_loc, file_name):
         string -- Relative path of the file.
     """
     return path.join(source_loc, file_name)
-   
-def batch(iterable, batch_size = 1):
-    """Creates a batch iterator to iterate over the iterable in batches.
 
-    Arguments:
-        iterable {[]} -- Iterable
-        batch_size {int} -- Number on items yielded at once.
-
-    Returns:
-        [] -- An iterable containing number of items as indicated by batch_size.
-    """
-    count = len(iterable)
-    for batch_idx in range(0, count, batch_size):
-        yield iterable[batch_idx:min(batch_idx + batch_size, count)]
-
-def _load_images(source_loc, img_names, img_shape):
+def _load_images(source_loc, img_names):
     """It loads the list of input image files from source location.
 
     Arguments:
         source_loc {string} -- Indicates the relative path of the image.
         img_names {[string]} -- A list of image file names.
-        img_shape {(int, int, int)} -- The target image shape.
 
     Returns:
-        [string] -- A list of images as numpy array.
+        [numpy array] -- A list of images.
     """
     imgs = []
     for img in img_names:
         data = cv2.imread(locate_file(source_loc, img), cv2.IMREAD_GRAYSCALE)
-        if img_shape is not None:
-            data = np.reshape(data, img_shape)
-
         imgs.append(data)
 
     return imgs
+
+def load_images(source_loc, r_count = 1):
+    """It loads requested number of input image files from the source location.
+
+    Arguments:
+        source_loc {string} -- The relative path of the image.
+        r_count {int} -- The number of images requested.
+
+    Returns:
+        [numpy array] -- A list of images.
+    """
+    file_names = list_files(source_loc, r_count)
+    return _load_images(source_loc, file_names)
 
 def resize_images(images, target_size):
     """It loads the list of input image files from source location.
@@ -117,23 +115,22 @@ def list_files(source_loc, n_files = None):
     
     return files
 
-def load_images_batch(source_loc, img_files, img_shape, batch_size = 1, progress_bar = None):
+def load_images_batch(source_loc, img_files, batch_size = 1, progress_bar = None):
     """It loads the list of input image files from source location in batches.
 
     Arguments:
         source_loc {string} -- Indicates the relative path of the image.
         img_files {[string]} -- A list of image file names.
-        img_shape {(int, int, int)} -- The target image shape.
         batch_size {int} -- Indicates the size of the batch of images to be fetches per call.
 
     Returns:
         [string] -- A list of images as numpy array.
     """
-    for batch_id, img_batch in enumerate(batch(img_files, batch_size)):
+    for batch_id, img_batch in enumerate(chunks(batch_size, img_files)):
         if progress_bar is not None:
             progress_bar.set_description("Processing batch: {batch_id}".format(batch_id = batch_id))
 
-        imgs = _load_images(source_loc, img_batch, img_shape)
+        imgs = _load_images(source_loc, img_batch)
 
         if progress_bar is not None:
             progress_bar.update(len(imgs))

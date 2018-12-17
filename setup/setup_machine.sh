@@ -7,6 +7,9 @@ sudo pip3 install -U virtualenv  # system-wide install
 #Install jupyter notebook. Configuration: https://jupyter-notebook.readthedocs.io/en/stable/public_server.html
 sudo apt install python3-notebook jupyter-core python3-ipykernel jupyter-notebook
 
+#OpenCV dependencies
+sudo apt install libsm6 libxrender1 libfontconfig1
+
 #Create a new virtual environment.
 virtualenv --system-site-packages -p python3 ~/venv
 
@@ -21,7 +24,6 @@ pip install tensorflow
 
 #Install opencv
 pip install opencv-python
-sudo apt-get install libsm6 libxrender1 libfontconfig1
 
 #Install scikit
 pip install scikit-image
@@ -33,4 +35,5 @@ pip install keras
 pip install pydot
 pip install graphviz
 
-
+#Install TQDM to create progress bars
+pip install tqdm

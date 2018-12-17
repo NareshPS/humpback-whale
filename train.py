@@ -1,6 +1,6 @@
 """Trains a model and save it to the disk.
 
-    Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <learning_rate> [<validation_split> <[int] Size of training set. If not specified, process all.>]
+    Usage:: python train.py <model_name> <batch_size> <num_epochs> <learning_rate> [<validation_split> <[int] Size of training set. If not specified, process all.>]
 """
 #Basic imports
 from sys import argv, stdout
@@ -17,18 +17,18 @@ from utils import list_files, split_dataset
 if __name__ == "__main__":
     """Entry point to train the model.
 
-    Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <learning_rate> [<validation_split)> <[int] Size of training set. If not specified, process all.>]
+    Usage:: python train.py <model_name> <batch_size> <num_epochs> <learning_rate> [<validation_split)> <[int] Size of training set. If not specified, process all.>]
     """
     n_args = len(argv)
     if n_args not in [5, 6, 7]:
-        print("Syntax error. Usage:: python train.py <output_model_name> <batch_size> <num_epochs> <learning_rate> [<validation_split> <[int] Size of training set. If not specified, process all.>]") 
-        print("Example:: python train.py \"model_1\" 16 5 0.001 0.2 64")
-        print("Example:: python train.py \"model_1\" 16 5 0.001 0.2")
-        print("Example:: python train.py \"model_1\" 16 5 0.001")
+        print("Syntax error. Usage:: python train.py <model_name> <batch_size> <num_epochs> <learning_rate> [<validation_split> <[int] Size of training set. If not specified, process all.>]") 
+        print("Example:: python train.py model_1 model_1 16 5 0.001 0.2 64")
+        print("Example:: python train.py model_1 model_1 16 5 0.001 0.2")
+        print("Example:: python train.py model_1 model_1 16 5 0.001")
         exit(-1)
     
     #Input parameters
-    o_model = argv[1]
+    model_name = argv[1]
     batch_size = int(argv[2])
     n_epochs = int(argv[3])
     l_rate = float(argv[4])
@@ -58,11 +58,11 @@ if __name__ == "__main__":
     #load_training_batch(requestor, source_loc, img_files, batch_size, input_labels, label_ids)
 
     #Train the model
-    history = model_fit(model, source_loc, train_set, validation_set, input_labels, label_ids, input_shape, batch_size, n_epochs)
+    history = model_fit(model, source_loc, train_set, validation_set, input_labels, label_ids, batch_size, n_epochs)
 
     #Output model file
-    model_file = "{o_model}.h5".format(o_model = o_model)
-    history_file = "{o_model}.hist".format(o_model = o_model)
+    model_file = "{model_file}.h5".format(model_file = model_name)
+    history_file = "{history_file}.hist".format(history_file = model_name)
 
     #Save model data
     print("Saving model: {model_file} and history: {history_file}".format(model_file = model_file, history_file = history_file))

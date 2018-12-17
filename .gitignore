@@ -11,6 +11,9 @@ kaggle.json
 logs/
 logs
 
+#Ignore VSCode project files
+.vscode/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

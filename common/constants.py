@@ -1,6 +1,7 @@
-from sys import platform
-
 ### Constants ###
+
+#Identify the platform
+from sys import platform
 
 #Dataset constants for Windows
 if platform.startswith("win"):

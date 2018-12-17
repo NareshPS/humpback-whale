@@ -6,14 +6,16 @@ import csv
 #To process image data
 import numpy as np
 
-#To generate one-hot vectors for labels.
+#Keras imports
 from keras.utils import to_categorical
-
-#TensorBoard callbacks
+from keras.models import load_model
 from keras.callbacks import TensorBoard
 
 #To shuffle the dataset for each pass
 from random import shuffle
+
+#Load training history
+from pickle import load as pickle_load
 
 #Basic imports
 from os import path
@@ -61,7 +63,7 @@ def get_all_labels():
     input_labels = get_input_labels()
     return set(input_labels.values())
 
-def load_training_batch(requestor, source_loc, img_files, batch_size, input_labels, label_ids, img_shape):
+def load_training_batch(requestor, source_loc, img_files, batch_size, input_labels, label_ids):
     """It loads training data in batches.
     
     Arguments:
@@ -70,13 +72,15 @@ def load_training_batch(requestor, source_loc, img_files, batch_size, input_labe
         batch_size {[int]} -- The number of images to load in a batch.
         input_labels {{string:string}} -- A mapping of image file name to their labels.
         label_ids {{string:int}} -- A mapping of label to a unique index.
-        img_shape {(int, int, int)} -- The target image shape.
     """
 
     num_classes = len(label_ids)
-    for batch_img_files, imgs in load_images_batch(source_loc, img_files, img_shape, batch_size = batch_size):
+    for batch_img_files, imgs in load_images_batch(source_loc, img_files, batch_size = batch_size):
         #Normalize image data
         x = np.asarray(imgs)/255
+
+        #Add additional dimension to make it compatible with Conv2D
+        x = np.expand_dims(x, axis = -1)
 
         #Assign label indices.
         y = [label_ids[input_labels[img_file]] for img_file in batch_img_files]
@@ -84,7 +88,7 @@ def load_training_batch(requestor, source_loc, img_files, batch_size, input_labe
 
         yield [x], y
 
-def load_training_data(source_loc, input_set, input_labels, label_ids, img_shape):
+def load_training_data(source_loc, input_set, input_labels, label_ids):
     """It loads the input set.
     
     Arguments:
@@ -92,19 +96,18 @@ def load_training_data(source_loc, input_set, input_labels, label_ids, img_shape
         input_set {[string]} -- List of image file names.
         input_labels {{string:string}} -- A mapping of image file name to their labels.
         label_ids {{string:int}} -- A mapping of label to a unique index.
-        img_shape {(int, int, int)} -- The target image shape.
     """
     x = []
     y = []
     batch_size = 32
 
-    for data, labels in list(load_training_batch("test", source_loc, input_set, batch_size, input_labels, label_ids, img_shape)):
+    for data, labels in list(load_training_batch("test", source_loc, input_set, batch_size, input_labels, label_ids)):
         x.append(data[0])
         y.append(labels)
 
     return np.vstack(x), np.vstack(y)
 
-def _model_fit_data_feeder(requestor, source_loc, input_set, batch_size, image_labels, label_ids, img_shape):
+def _model_fit_data_feeder(requestor, source_loc, input_set, batch_size, image_labels, label_ids):
     """It is used in fit_generator() to supply the training and the validation data.
     
     Arguments:
@@ -113,11 +116,10 @@ def _model_fit_data_feeder(requestor, source_loc, input_set, batch_size, image_l
         batch_size {[type]} -- Number of images to load in a batch.
         image_labels {{string:string}} -- A mapping of image file name to their labels.
         label_ids {{string:int}} -- A mapping of label to a unique index.
-        img_shape {(int, int, int)} -- The target image shape.
     """
     while True:
         shuffle(input_set)
-        for x, y in load_training_batch(requestor, source_loc, input_set, batch_size, image_labels, label_ids, img_shape):
+        for x, y in load_training_batch(requestor, source_loc, input_set, batch_size, image_labels, label_ids):
             yield x, y
 
 def _create_summary_callback(logs_loc, source_loc, validation_set, input_labels, label_ids):
@@ -137,7 +139,26 @@ def _create_summary_callback(logs_loc, source_loc, validation_set, input_labels,
     callback = TensorBoard(log_dir=logs_loc, histogram_freq = 1, write_graph=True, write_images=True)
     return callback
 
-def model_fit(model, source_loc, train_set, validation_set, input_labels, label_ids, img_shape, batch_size, n_epochs):
+def load_pretrained_model(model_name):
+    """It loads the model and the history objects from the disk.
+    
+    Arguments:
+        model_name {string} -- The name of a model to be loaded.
+    
+    Returns:
+        (model, history) -- A tuple of a model and a history object loaded from the disk.
+    """
+    history_file = "{model_name}.hist".format(model_name = model_name)
+    model_file = "{model_name}.h5".format(model_name = model_name)
+
+    model = load_model(model_file)
+    history = None
+    with open(history_file, 'rb') as handle:
+        history = pickle_load(handle)
+
+    return (model, history)
+
+def model_fit(model, source_loc, train_set, validation_set, input_labels, label_ids, batch_size, n_epochs):
     """Splits the data into two sets. Training set is used for training the model. Validation set validates it.
     Training is conducted in batches.
     
@@ -148,7 +169,6 @@ def model_fit(model, source_loc, train_set, validation_set, input_labels, label_
         validation_set {[string]} -- A list of items in the validation set.
         input_labels {[string]} -- A mapping from input item name to its label.
         label_ids {[int]} -- A mapping from input label to its id.
-        img_shape {(int, int, int)} -- The target image shape.
         batch_size {int} -- The batch size.
         n_epochs {int} -- The number of epochs to train the model.
 
@@ -156,13 +176,13 @@ def model_fit(model, source_loc, train_set, validation_set, input_labels, label_
         A keras history object -- A keras history object returned by fit_generator()
     """
     #Generate validation data
-    validation_data = load_training_data(source_loc, validation_set, input_labels, label_ids, img_shape)
+    validation_data = load_training_data(source_loc, validation_set, input_labels, label_ids)
 
     #Training summary collection callback
     summary_callback = _create_summary_callback(constants.TENSORBOARD_LOGS_LOC, source_loc, validation_set, input_labels, label_ids)
 
     history = model.fit_generator(
-                _model_fit_data_feeder("training", source_loc, train_set, batch_size, input_labels, label_ids, img_shape),
+                _model_fit_data_feeder("training", source_loc, train_set, batch_size, input_labels, label_ids),
                 steps_per_epoch = int((len(train_set) + batch_size - 1)/batch_size),
                 epochs = n_epochs,
                 validation_data = validation_data,

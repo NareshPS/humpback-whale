@@ -9,6 +9,28 @@ from keras.optimizers import SGD
 #Local imports
 from common import constants
 
+class ModelParameters:
+    """Encapsulates model parameters
+    """
+    valid_names = ['n_classes', 'l_rate']
+    def __init__(self, parameters):
+        """Initializes the model parameters
+        
+        Arguments:
+            parameters {dict} -- A dictionary of model parameters.
+        """
+        ModelParameters.validate_names(parameters)
+        self._parameters = parameters
+    
+    @classmethod
+    def validate_names(cls, names):
+        invalid_names = [name for name in names if name not in ModelParameters.valid_names]
+        if invalid_names:
+            ValueError("Invalid parameters: {}".format(invalid_names))
+    
+    def parameters(self):
+        return self._parameters
+
 def cnn_model_1d_1(input_shape, n_classes, l_rate = 0.01):
     """A grayscale CNN model based on VGG.
     
