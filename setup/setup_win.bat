@@ -21,3 +21,6 @@ pip install graphviz
 
 REM Install TQDM to create progress bars
 pip install tqdm
+
+REM Install funcy
+pip install funcy
