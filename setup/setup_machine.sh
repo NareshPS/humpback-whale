@@ -31,7 +31,8 @@ pip install scikit-image
 #Install keras
 pip install keras
 
-#Install pydot
+#Plotting support
+pip install matplotlib
 pip install pydot
 pip install graphviz
 

@@ -15,7 +15,8 @@ pip install scikit-image
 REM Install keras
 pip install keras
 
-REM Install pydot
+REM Plotting support
+pip install matplotlib
 pip install pydot
 pip install graphviz
 

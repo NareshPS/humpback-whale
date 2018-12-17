@@ -117,7 +117,8 @@ class PlottingUtils:
         Arguments:
             dimensions {(rows, cols)} -- A tuple to indicate the dimensions of the plot.
         """
-        figure, axes = plt.subplots(dimensions[0], dimensions[1], figsize = dimensions*5)
+        figsize = tuple(5*x for x in dimensions)
+        figure, axes = plt.subplots(dimensions[0], dimensions[1], figsize = figsize)
 
         return figure, axes
 
