@@ -9,13 +9,15 @@ import numpy as np
 
 #Local imports
 from common import constants
+from common import ut_constants
 from model_utils import get_input_labels, get_label_ids, model_fit, load_training_batch, load_training_data, load_pretrained_model
 from utils import list_files
 
 batch_size = 2
 n_images = 3
 n_epochs = 30
-model_name = "model_1"
+model_name = "cnn_model2d_1"
+store = ut_constants.UT_DATA_STORE
 l_rate = 0.001
 
 dataset = "train"
@@ -33,4 +35,4 @@ x, y = load_training_data(source_loc, input_set, input_labels, label_ids)
 print(x.shape)
 print(y.shape)
 
-model, history = load_pretrained_model(model_name)
+model, history = load_pretrained_model(model_name, store)

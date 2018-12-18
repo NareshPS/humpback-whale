@@ -3,6 +3,7 @@
 #Plotting
 from matplotlib import pyplot as plt
 
+#Perform convolutions
 from image import operations as img_ops
 
 class HistoryInsights:
@@ -75,7 +76,7 @@ class WeightInsights:
             raise ValueError("Valid weights are required to analyze.")
 
         self._weights = weights
-        self._conv_weights = None
+        self._conv_weights = self._extract_conv_weights()
 
     def get_conv_weights(self):
         """Getter for _conv_weights.
@@ -83,7 +84,7 @@ class WeightInsights:
         Returns:
             A numpy array -- A numpy array containing the convolutional weights.
         """
-        return self._extract_conv_weights() if self._conv_weights is None else self._conv_weights
+        return self._conv_weights
 
     def _extract_conv_weights(self):
         """Extracts the trained weights from covolutional layers.
@@ -104,8 +105,31 @@ class WeightInsights:
             kernel {[type]} -- [description]
             plot {[type]} -- [description]
         """
-        convolutions = img_ops.convolve([image], kernel)
+        convolutions = img_ops.convolve([image], None)
         plot.plot(convolutions[0])
+
+
+class ModelSummary:
+    visual_layer_prefix = 'conv'
+    def __init__(self, model):
+        self._model = model
+
+    def summary(self):
+        #Useful objects
+        model = self._model
+        layers = model.layers
+
+        print("Layers: {}".format(len(layers)))
+        
+        print("\nNames and shapes.")
+        for layer in layers:
+            print("({}, {})".format(layer.name, layer.output_shape))
+        
+        print("\nNames and weights.")
+        for layer in layers:
+            if layer.name.startswith(ModelSummary.visual_layer_prefix):
+                weights = layer.get_weights()[0]
+                print("({}, {})".format(layer.name, weights.shape))
 
 class PlottingUtils:
     """A collection of utilities to supplement matplotlib.

@@ -1,0 +1,22 @@
+### Project dependencies ###
+
+#Deep learning
+tensorflow
+keras
+
+#Image processing
+opencv
+opencv-python
+scikit
+scikit-image
+
+#Plotting
+matplotlib
+pydot
+graphviz
+
+#Progress bars
+tqdm
+
+#Advanced code constructs
+funcy

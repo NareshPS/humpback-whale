@@ -139,11 +139,12 @@ def _create_summary_callback(logs_loc, source_loc, validation_set, input_labels,
     callback = TensorBoard(log_dir=logs_loc, histogram_freq = 1, write_graph=True, write_images=True)
     return callback
 
-def load_pretrained_model(model_name):
+def load_pretrained_model(model_name, location = None):
     """It loads the model and the history objects from the disk.
     
     Arguments:
         model_name {string} -- The name of a model to be loaded.
+        location {string} -- The location of the model file.
     
     Returns:
         (model, history) -- A tuple of a model and a history object loaded from the disk.
@@ -151,9 +152,12 @@ def load_pretrained_model(model_name):
     history_file = "{model_name}.hist".format(model_name = model_name)
     model_file = "{model_name}.h5".format(model_name = model_name)
 
-    model = load_model(model_file)
+    history_path = path.join(location, history_file) if location else history_file
+    model_path = path.join(location, model_file) if location else model_name
+
+    model = load_model(model_path)
     history = None
-    with open(history_file, 'rb') as handle:
+    with open(history_path, 'rb') as handle:
         history = pickle_load(handle)
 
     return (model, history)
