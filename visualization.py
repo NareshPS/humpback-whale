@@ -2,9 +2,14 @@
 """
 #Plotting
 from matplotlib import pyplot as plt
+from math import sqrt
+import numpy as np
 
 #Perform convolutions
 from image import operations as img_ops
+
+#Keras imports
+from keras import backend as K
 
 class HistoryInsights:
     """Support to analyze the training history to gain better insight.
@@ -17,7 +22,7 @@ class HistoryInsights:
         self._history = history
 
         #Create a figure to accomodate accuracy and loss plots.
-        self._figure, self._axes = PlottingUtils.create_plot((1, 2))
+        self._figure, self._axes = PlottingUtils.create_plot_d((1, 2))
         
     def accuracy(self):
         self._plot(
@@ -65,54 +70,98 @@ class HistoryInsights:
 class WeightInsights:
     """Support to analyze the weights to gain insight.
     """
-    def __init__(self, weights):
+    def __init__(self, model):
         """Convolve the input image witht he 
         
         Arguments:
-            weight {Numpy array} -- A numpy array with kernel weights.
+            model {A ModelInsights object} -- A model insights object.
         """
         #Weight object must exist to derive insights.
-        if weights is None:
-            raise ValueError("Valid weights are required to analyze.")
+        if model is None:
+            raise ValueError("A valid ModelInsights object is required to analyze.")
 
-        self._weights = weights
-        self._conv_weights = self._extract_conv_weights()
-
-    def get_conv_weights(self):
-        """Getter for _conv_weights.
-        
-        Returns:
-            A numpy array -- A numpy array containing the convolutional weights.
-        """
-        return self._conv_weights
-
-    def _extract_conv_weights(self):
-        """Extracts the trained weights from covolutional layers.
-        It saves them in an instance variable for subsequenct accesses.
-        
-        Returns:
-            A numpy array -- A numpy array containing the convolutional weights.
-        """
-        #Calculate weights here
-        conv_weights = None
-        return conv_weights
+        self._model = model
+        self._conv_weights = self._model.get_conv_weights()
     
     def convole(self, image, plot):
-        """Convolve the input image witht he 
+        """Convolve the input image with the convolutional weights
         
         Arguments:
-            image {[type]} -- [description]
-            kernel {[type]} -- [description]
-            plot {[type]} -- [description]
+            image {An image object} -- An image object to convolve.
+            plot {A plotting object} -- The convolved image is plotted using this object.
         """
-        convolutions = img_ops.convolve([image], None)
-        plot.plot(convolutions[0])
+        convolutions = img_ops.convolve([image], self._model.get_conv_weights())
+        
+        print(convolutions.shape)
 
-
-class ModelSummary:
+class ModelInsights:
     visual_layer_prefix = 'conv'
     def __init__(self, model):
         self._model = model
+
+    def _get_conv_weights(self):
+        """It extracts the trained weights from covolutional layers.
+        
+        Returns:
+            A numpy array -- A numpy array containing the convolutional weights.
+        """
+        #Iterate through all layers to get the weights
+        return {layer.name: layer.get_weights()[0] for layer in self._model.layers if self._is_conv_layer(layer.name)}
+
+    def _get_layer_names(self):
+        #Iterate through all layers to fetch their names.
+        return [layer.name for layer in self._model.layers]
+
+    def _is_conv_layer(self, layer_name):
+        return True if layer_name.startswith(self.visual_layer_prefix) else False
+
+    def visualize_layer(self, layer_name, images):
+        """It applies activations to input images up to a convolution layer.
+        
+        Arguments:
+            layer_name {string} -- The name of layer whose activations are to be visualized.
+            images {[Image objects]} -- A list of images.
+        
+        Raises:
+            ValueError -- It is raise if
+            1- The input layer name is invalid.
+            2- The input layer name is not a convolution layer.
+        """
+
+        layer_names = self._get_layer_names()
+        r_count = len(images)
+
+        if layer_name not in layer_names:
+            raise ValueError("Invalid layer name: {}".format(layer_name))
+
+        inputs = [self._model.layers[0].input]
+        outputs = [self._model.get_layer(layer_name).output]
+
+        #Create a keras function from input -> output.
+        get_activations = K.function(inputs, outputs)
+
+        #Compute activations
+        activations = get_activations(images)
+
+        #Plot a grid of activations through each filter.
+        for image_id in range(r_count):
+            plt.figure()
+            image_act = activations[0][image_id, :, :, :]
+            n_filters = image_act.shape[-1]
+
+            cols = int(sqrt(n_filters))
+            rows = int((n_filters + cols - 1)/cols)
+
+            image = images[image_id, :, :, :]
+            figure, axes = plt.subplots(rows, cols, figsize = (12, 12))
+
+            for fid in range(n_filters):
+                location = PlottingUtils.get_plot_axes((rows, cols), fid)
+                image = np.asarray(image_act[:, :, fid])
+                axes[location].imshow(image, aspect='auto')
+
+            figure.tight_layout()
+            figure.savefig("image_{}.png".format(image_id), dpi=100)
 
     def summary(self):
         #Useful objects
@@ -127,7 +176,7 @@ class ModelSummary:
         
         print("\nNames and weights.")
         for layer in layers:
-            if layer.name.startswith(ModelSummary.visual_layer_prefix):
+            if layer.name.startswith(ModelInsights.visual_layer_prefix):
                 weights = layer.get_weights()[0]
                 print("({}, {})".format(layer.name, weights.shape))
 
@@ -135,7 +184,20 @@ class PlottingUtils:
     """A collection of utilities to supplement matplotlib.
     """
     @staticmethod
-    def create_plot(dimensions):
+    def create_plot_n(n_graphs):
+        """Creates a grid of plots based on the number of graphs to be displayed.
+        
+        Arguments:
+            n_graphs {int} -- An integer to indicate the number of graphs.
+        """
+        #Stick with two columns.
+        n_cols = 2
+        n_rows = max(int(n_graphs / n_cols), 2)
+
+        return PlottingUtils.create_plot_d((n_rows, n_cols))
+
+    @staticmethod
+    def create_plot_d(dimensions):
         """Creates a grid of plots based on the input dimensions.
         
         Arguments:
@@ -145,7 +207,19 @@ class PlottingUtils:
         figure, axes = plt.subplots(dimensions[0], dimensions[1], figsize = figsize)
 
         return figure, axes
+    """"
+    @staticmethod
+    def plot_images_d(img_grid):
+        ""It plots the input grid of images.
+        
+        Arguments:
+            img_grid {A numpy tuple} -- A tuple of image grid
+        ""
 
+        for row_id, row_imgs in enumerate(img_grid):
+            for col_id, img in enumerate(row_imgs):
+
+    """
 
     @staticmethod
     def get_plot_axes(grid_dimensions, plot_id):

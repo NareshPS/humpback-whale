@@ -4,7 +4,7 @@ import unittest as ut
 #Local imports
 from model_utils import load_pretrained_model
 from visualization import HistoryInsights
-from visualization import ModelSummary
+from visualization import ModelInsights
 from visualization import WeightInsights
 from visualization import PlottingUtils
 from common import ut_constants
@@ -40,18 +40,35 @@ class TestPlottingUtils(ut.TestCase):
             location = PlottingUtils.get_plot_axes(TestPlottingUtils.grid_dimensions, plot_id)
             self.assertEqual(location, expected_loc, "Got unexpected location: {} for plot_id: {}".format(location, plot_id))
 
+    def test_create_plot_d(self):
+        grid_dimensions = (5, 3)
+
+        figure, axes = PlottingUtils.create_plot_d(grid_dimensions)
+        self.assertEqual(len(axes), 15, "Expected 15 axes for the grid with dimensions {}".format(grid_dimensions))
+        self.assertEqual(len(figure.get_axes()), 15, "Expected 15 axes for the grid with dimensions {}".format(grid_dimensions))
+
+    def test_create_plot_n(self):
+        n_graphs = 6
+        figure, axes = PlottingUtils.create_plot_n(n_graphs)
+
+        self.assertEqual(len(axes), 6, "Expected 6 axes for {} graphs".format(n_graphs))
+        self.assertEqual(len(figure.get_axes()), 6, "Expected 6 axes for {} graphs".format(n_graphs))
+
 class TestWeightInsights(ut.TestCase):
     def test_get_conv_weights(self):
-        weights = []
         model, _ = load_pretrained_model(model_name, store)
-        for layer in model.layers:
-            None
+        model_insights = ModelInsights(model)
 
-class TestModelSummary(ut.TestCase):
+        weights = model_insights.get_conv_weights()
+        for l_name, l_weights in weights.items():
+            print(l_name)
+            print(l_weights)
+
+class TestModelInsights(ut.TestCase):
     def test_summary(self):
         model, _ = load_pretrained_model(model_name, store)
 
-        summary = ModelSummary(model)
+        summary = ModelInsights(model)
         summary.summary()
 
 if __name__ == "__main__":

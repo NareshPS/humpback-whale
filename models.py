@@ -80,13 +80,13 @@ def cnn_model_2d_1(input_shape, n_classes, l_rate = 0.01):
     """
     model = Sequential()
 
-    model.add(Conv2D(32, kernel_size = 3, strides = 3, activation='relu', input_shape=input_shape))
-    model.add(Conv2D(32, kernel_size = 3, strides = 3, activation='relu'))
+    model.add(Conv2D(32, kernel_size = 3, activation='relu', input_shape=input_shape))
+    model.add(Conv2D(32, kernel_size = 3, activation='relu'))
     model.add(MaxPool2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(64, kernel_size = 3, strides = 3, activation='relu'))
-    model.add(Conv2D(64, kernel_size = 3, strides = 3, activation='relu'))
+    model.add(Conv2D(64, kernel_size = 3, activation='relu'))
+    model.add(Conv2D(64, kernel_size = 3, activation='relu'))
     model.add(MaxPool2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
 

@@ -153,7 +153,7 @@ def load_pretrained_model(model_name, location = None):
     model_file = "{model_name}.h5".format(model_name = model_name)
 
     history_path = path.join(location, history_file) if location else history_file
-    model_path = path.join(location, model_file) if location else model_name
+    model_path = path.join(location, model_file) if location else model_file
 
     model = load_model(model_path)
     history = None
