@@ -80,8 +80,6 @@ class ImageDataGenerator:
 
                 yield (df_slice_x, df_slice_y)
 
-            break
-
     def _apply_parameters(self, img_objs):
         """It processes image objects based on the input parameters.
         e.g. normalization, reshaping etc.

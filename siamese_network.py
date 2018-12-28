@@ -89,9 +89,11 @@ if __name__ == "__main__":
     similar_field = constants.TRAIN_TUPLE_HEADERS[3]
 
     batch_size = 32
-    n_epochs = 1
+    #batch_size = 3
+    n_epochs = 50
 
     train_tuples_df = read_csv(constants.PROCESSED_DATASET_MAPPINGS['train_tuples'])
+    #df_slice = train_tuples_df.loc[:5, :]
 
     from image.generator import ImageDataGenerator
 
@@ -100,12 +102,14 @@ if __name__ == "__main__":
 
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGenerator(train_set_loc, train_tuples_df, input_shape[:2], batch_size)
+    #datagen = ImageDataGenerator(train_set_loc, df_slice, input_shape[:2], batch_size)
 
     #Create siamese network model
     model = siamese_network_model(input_shape, feature_dims)
 
     #Calculate number of steps per epoch based on the input and the batch sizes.
     steps_per_epoch = int((len(train_tuples_df) + batch_size - 1)/batch_size)
+    #steps_per_epoch = int((len(df_slice) + batch_size - 1)/batch_size)
 
     #Fit the model the input.
     model.fit_generator(
