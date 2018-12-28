@@ -4,6 +4,9 @@
 #Randomization
 from random import shuffle as random_shuffle
 
+#Caching
+from cachetools import LRUCache
+
 #Dataset processing
 from funcy import chunks
 from image import operations
@@ -38,6 +41,10 @@ class ImageDataGenerator:
         #Initialize shuffled indices
         self._shuffled_indices = list(range(self._dataset_size))
 
+        #Caching
+        self._cache_size = 256
+        self._image_cache = LRUCache(self._cache_size)
+
     def flow(self, x_cols, y_col, transform_x_cols = []):
         """It creates an iterator to the input dataframe.
         For y_col, only binary inputs are supported.
@@ -70,8 +77,14 @@ class ImageDataGenerator:
                 #Process image columns
                 df_slice_x = []  
                 for x_col in x_cols:
-                    img_objs = operations.imload(self._source, df_slice[x_col].tolist(), self._target_shape)
-                    img_objs = self._apply_parameters(img_objs)
+                    images = df_slice[x_col].tolist()
+
+                    #Load images
+                    img_objs_map = self._get_image_objects(images)
+
+                    #Arrange them in the input order
+                    img_objs = [img_objs_map[image] for image in images]
+                    img_objs = np.asarray(img_objs)
 
                     if x_col in transform_x_cols:
                         img_objs = self._apply_random_transformation(img_objs)
@@ -79,6 +92,41 @@ class ImageDataGenerator:
                     df_slice_x.append(img_objs)
 
                 yield (df_slice_x, df_slice_y)
+
+    def _get_image_objects(self, images):
+        """It loads the image objects for the list of images.
+        If the image is available, it is loaded from the cache.
+        Otherwise, it is loaded from the disk.
+        
+        Arguments:
+            images {[string]} -- A list of image names.
+        """
+        img_objs = {}
+        candidate_images = set(images)
+        for image in candidate_images:
+            #Get the image object for the current image from the cache.
+            #Add to the dictionary, if it is not None.
+            img_obj = self._image_cache.get(image)
+
+            if img_obj is not None:
+                img_objs[image] = img_obj
+
+        #Create a list of missing images.
+        cached_images = set(img_objs.keys())
+        missing_images = [image for image in candidate_images if not image in cached_images]
+
+        #Load the missing image objects, and apply parameters.
+        missing_img_objs = operations.imload(self._source, missing_images, self._target_shape)
+        missing_img_objs = self._apply_parameters(missing_img_objs)
+
+        #Update the cache
+        self._image_cache.update(zip(missing_images, missing_img_objs))
+
+        #Update the image object dictionary with the missing image objects.
+        for image, img_obj in zip(missing_images, missing_img_objs):
+            img_objs[image] = img_obj
+
+        return img_objs
 
     def _apply_parameters(self, img_objs):
         """It processes image objects based on the input parameters.
