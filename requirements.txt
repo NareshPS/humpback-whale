@@ -5,10 +5,9 @@ tensorflow
 keras
 
 #Image processing
-opencv
 opencv-python
-scikit
 scikit-image
+sklearn
 
 #Plotting
 matplotlib
