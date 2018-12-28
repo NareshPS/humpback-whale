@@ -5,30 +5,22 @@ from sys import platform
 
 #Dataset constants for Windows
 if platform.startswith("win"):
-    RAW_DATASET_MAPPINGS = {
+    DATASET_MAPPINGS = {
         "train" : "..\\Humpback Whale\\dataset\\train",
         "test" : "..\\Humpback Whale\\dataset\\test",
-        "labels" : "..\\Humpback Whale\\dataset\\train.csv"
-    }
-
-    PROCESSED_DATASET_MAPPINGS = {
-        "train" : "..\\Humpback Whale\\dataset\\train_preprocessed",
-        "test" : "..\\Humpback Whale\\dataset\\test_preprocessed",
+        "train_preprocessed" : "..\\Humpback Whale\\dataset\\train_preprocessed",
+        "test_preprocessed" : "..\\Humpback Whale\\dataset\\test_preprocessed",
         "labels" : "..\\Humpback Whale\\dataset\\train.csv",
         "train_tuples" : "..\\Humpback Whale\\dataset\\train_tuples.bin"
     }
 
     TENSORBOARD_LOGS_LOC = "logs\\"
 else:
-    RAW_DATASET_MAPPINGS = {
+    DATASET_MAPPINGS = {
         "train" : "dataset/train",
         "test" : "dataset/test",
-        "labels" : "dataset/train.csv"
-    }
-
-    PROCESSED_DATASET_MAPPINGS = {
-        "train" : "dataset/train_preprocessed",
-        "test" : "dataset/test_preprocessed",
+        "train_preprocessed" : "dataset/train_preprocessed",
+        "test_preprocessed" : "dataset/test_preprocessed",
         "labels" : "dataset/train.csv",
         "train_tuples" : "dataset/train_tuples.bin"
     }

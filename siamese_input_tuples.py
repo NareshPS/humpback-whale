@@ -105,9 +105,9 @@ if __name__ == "__main__":
     df_image_col = constants.IMAGE_HEADER_NAME
     df_class_col = constants.LABEL_HEADER_NAME
     batch_size = 32
-    label_df = read_csv(constants.PROCESSED_DATASET_MAPPINGS['labels'])
-    train_set_loc = constants.PROCESSED_DATASET_MAPPINGS['train']
-    train_tuples_loc = constants.PROCESSED_DATASET_MAPPINGS['train_tuples']
+    label_df = read_csv(constants.DATASET_MAPPINGS['labels'])
+    train_set_loc = constants.DATASET_MAPPINGS['train_preprocessed']
+    train_tuples_loc = constants.DATASET_MAPPINGS['train_tuples']
     train_tuples_columns = constants.TRAIN_TUPLE_HEADERS
 
     #Parse commandline arguments

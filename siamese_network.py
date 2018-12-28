@@ -1,5 +1,4 @@
 #Keras imports
-from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Input, Dense, BatchNormalization, Activation, Concatenate
 from keras.models import Model
 
@@ -7,6 +6,7 @@ from keras.models import Model
 from resnet_feature_model import resnet_feature_model as feature_model
 
 #Data processing
+from image.generator import ImageDataGenerator
 import numpy as np
 import pandas as pd
 
@@ -19,6 +19,9 @@ from tensorflow import set_random_seed as tf_seed
 
 #Constants
 from common import constants
+
+#Commandline arguments
+from argparse import ArgumentParser
 
 def siamese_network_model(input_shape, feature_dims):
     anchor_input = Input(shape = input_shape, name = 'Anchor')
@@ -43,7 +46,7 @@ def siamese_network_model(input_shape, feature_dims):
     siamese_network.summary()
 
     return siamese_network
-
+"""
 def make_datagen(batch_size, validation_split = None):
     idg_kwargs = dict(
                     rescale = 1./255, shear_range = 0.2,
@@ -73,8 +76,35 @@ def make_generators(datagen, source, train_tuples_df, x_col, y_col, batch_size, 
     train_gen = datagen.flow_from_dataframe(train_tuples_df, source, subset = 'training', **flow_kwargs)
 
     return train_gen, val_gen
+    """
+
+def parse_args():
+    parser = ArgumentParser(description = 'Usage:: python siamese_network.py [-d|--dataset <string>] [-n|--num_inputs <Num>] [-e|--epochs <Num>] [-b|--batch_size] <Num>')
+    parser.add_argument(
+        '-d', '--dataset',
+         default='train', choices = constants.DATASET_NAMES,
+        help = 'It specifies the dataset to use for training.')
+    parser.add_argument(
+        '-n', '--num_inputs',
+        action = 'store', default = None, type = int,
+        help = 'It specified the number of inputs to use for training')
+    parser.add_argument(
+        '-e', '--epochs',
+        action = 'store', default = 50, type = int,
+        help = 'It specified the number of training epochs.')
+    parser.add_argument(
+        '-b', '--batch_size',
+        action = 'store', default = 32, type = int,
+        help = 'It specified the training batch size.')
+
+    args = parser.parse_args()
+
+    return args.dataset, args.num_inputs, args.epochs, args.batch_size
 
 if __name__ == "__main__":
+    #Parse commandline arguments
+    dataset, n_inputs, n_epochs, batch_size = parse_args()
+
     #Predictable randomness
     seed = 3
     np_seed(3)
@@ -83,33 +113,25 @@ if __name__ == "__main__":
     df_class_col = constants.LABEL_HEADER_NAME
     input_shape = constants.INPUT_SHAPE
     feature_dims = constants.FEATURE_VECTOR_DIMS
-    train_set_loc = constants.RAW_DATASET_MAPPINGS['train']
+    train_set_loc = constants.DATASET_MAPPINGS[dataset]
     anchor_field = constants.TRAIN_TUPLE_HEADERS[0]
     sample_field = constants.TRAIN_TUPLE_HEADERS[1]
     similar_field = constants.TRAIN_TUPLE_HEADERS[3]
 
-    batch_size = 32
-    #batch_size = 3
-    n_epochs = 50
-
-    train_tuples_df = read_csv(constants.PROCESSED_DATASET_MAPPINGS['train_tuples'])
-    #df_slice = train_tuples_df.loc[:5, :]
-
-    from image.generator import ImageDataGenerator
+    train_tuples_df = read_csv(constants.DATASET_MAPPINGS['train_tuples'])
+    train_tuples_df = train_tuples_df.loc[:(n_inputs - 1), :] if n_inputs else train_tuples_df
 
     image_cols = constants.TRAIN_TUPLE_HEADERS[0:2]
     output_col = constants.TRAIN_TUPLE_HEADERS[-1]
 
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGenerator(train_set_loc, train_tuples_df, input_shape[:2], batch_size)
-    #datagen = ImageDataGenerator(train_set_loc, df_slice, input_shape[:2], batch_size)
 
     #Create siamese network model
     model = siamese_network_model(input_shape, feature_dims)
 
     #Calculate number of steps per epoch based on the input and the batch sizes.
     steps_per_epoch = int((len(train_tuples_df) + batch_size - 1)/batch_size)
-    #steps_per_epoch = int((len(df_slice) + batch_size - 1)/batch_size)
 
     #Fit the model the input.
     model.fit_generator(
