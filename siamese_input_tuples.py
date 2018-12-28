@@ -91,15 +91,23 @@ def create_training_sample(label_dict, file_set, samples_per_image = 10, positiv
     return samples
 
 def parse_args():
-    parser = ArgumentParser(description = 'Usage:: python siamese_input_tuples.py [-o|--overwrite]')
+    parser = ArgumentParser(description = 'It generates training samples for the siamese network model.')
     parser.add_argument(
         '-o', '--overwrite',
         action = 'store_true', default=False,
         help = 'If specified, overwrites the existing tuple file.')
+    parser.add_argument(
+        '-s', '--samples_per_image',
+        default = 10, type = int,
+        help = 'It specified the number of samples to create for each image.')
+    parser.add_argument(
+        '-r', '--positive_sample_ratio',
+        default = 0.3, type = float,
+        help = 'It specified the ratio of the positive and the negative samples in the generated dataset.')
 
     args = parser.parse_args()
     
-    return args.overwrite
+    return args.overwrite, args.samples_per_image, args.positive_sample_ratio
 
 if __name__ == "__main__":
     df_image_col = constants.IMAGE_HEADER_NAME
@@ -111,14 +119,16 @@ if __name__ == "__main__":
     train_tuples_columns = constants.TRAIN_TUPLE_HEADERS
 
     #Parse commandline arguments
-    overwrite_output_file = parse_args()
+    overwrite_output_file, samples_per_image, positive_sample_ratio = parse_args()
+
+    print(overwrite_output_file, samples_per_image, positive_sample_ratio)
 
     train_tuples_df = None
 
     if not is_a_file(train_tuples_loc) or overwrite_output_file:
         label_dict = create_label_dict(label_df)
         file_set = create_file_set(label_df, df_image_col)
-        train_tuples =  create_training_sample(label_dict, file_set)
+        train_tuples =  create_training_sample(label_dict, file_set, samples_per_image, positive_sample_ratio)
         print(train_tuples[0])
 
         train_tuples_df = pd.DataFrame(train_tuples, columns = train_tuples_columns)
