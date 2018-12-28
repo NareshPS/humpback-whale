@@ -1,11 +1,4 @@
-#Keras support
-from keras.preprocessing.image import ImageDataGenerator
-from keras.applications.resnet50 import ResNet50 as ResNet
-from keras.layers import Input, Dense, Flatten
-from keras.models import Model, Sequential
-
 #Plotting
-from sklearn.neighbors import NearestNeighbors
 from matplotlib import pyplot as plt
 from matplotlib import image as mpimg
 
@@ -21,11 +14,11 @@ from funcy import without
 from pandas import read_csv
 from os.path import isfile as is_a_file
 
-#Locate files
-from utils import locate_file
-
 #Useful constants
 from common import constants
+
+#Commandline arguments
+from argparse import ArgumentParser
 
 def plot_image_comparison(X, n_images, train_set_loc):
     n_images = 5
@@ -97,6 +90,17 @@ def create_training_sample(label_dict, file_set, samples_per_image = 10, positiv
 
     return samples
 
+def parse_args():
+    parser = ArgumentParser(description = 'Usage:: python siamese_input_tuples.py [-o|--overwrite]')
+    parser.add_argument(
+        '-o', '--overwrite',
+        action = 'store_true', default=False,
+        help = 'If specified, overwrites the existing tuple file.')
+
+    args = parser.parse_args()
+    
+    return args.overwrite
+
 if __name__ == "__main__":
     df_image_col = constants.IMAGE_HEADER_NAME
     df_class_col = constants.LABEL_HEADER_NAME
@@ -106,9 +110,12 @@ if __name__ == "__main__":
     train_tuples_loc = constants.PROCESSED_DATASET_MAPPINGS['train_tuples']
     train_tuples_columns = constants.TRAIN_TUPLE_HEADERS
 
+    #Parse commandline arguments
+    overwrite_output_file = parse_args()
+
     train_tuples_df = None
 
-    if not is_a_file(train_tuples_loc):
+    if not is_a_file(train_tuples_loc) or overwrite_output_file:
         label_dict = create_label_dict(label_df)
         file_set = create_file_set(label_df, df_image_col)
         train_tuples =  create_training_sample(label_dict, file_set)
@@ -117,8 +124,10 @@ if __name__ == "__main__":
         train_tuples_df = pd.DataFrame(train_tuples, columns = train_tuples_columns)
         train_tuples_df.to_csv(train_tuples_loc)
 
-    if train_tuples_df is None:
-        train_tuples_df = read_csv(train_tuples_loc)
+        print("Wrote {} image tuples".format(len(train_tuples_df)))
+    else:
+        print("File already exists. Please specify overwrite flag to regenerate.")
 
-    print("Loaded {} image tuples".format(len(train_tuples_df)))
 
+
+    
