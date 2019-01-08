@@ -2,6 +2,9 @@
 from keras.layers import Input, Dense, BatchNormalization, Activation, Concatenate
 from keras.models import Model
 
+#Load models from the disk
+from keras.models import load_model
+
 #Feature model
 from resnet_feature_model import resnet_feature_model as feature_model
 
@@ -22,6 +25,9 @@ from common import constants
 
 #Commandline arguments
 from argparse import ArgumentParser
+
+#Path manipulations
+from os import path
 
 def siamese_network_model(input_shape, feature_dims):
     anchor_input = Input(shape = input_shape, name = 'Anchor')
@@ -79,10 +85,14 @@ def make_generators(datagen, source, train_tuples_df, x_col, y_col, batch_size, 
     """
 
 def parse_args():
-    parser = ArgumentParser(description = 'Usage:: python siamese_network.py [-d|--dataset <string>] [-n|--num_inputs <Num>] [-e|--epochs <Num>] [-b|--batch_size] <Num>')
+    parser = ArgumentParser(description = 'It trains a siamese network for whale identification.')
+    parser.add_argument(
+        '-r', '--r_name',
+        action = 'store', type = str,
+        help = 'It names the run. The name is used to generate output names.')
     parser.add_argument(
         '-d', '--dataset',
-         default='train', choices = constants.DATASET_NAMES,
+        default='train', choices = constants.DATASET_NAMES,
         help = 'It specifies the dataset to use for training.')
     parser.add_argument(
         '-n', '--num_inputs',
@@ -99,11 +109,11 @@ def parse_args():
 
     args = parser.parse_args()
 
-    return args.dataset, args.num_inputs, args.epochs, args.batch_size
+    return args.r_name, args.dataset, args.num_inputs, args.epochs, args.batch_size
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    dataset, n_inputs, n_epochs, batch_size = parse_args()
+    r_name, dataset, n_inputs, n_epochs, batch_size = parse_args()
 
     #Predictable randomness
     seed = 3
@@ -124,11 +134,20 @@ if __name__ == "__main__":
     image_cols = constants.TRAIN_TUPLE_HEADERS[0:2]
     output_col = constants.TRAIN_TUPLE_HEADERS[-1]
 
+    output_model_file = r_name + ".h5"
+
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGenerator(train_set_loc, train_tuples_df, input_shape[:2], batch_size)
 
-    #Create siamese network model
-    model = siamese_network_model(input_shape, feature_dims)
+    #Create a model placeholder to create or load a model.
+    model = None
+
+    if path.exists(output_model_file):
+        #Try to load the trained model from the disk.
+        model = load_model(output_model_file)
+    else:
+        #Create siamese network model
+        model = siamese_network_model(input_shape, feature_dims)
 
     #Calculate number of steps per epoch based on the input and the batch sizes.
     steps_per_epoch = int((len(train_tuples_df) + batch_size - 1)/batch_size)
@@ -138,3 +157,6 @@ if __name__ == "__main__":
         datagen.flow(image_cols, output_col),
         steps_per_epoch = steps_per_epoch,
         epochs = n_epochs)
+
+    #Save the trained model.
+    model.save(output_model_file)

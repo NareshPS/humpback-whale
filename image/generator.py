@@ -18,7 +18,8 @@ class ImageDataGenerator:
 
     def __init__(self,
                     source, dataframe, target_shape, batch_size,
-                    normalize = True):
+                    normalize = True,
+                    cache_size = 512):
         """It initializes the dataframe object.
         
         Arguments:
@@ -27,6 +28,7 @@ class ImageDataGenerator:
             target_shape {(width, height)} -- A tuple that indicates the target image dimensions.
             batch_size {int} -- A number indicating the size of each batch.
             normalize {bool} -- A boolean flag to enable img_obs normalization.
+            cache_size {int} -- A integer value to determine the size of the cache.
         """
         #Required parameters
         self._source = source
@@ -37,12 +39,12 @@ class ImageDataGenerator:
 
         #Optional parameters
         self._normalize = normalize
+        self._cache_size = cache_size
 
         #Initialize shuffled indices
         self._shuffled_indices = list(range(self._dataset_size))
 
         #Caching
-        self._cache_size = 256
         self._image_cache = LRUCache(self._cache_size)
 
     def flow(self, x_cols, y_col, transform_x_cols = []):
