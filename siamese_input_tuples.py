@@ -102,7 +102,7 @@ def parse_args():
         help = 'It specified the number of samples to create for each image.')
     parser.add_argument(
         '-r', '--positive_sample_ratio',
-        default = 0.3, type = float,
+        default = 0.5, type = float,
         help = 'It specified the ratio of the positive and the negative samples in the generated dataset.')
 
     args = parser.parse_args()
