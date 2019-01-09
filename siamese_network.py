@@ -88,7 +88,7 @@ def parse_args():
     parser = ArgumentParser(description = 'It trains a siamese network for whale identification.')
     parser.add_argument(
         '-r', '--r_name',
-        action = 'store', type = str,
+        required = True,
         help = 'It names the run. The name is used to generate output names.')
     parser.add_argument(
         '-d', '--dataset',
@@ -96,24 +96,28 @@ def parse_args():
         help = 'It specifies the dataset to use for training.')
     parser.add_argument(
         '-n', '--num_inputs',
-        action = 'store', default = None, type = int,
-        help = 'It specified the number of inputs to use for training')
+        type = int,
+        help = 'It specifies the number of inputs to use for training')
     parser.add_argument(
         '-e', '--epochs',
-        action = 'store', default = 50, type = int,
-        help = 'It specified the number of training epochs.')
+        default = 50, type = int,
+        help = 'It specifies the number of training epochs.')
     parser.add_argument(
         '-b', '--batch_size',
-        action = 'store', default = 32, type = int,
-        help = 'It specified the training batch size.')
+        default = 32, type = int,
+        help = 'It specifies the training batch size.')
+    parser.add_argument(
+        '-c', '--cache_size',
+        default = 512, type = int,
+        help = 'It specifies the image cache size.')
 
     args = parser.parse_args()
 
-    return args.r_name, args.dataset, args.num_inputs, args.epochs, args.batch_size
+    return args.r_name, args.dataset, args.num_inputs, args.epochs, args.batch_size, args.cache_size
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    r_name, dataset, n_inputs, n_epochs, batch_size = parse_args()
+    r_name, dataset, n_inputs, n_epochs, batch_size, cache_size = parse_args()
 
     #Predictable randomness
     seed = 3
@@ -137,7 +141,7 @@ if __name__ == "__main__":
     output_model_file = r_name + ".h5"
 
     #Create a data generator to be used for fitting the model.
-    datagen = ImageDataGenerator(train_set_loc, train_tuples_df, input_shape[:2], batch_size)
+    datagen = ImageDataGenerator(train_set_loc, train_tuples_df, input_shape[:2], batch_size, cache_size)
 
     #Create a model placeholder to create or load a model.
     model = None
