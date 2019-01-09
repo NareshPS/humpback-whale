@@ -52,37 +52,6 @@ def siamese_network_model(input_shape, feature_dims):
     siamese_network.summary()
 
     return siamese_network
-"""
-def make_datagen(batch_size, validation_split = None):
-    idg_kwargs = dict(
-                    rescale = 1./255, shear_range = 0.2,
-                    rotation_range=10, width_shift_range=0.2,
-                    height_shift_range=0.2, zoom_range = 0.2, horizontal_flip= True)
-
-    datagen = None
-
-    if validation_split:
-        datagen = ImageDataGenerator(validation_split = validation_split, **idg_kwargs)
-    else:
-        datagen = ImageDataGenerator(**idg_kwargs)
-
-    return datagen
-
-def make_generators(datagen, source, train_tuples_df, x_col, y_col, batch_size, validation_split = None):
-    input_shape_nc = (224, 224)
-    val_gen = None
-
-    flow_kwargs = dict(
-                    x_col = x_col, y_col = y_col, target_size = input_shape_nc,
-                    batch_size = batch_size)
-
-    if validation_split:
-        val_gen = datagen.flow_from_dataframe(train_tuples_df, source, subset = 'validation', **flow_kwargs)
-
-    train_gen = datagen.flow_from_dataframe(train_tuples_df, source, subset = 'training', **flow_kwargs)
-
-    return train_gen, val_gen
-    """
 
 def parse_args():
     parser = ArgumentParser(description = 'It trains a siamese network for whale identification.')

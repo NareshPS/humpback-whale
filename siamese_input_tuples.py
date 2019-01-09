@@ -20,21 +20,9 @@ from common import constants
 #Commandline arguments
 from argparse import ArgumentParser
 
-def plot_image_comparison(X, n_images, train_set_loc):
-    n_images = 5
-    figure, axes = plt.subplots(n_images, 2)
-
-    for image_id in range(n_images):
-        axes[image_id, 0].imshow(X[image_id])
-
-        img = mpimg.imread(locate_file(train_set_loc, label_df.loc[image_id, df_image_col]))
-        axes[image_id, 1].imshow(img)
-
-    figure.tight_layout()
-
 def create_label_dict(label_df):
     label_dict = defaultdict(list)
-    for index, row in label_df.iterrows():
+    for _, row in label_df.iterrows():
         class_name = row[df_class_col]
         file_name = row[df_image_col]
 
