@@ -39,3 +39,6 @@ LABEL_HEADER_NAME = "Id"
 
 #Feature vector dimensions
 FEATURE_VECTOR_DIMS = 300
+
+#Feature model options
+FEATURE_MODELS = ["resnet", "inceptionv3"]
