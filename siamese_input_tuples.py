@@ -140,7 +140,3 @@ if __name__ == "__main__":
         logger.info("Wrote {} image tuples".format(len(train_tuples_df)))
     else:
         logger.error("File already exists. Please specify overwrite flag to regenerate.")
-
-
-
-    

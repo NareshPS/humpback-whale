@@ -139,9 +139,11 @@ if __name__ == "__main__":
     if path.exists(output_model_file):
         #Try to load the trained model from the disk.
         model = load_model(output_model_file)
+        logger.info("Loaded model from: {}".format(output_model_file))
     else:
         #Create siamese network model
         model = siamese_network_model(base_model, input_shape, feature_dims)
+        logger.info("Created a new model using base_model: {}".format(base_model))
 
     #Calculate number of steps per epoch based on the input and the batch sizes.
     steps_per_epoch = int((len(train_tuples_df) + batch_size - 1)/batch_size)

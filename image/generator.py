@@ -12,6 +12,9 @@ from funcy import chunks
 from image import operations
 import numpy as np
 
+#Logging
+from common import logging
+
 class ImageDataGenerator:
     """It has functionality to create generators to feed data to keras.
     """
@@ -47,6 +50,9 @@ class ImageDataGenerator:
         #Caching
         self._image_cache = LRUCache(self._cache_size)
 
+        #Logging
+        self._logger = logging.get_logger(__name__)
+
     def flow(self, x_cols, y_col, transform_x_cols = []):
         """It creates an iterator to the input dataframe.
         For y_col, only binary inputs are supported.
@@ -63,13 +69,21 @@ class ImageDataGenerator:
         if invalid_transform_x_cols:
             raise ValueError("Transform cols: {} not found in x_cols".format(invalid_transform_x_cols))
 
+        self._logger.info("flow:: xcols: {} y_col: {}".format(x_cols, y_col))
+
         while True:
             #Shuffle indices before iterating over the datset.
             random_shuffle(self._shuffled_indices)
 
             for pos in range(0, self._dataset_size, self._batch_size):
+                #Mark start and end of the current slice
+                start = pos
+                end = pos + self._batch_size
+                
+                self._logger.info("Using dataset slice [{}, {}]".format(start, end))
+
                 #Make a data frame slice
-                indices_slice = self._shuffled_indices[pos:pos + self._batch_size]
+                indices_slice = self._shuffled_indices[start:end]
                 df_slice = self._dataframe.loc[indices_slice, :]
 
                 #Process labels
@@ -117,6 +131,8 @@ class ImageDataGenerator:
         cached_images = set(img_objs.keys())
         missing_images = [image for image in candidate_images if not image in cached_images]
 
+        self._logger.info("Cached images: {} missing images: {}".format(cached_images, missing_images))
+
         #Load the missing image objects, and apply parameters.
         missing_img_objs = operations.imload(self._source, missing_images, self._target_shape)
         missing_img_objs = self._apply_parameters(missing_img_objs)
@@ -144,5 +160,3 @@ class ImageDataGenerator:
 
     def _apply_random_transformation(self, img_objs):
         None
-    
-
