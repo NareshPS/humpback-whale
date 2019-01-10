@@ -95,10 +95,14 @@ def parse_args():
         '-r', '--positive_sample_ratio',
         default = 0.5, type = float,
         help = 'It specified the ratio of the positive and the negative samples in the generated dataset.')
+    parser.add_argument(
+        '-l', '--log_to_console',
+        action = 'store_true', default = False,
+        help = 'It enables logging to console')
 
     args = parser.parse_args()
     
-    return args.overwrite, args.samples_per_image, args.positive_sample_ratio
+    return args.overwrite, args.samples_per_image, args.positive_sample_ratio, args.log_to_console
 
 if __name__ == "__main__":
     df_image_col = constants.IMAGE_HEADER_NAME
@@ -110,10 +114,10 @@ if __name__ == "__main__":
     train_tuples_columns = constants.TRAIN_TUPLE_HEADERS
 
     #Parse commandline arguments
-    overwrite_output_file, samples_per_image, positive_sample_ratio = parse_args()
+    overwrite_output_file, samples_per_image, positive_sample_ratio, log_to_console = parse_args()
 
     #Initialize logging
-    logging.initialize(__file__)
+    logging.initialize(__file__, log_to_console = log_to_console)
     logger = logging.get_logger(__name__)
 
     #Log input parameters

@@ -82,17 +82,21 @@ def parse_args():
         '-c', '--cache_size',
         default = 512, type = int,
         help = 'It specifies the image cache size.')
+    parser.add_argument(
+        '-l', '--log_to_console',
+        action = 'store_true', default = False,
+        help = 'It enables logging to console')
 
     args = parser.parse_args()
 
-    return args.base_model, args.dataset, args.num_inputs, args.epochs, args.batch_size, args.cache_size
+    return args.base_model, args.dataset, args.num_inputs, args.epochs, args.batch_size, args.cache_size, args.log_to_console
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    base_model, dataset, n_inputs, n_epochs, batch_size, cache_size = parse_args()
+    base_model, dataset, n_inputs, n_epochs, batch_size, cache_size, log_to_console = parse_args()
 
     #Initialize logging
-    logging.initialize(__file__)
+    logging.initialize(__file__, log_to_console = log_to_console)
     logger = logging.get_logger(__name__)
 
     #Predictable randomness

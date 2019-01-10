@@ -11,6 +11,11 @@ handlers:
     backupCount: 5
     filename: 'siamese_network.log'
     mode: 'w'
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
 root:
   level: INFO
   handlers: [rotatingFile]
