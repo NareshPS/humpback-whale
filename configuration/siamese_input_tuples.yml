@@ -1,0 +1,16 @@
+version: 1
+formatters:
+  simple:
+    format: '%(asctime)s: %(levelname)s: %(name)s: %(message)s'
+handlers:
+  rotatingFile:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: simple
+    maxBytes: 10240
+    backupCount: 5
+    filename: 'siamese_input_tuples.log'
+    mode: 'w'
+root:
+  level: INFO
+  handlers: [rotatingFile]

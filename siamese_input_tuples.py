@@ -20,6 +20,9 @@ from common import constants
 #Commandline arguments
 from argparse import ArgumentParser
 
+#Logging
+from common import logging
+
 def create_label_dict(label_df):
     label_dict = defaultdict(list)
     for _, row in label_df.iterrows():
@@ -109,7 +112,16 @@ if __name__ == "__main__":
     #Parse commandline arguments
     overwrite_output_file, samples_per_image, positive_sample_ratio = parse_args()
 
-    print(overwrite_output_file, samples_per_image, positive_sample_ratio)
+    #Initialize logging
+    logging.initialize(__file__)
+    logger = logging.get_logger(__name__)
+
+    #Log input parameters
+    logger.info(
+                'Running with parameters overwrite_output_file: %s samples_per_image: %d positive_sample_ratio: %f',
+                overwrite_output_file, 
+                samples_per_image, 
+                positive_sample_ratio)
 
     train_tuples_df = None
 
@@ -117,14 +129,13 @@ if __name__ == "__main__":
         label_dict = create_label_dict(label_df)
         file_set = create_file_set(label_df, df_image_col)
         train_tuples =  create_training_sample(label_dict, file_set, samples_per_image, positive_sample_ratio)
-        print(train_tuples[0])
 
         train_tuples_df = pd.DataFrame(train_tuples, columns = train_tuples_columns)
         train_tuples_df.to_csv(train_tuples_loc)
 
-        print("Wrote {} image tuples".format(len(train_tuples_df)))
+        logger.info("Wrote {} image tuples".format(len(train_tuples_df)))
     else:
-        print("File already exists. Please specify overwrite flag to regenerate.")
+        logger.error("File already exists. Please specify overwrite flag to regenerate.")
 
 
 

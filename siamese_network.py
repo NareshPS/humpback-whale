@@ -29,6 +29,9 @@ from argparse import ArgumentParser
 #Path manipulations
 from os import path
 
+#Logging
+from common import logging
+
 def siamese_network_model(base_model, input_shape, feature_dims):
     anchor_input = Input(shape = input_shape, name = 'Anchor')
     sample_input = Input(shape = input_shape, name = 'Sample')
@@ -88,6 +91,10 @@ if __name__ == "__main__":
     #Parse commandline arguments
     base_model, dataset, n_inputs, n_epochs, batch_size, cache_size = parse_args()
 
+    #Initialize logging
+    logging.initialize(__file__)
+    logger = logging.get_logger(__name__)
+
     #Predictable randomness
     seed = 3
     np_seed(3)
@@ -108,6 +115,16 @@ if __name__ == "__main__":
     output_col = constants.TRAIN_TUPLE_HEADERS[-1]
 
     output_model_file = base_model + ".h5"
+
+    #Log input parameters
+    logger.info(
+                'Running with parameters base_model: %s dataset: %s n_inputs: %d n_epochs: %d batch_size: %d cache_size: %d',
+                base_model, 
+                dataset, 
+                n_inputs, 
+                n_epochs, 
+                batch_size, 
+                cache_size)
 
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGenerator(train_set_loc, train_tuples_df, input_shape[:2], batch_size, cache_size)
