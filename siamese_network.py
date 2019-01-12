@@ -86,14 +86,25 @@ def parse_args():
         '-l', '--log_to_console',
         action = 'store_true', default = False,
         help = 'It enables logging to console')
+    parser.add_argument(
+        '-s', '--validation_split',
+        type = float,
+        help = 'It specifies the validation split on the training dataset. It must be a float between 0 and 1')
 
     args = parser.parse_args()
 
-    return args.base_model, args.dataset, args.num_inputs, args.epochs, args.batch_size, args.cache_size, args.log_to_console
+    return (args.base_model,
+            args.dataset, 
+            args.num_inputs, 
+            args.epochs, 
+            args.batch_size, 
+            args.cache_size, 
+            args.log_to_console,
+            args.validation_split)
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    base_model, dataset, n_inputs, n_epochs, batch_size, cache_size, log_to_console = parse_args()
+    base_model, dataset, n_inputs, n_epochs, batch_size, cache_size, log_to_console, validation_split = parse_args()
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -129,9 +140,21 @@ if __name__ == "__main__":
                 n_epochs, 
                 batch_size, 
                 cache_size)
+    
+    #Log training metadata
+    logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
 
     #Create a data generator to be used for fitting the model.
-    datagen = ImageDataGenerator(train_set_loc, train_tuples_df, input_shape[:2], batch_size, cache_size)
+    datagen = ImageDataGenerator(
+                    train_set_loc, 
+                    train_tuples_df, 
+                    input_shape[:2], 
+                    batch_size,
+                    validation_split = validation_split,
+                    cache_size = cache_size)
+
+    train_gen = datagen.flow(image_cols, output_col, subset = 'training')
+    validation_gen = datagen.flow(image_cols, output_col, subset = 'validation') if validation_split else None
 
     #Create a model placeholder to create or load a model.
     model = None
@@ -145,13 +168,10 @@ if __name__ == "__main__":
         model = siamese_network_model(base_model, input_shape, feature_dims)
         logger.info("Created a new model using base_model: {}".format(base_model))
 
-    #Calculate number of steps per epoch based on the input and the batch sizes.
-    steps_per_epoch = int((len(train_tuples_df) + batch_size - 1)/batch_size)
-
     #Fit the model the input.
     model.fit_generator(
-        datagen.flow(image_cols, output_col),
-        steps_per_epoch = steps_per_epoch,
+        generator = datagen.flow(image_cols, output_col),
+        validation_data = validation_gen,
         epochs = n_epochs)
 
     #Save the trained model.
