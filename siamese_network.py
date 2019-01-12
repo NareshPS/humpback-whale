@@ -1,6 +1,8 @@
 #Keras imports
 from keras.layers import Input, Dense, BatchNormalization, Activation, Concatenate
 from keras.models import Model
+from keras.optimizers import Adam
+from keras import backend as K
 
 #Load models from the disk
 from keras.models import load_model
@@ -32,7 +34,19 @@ from os import path
 #Logging
 from common import logging
 
-def siamese_network_model(base_model, input_shape, feature_dims):
+def siamese_network_model(base_model, input_shape, feature_dims, learning_rate):
+    """It creates a siamese network model using the input as a base model.
+    
+    Arguments:
+        base_model {A Model object.} -- A base model to generate feature vector.
+        input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
+        feature_dims {int} -- An integer indicating the dimensions of the feature vector.
+        learning_rate {float} -- A float value to control speed of learning.
+    
+    Returns:
+        {A Model object} -- A keras model.
+    """
+
     anchor_input = Input(shape = input_shape, name = 'Anchor')
     sample_input = Input(shape = input_shape, name = 'Sample')
 
@@ -49,9 +63,12 @@ def siamese_network_model(base_model, input_shape, feature_dims):
     X = Activation('relu')(X)
 
     X = Dense(1, activation = 'sigmoid')(X)
+    
+    #Create an optimizer object
+    adam_optimizer = Adam(lr = learning_rate)
 
     siamese_network = Model(inputs = [anchor_input, sample_input], outputs = [X], name = 'Siamese Model')
-    siamese_network.compile(loss='binary_crossentropy', optimizer='adam', metrics = ['mae', 'accuracy'])
+    siamese_network.compile(loss='binary_crossentropy', optimizer=adam_optimizer, metrics = ['accuracy'])
     siamese_network.summary()
 
     return siamese_network
@@ -90,6 +107,10 @@ def parse_args():
         '-s', '--validation_split',
         type = float,
         help = 'It specifies the validation split on the training dataset. It must be a float between 0 and 1')
+    parser.add_argument(
+        '-r', '--learning_rate',
+        default = 0.0001, type = float,
+        help = 'It specifies the learning rate of the optimization algorithm. It must be a float between 0 and 1')
 
     args = parser.parse_args()
 
@@ -100,11 +121,12 @@ def parse_args():
             args.batch_size, 
             args.cache_size, 
             args.log_to_console,
-            args.validation_split)
+            args.validation_split,
+            args.learning_rate)
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    base_model, dataset, n_inputs, n_epochs, batch_size, cache_size, log_to_console, validation_split = parse_args()
+    base_model, dataset, n_inputs, n_epochs, batch_size, cache_size, log_to_console, validation_split, learning_rate = parse_args()
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -140,6 +162,11 @@ if __name__ == "__main__":
                 n_epochs, 
                 batch_size, 
                 cache_size)
+    logger.info(
+                'Additional parameters log_to_console: %s validation_split: %s learning_rate: %s',
+                log_to_console,
+                validation_split,
+                learning_rate)
     
     #Log training metadata
     logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
@@ -163,9 +190,13 @@ if __name__ == "__main__":
         #Try to load the trained model from the disk.
         model = load_model(output_model_file)
         logger.info("Loaded model from: {}".format(output_model_file))
+
+        #Update the learning rate
+        logger.info("Switching leraning rate from: {} to: {}".format(K.get_value(model.optimizer.lr), learning_rate))
+        K.set_value(model.optimizer.lr, learning_rate)
     else:
         #Create siamese network model
-        model = siamese_network_model(base_model, input_shape, feature_dims)
+        model = siamese_network_model(base_model, input_shape, feature_dims, learning_rate)
         logger.info("Created a new model using base_model: {}".format(base_model))
 
     #Fit the model the input.
