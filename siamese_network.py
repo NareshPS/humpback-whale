@@ -8,7 +8,7 @@ from keras import backend as K
 from keras.models import load_model
 
 #Feature models
-from feature_models import feature_model
+from model.feature_models import feature_model
 
 #Data processing
 from image.generator import ImageDataGenerator
@@ -34,6 +34,11 @@ from os import path
 #Logging
 from common import logging
 
+top_layer_name_prefix = 'siamese_network'
+
+def layer_name(layer_type, param):
+    return "{}_{}_{}".format(top_layer_name_prefix, layer_type, param)
+
 def siamese_network_model(base_model, input_shape, feature_dims, learning_rate):
     """It creates a siamese network model using the input as a base model.
     
@@ -54,15 +59,15 @@ def siamese_network_model(base_model, input_shape, feature_dims, learning_rate):
     sample_features = feature_model(base_model, input_shape, feature_dims)(sample_input)
 
     X = Concatenate()([anchor_features, sample_features])
-    X = Dense(16, activation = 'linear')(X)
+    X = Dense(16, activation = 'linear', name = layer_name('dense', 16))(X)
     X = BatchNormalization()(X)
     X = Activation('relu')(X)
 
-    X = Dense(4, activation = 'linear')(X)
+    X = Dense(4, activation = 'linear', name = layer_name('dense', 4))(X)
     X = BatchNormalization()(X)
     X = Activation('relu')(X)
 
-    X = Dense(1, activation = 'sigmoid')(X)
+    X = Dense(1, activation = 'sigmoid', name = layer_name('dense', 1))(X)
     
     #Create an optimizer object
     adam_optimizer = Adam(lr = learning_rate)
@@ -155,7 +160,7 @@ if __name__ == "__main__":
 
     #Log input parameters
     logger.info(
-                'Running with parameters base_model: %s dataset: %s n_inputs: %d n_epochs: %d batch_size: %d cache_size: %d',
+                'Running with parameters base_model: %s dataset: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
                 base_model, 
                 dataset, 
                 n_inputs, 

@@ -1,7 +1,7 @@
 #Unittest
 import unittest as ut
 
-from models import ModelParameters
+from model.models import ModelParameters
 
 all_valid_parameters = {
                         'n_classes': 5,
@@ -23,10 +23,12 @@ class TestModelParameters(ut.TestCase):
         ModelParameters(valid_parameters)
 
     def test_invalid_parameters(self):
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            ModelParameters(invalid_parameters)
 
     def test_mixed_parameters(self):
-        self.assertRaises(ValueError)
+        with self.assertRaises(ValueError):
+            ModelParameters(mixed_parameters)
 
 if __name__ == "__main__":
     ut.main()

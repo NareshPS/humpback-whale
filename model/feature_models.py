@@ -41,5 +41,3 @@ def feature_model(base_model_name, input_shape, feature_dims):
         layer.trainable = False
 
     return model
-
-    
