@@ -8,6 +8,7 @@ kaggle.json
 # Ignore project generated files
 *.h5
 *.hist
+*.model_state
 logs/
 logs
 

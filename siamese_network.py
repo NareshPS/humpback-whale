@@ -7,6 +7,9 @@ from keras import backend as K
 #Load models from the disk
 from keras.models import load_model
 
+#Load/Save model states
+from model.state import ModelState
+
 #Feature models
 from model.feature_models import feature_model
 
@@ -156,7 +159,8 @@ if __name__ == "__main__":
     image_cols = constants.TRAIN_TUPLE_HEADERS[0:2]
     output_col = constants.TRAIN_TUPLE_HEADERS[-1]
 
-    output_model_file = base_model + ".h5"
+    model_file = base_model + ".h5"
+    model_state_file = base_model + ".model_state"
 
     #Log input parameters
     logger.info(
@@ -191,10 +195,10 @@ if __name__ == "__main__":
     #Create a model placeholder to create or load a model.
     model = None
 
-    if path.exists(output_model_file):
+    if path.exists(model_file):
         #Try to load the trained model from the disk.
-        model = load_model(output_model_file)
-        logger.info("Loaded model from: {}".format(output_model_file))
+        model = load_model(model_file)
+        logger.info("Loaded model from: {}".format(model_file))
 
         #Update the learning rate
         logger.info("Switching leraning rate from: {} to: {}".format(K.get_value(model.optimizer.lr), learning_rate))
@@ -204,6 +208,11 @@ if __name__ == "__main__":
         model = siamese_network_model(base_model, input_shape, feature_dims, learning_rate)
         logger.info("Created a new model using base_model: {}".format(base_model))
 
+        #Write model trainable state
+        model_state = ModelState(model)
+        model_state.save(".", model_state_file)
+        logger.info("Writing model state to: {}".format(model_state_file))
+
     #Fit the model the input.
     model.fit_generator(
         generator = datagen.flow(image_cols, output_col),
@@ -211,4 +220,4 @@ if __name__ == "__main__":
         epochs = n_epochs)
 
     #Save the trained model.
-    model.save(output_model_file)
+    model.save(model_file)
