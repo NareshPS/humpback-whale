@@ -20,6 +20,7 @@ import pandas as pd
 
 #Load and save objects to disk
 from pandas import read_csv
+from pickle import dump as pickle_dump
 
 #Allow reproducible results
 from numpy.random import seed as np_seed
@@ -161,6 +162,7 @@ if __name__ == "__main__":
 
     model_file = base_model + ".h5"
     model_state_file = base_model + ".model_state"
+    history_file = base_model + ".history"
 
     #Log input parameters
     logger.info(
@@ -171,11 +173,20 @@ if __name__ == "__main__":
                 n_epochs, 
                 batch_size, 
                 cache_size)
+
+    #Additional parameters
     logger.info(
                 'Additional parameters log_to_console: %s validation_split: %s learning_rate: %s',
                 log_to_console,
                 validation_split,
                 learning_rate)
+
+    #Output files
+    logger.info(
+                'Output files:: model_file: %s model_state_file: %s history_file: %s',
+                model_file,
+                model_state_file,
+                history_file)
     
     #Log training metadata
     logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
@@ -214,10 +225,20 @@ if __name__ == "__main__":
         logger.info("Writing model state to: {}".format(model_state_file))
 
     #Fit the model the input.
-    model.fit_generator(
-        generator = datagen.flow(image_cols, output_col),
-        validation_data = validation_gen,
-        epochs = n_epochs)
+    history = model.fit_generator(
+                    generator = datagen.flow(image_cols, output_col),
+                    validation_data = validation_gen,
+                    epochs = n_epochs)
+
+    logger.info('Training finished. Trained: %d epochs', n_epochs)
 
     #Save the trained model.
     model.save(model_file)
+
+    logger.info('Wrote the model object: %s', model_file)
+
+    #Save training history
+    with open(history_file, 'wb') as handle:
+        pickle_dump(history, handle)
+
+    logger.info('Wrote the history file: %s', history_file)
