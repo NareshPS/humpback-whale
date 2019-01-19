@@ -1,5 +1,6 @@
-"""Utility methods that help visualize the model training and accuracy.
+"""It defines objects that encapsulate training statistics. These can be used to plot them.
 """
+
 #Plotting
 from matplotlib import pyplot as plt
 from math import sqrt
@@ -11,38 +12,72 @@ from image import operations as img_ops
 #Keras imports
 from keras import backend as K
 
-class HistoryInsights:
+class History:
     """Support to analyze the training history to gain better insight.
     """
+
+    _acc_cols = set(['acc', 'val_acc'])
+    _loss_cols = set(['loss', 'val_loss'])
+
     def __init__(self, history):
         #History object must exist to plot accuracy.
         if history is None:
-            raise ValueError("History object must exist to plot accuracy.")
+            raise ValueError("History object must exist.")
 
-        self._history = history
+        self._history = history.history
+        
+    def accuracy(self, acc_cols = None):
+        """It pulls the accuracy metrics for the input columns.
+        
+        Keyword Arguments:
+            cols {[string]} -- It is a list of column names. (default: {None})
+        
+        Raises:
+            ValueError -- It raises a ValueError for invalid column names.
+        
+        Returns:
+            ([], []) -- A tuple of metrics values and their names.
+        """
+        if acc_cols is None:
+            acc_cols = self._acc_cols
+        else:
+            acc_cols = set(acc_cols)
 
-        #Create a figure to accomodate accuracy and loss plots.
-        self._figure, self._axes = PlottingUtils.create_plot_d((1, 2))
+        #Validate the input metrics set
+        if not set(acc_cols).issubset(self._acc_cols):
+            raise ValueError(
+                    "acc_cols: {} must contain valid values. Allowed values are: {}".format(
+                            acc_cols,
+                            self._acc_cols))
+
+        return {col:self._history[col] for col in acc_cols}
+
+    def loss(self, loss_cols = None):
+        """It pulls the loss metrics for the input columns.
         
-    def accuracy(self):
-        self._plot(
-                0, #plot_id
-                ['acc', 'val_acc'],
-                ['Training', 'Validation'],
-                title = 'Training and validation accuracies',
-                ylabel = 'Accuracy')
-    
-    def loss(self):
-        self._plot(
-                1, #plot_id
-                ['loss', 'val_loss'],
-                ['Training', 'Validation'],
-                title = 'Training and validation losses',
-                ylabel = 'Loss')
+        Keyword Arguments:
+            cols {[string]} -- It is a list of column names. (default: {None})
         
-    def _plot(self, plot_id, params, legend, title = None, ylabel = None):
+        Raises:
+            ValueError -- It raises a ValueError for invalid column names.
         
-            
+        Returns:
+            ([], []) -- A tuple of metrics values and their names.
+        """
+        if loss_cols is None:
+            loss_cols = self._loss_cols
+        else:
+            loss_cols = set(loss_cols)
+
+        #Validate the input metrics set
+        if not set(loss_cols).issubset(self._loss_cols):
+            raise ValueError(
+                    "loss_cols: {} must contain valid values. Allowed values are: {}".format(
+                            loss_cols,
+                            self._loss_cols))
+        return {col:self._history[col] for col in loss_cols}
+        
+    def _plot(self, plot_id, params, legend, title = None, ylabel = None):    
         if len(params) == 0:
             raise ValueError("params must contain a list of history items.")
 
@@ -179,62 +214,3 @@ class ModelInsights:
             if layer.name.startswith(ModelInsights.visual_layer_prefix):
                 weights = layer.get_weights()[0]
                 print("({}, {})".format(layer.name, weights.shape))
-
-class PlottingUtils:
-    """A collection of utilities to supplement matplotlib.
-    """
-    @staticmethod
-    def create_plot_n(n_graphs):
-        """Creates a grid of plots based on the number of graphs to be displayed.
-        
-        Arguments:
-            n_graphs {int} -- An integer to indicate the number of graphs.
-        """
-        #Stick with two columns.
-        n_cols = 2
-        n_rows = max(int(n_graphs / n_cols), 2)
-
-        return PlottingUtils.create_plot_d((n_rows, n_cols))
-
-    @staticmethod
-    def create_plot_d(dimensions):
-        """Creates a grid of plots based on the input dimensions.
-        
-        Arguments:
-            dimensions {(rows, cols)} -- A tuple to indicate the dimensions of the plot.
-        """
-        figsize = tuple(5*x for x in dimensions)
-        figure, axes = plt.subplots(dimensions[0], dimensions[1], figsize = figsize)
-
-        return figure, axes
-    """"
-    @staticmethod
-    def plot_images_d(img_grid):
-        ""It plots the input grid of images.
-        
-        Arguments:
-            img_grid {A numpy tuple} -- A tuple of image grid
-        ""
-
-        for row_id, row_imgs in enumerate(img_grid):
-            for col_id, img in enumerate(row_imgs):
-
-    """
-
-    @staticmethod
-    def get_plot_axes(grid_dimensions, plot_id):
-        """It calculates the position for a plot based on the 0 indexed plot id.
-        
-        Arguments:
-            grid_dimensions {(int, int)} -- A two dimensional tuple to indicate the number of rows and the columns.
-            plot_id {int} -- An integer to represent the plot id.
-            
-        Returns:
-            {(int, int)} -- A tuple to indicate the position of a plot on a two dimensional grid.
-        """
-        n_cols = grid_dimensions[1]
-        
-        row_id = int(plot_id / n_cols)
-        col_id = int(plot_id - (row_id * n_cols))
-        
-        return row_id, col_id
