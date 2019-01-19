@@ -11,6 +11,7 @@ kaggle.json
 *.model_state
 logs/
 logs
+*.log.*
 
 #Ignore VSCode project files
 .vscode/
