@@ -12,6 +12,7 @@ kaggle.json
 logs/
 logs
 *.log.*
+*.history
 
 #Ignore VSCode project files
 .vscode/
