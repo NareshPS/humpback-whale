@@ -195,7 +195,9 @@ if __name__ == "__main__":
     logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
 
     #Transformer
-    transformer = ImageDataTransformation(samplewise_mean = True)
+    transformer = ImageDataTransformation(
+                        samplewise_mean = True,
+                        samplewise_std_normalization = True)
 
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGeneration(

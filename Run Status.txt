@@ -1,12 +1,9 @@
 === Without transofrmations ===
-
-$ python siamese_network.py -m inceptionv3  -d train_preprocessed  -e 10 -c 1024 -b 128 -s 0.1 -e 1
+$ python siamese_network.py -m inceptionv3 -d train_preprocessed -e 10 -c 1024 -b 128 -s 0.1 -e 1
 
 Epoch 1/1
 1640/1640 [==============================] - 60105s 37s/step - loss: 0.6746 - acc: 0.5750 - val_loss: 0.6042 - val_acc: 0.7047
 
 === Zero mean transformation ===
-
-
-
+$ python siamese_network.py -m inceptionv3 -d train_preprocessed -e 10 -c 1024 -b 128 -s 0.1 -e 1
 
