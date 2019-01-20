@@ -14,7 +14,8 @@ from model.state import ModelState
 from model.feature_models import feature_model
 
 #Data processing
-from image.generator import ImageDataGenerator
+from image.generation import ImageDataGeneration
+from image.transformation import ImageDataTransformation
 import numpy as np
 import pandas as pd
 
@@ -143,8 +144,10 @@ if __name__ == "__main__":
 
     #Predictable randomness
     seed = 3
-    np_seed(3)
-    tf_seed(3)
+    np_seed(seed)
+    tf_seed(seed)
+
+    #Required parameters
     df_image_col = constants.IMAGE_HEADER_NAME
     df_class_col = constants.LABEL_HEADER_NAME
     input_shape = constants.INPUT_SHAPE
@@ -191,17 +194,30 @@ if __name__ == "__main__":
     #Log training metadata
     logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
 
+    #Transformer
+    transformer = ImageDataTransformation(samplewise_mean = True)
+
     #Create a data generator to be used for fitting the model.
-    datagen = ImageDataGenerator(
+    datagen = ImageDataGeneration(
                     train_set_loc, 
                     train_tuples_df, 
                     input_shape[:2], 
                     batch_size,
                     validation_split = validation_split,
-                    cache_size = cache_size)
+                    cache_size = cache_size,
+                    transformer = transformer)
 
-    train_gen = datagen.flow(image_cols, output_col, subset = 'training')
-    validation_gen = datagen.flow(image_cols, output_col, subset = 'validation') if validation_split else None
+    train_gen = datagen.flow(
+                            image_cols, 
+                            output_col,
+                            transform_x_cols = image_cols,
+                            subset = 'training')
+
+    validation_gen = datagen.flow(
+                                image_cols,
+                                output_col,
+                                transform_x_cols = image_cols,
+                                subset = 'validation') if validation_split else None
 
     #Create a model placeholder to create or load a model.
     model = None
@@ -226,7 +242,7 @@ if __name__ == "__main__":
 
     #Fit the model the input.
     history = model.fit_generator(
-                    generator = datagen.flow(image_cols, output_col),
+                    generator = train_gen,
                     validation_data = validation_gen,
                     epochs = n_epochs)
 

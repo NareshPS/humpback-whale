@@ -95,7 +95,7 @@ class ImageDataIterator(Sequence):
             #Shuffle indices before iterating over the datset.
             random_shuffle(self._shuffled_indices)
 
-class ImageDataGenerator:
+class ImageDataGeneration:
     """It has functionality to create generators to feed data to keras.
     """
     valid_subsets = ['training', 'validation']
@@ -104,7 +104,8 @@ class ImageDataGenerator:
                     source, dataframe, target_shape, batch_size,
                     validation_split = None,
                     normalize = True,
-                    cache_size = 512):
+                    cache_size = 512,
+                    transformer = None):
         """It initializes the dataframe object.
         
         Arguments:
@@ -115,6 +116,7 @@ class ImageDataGenerator:
             validation_split {float} -- A float indicating the fraction of validation split of the dataset.
             normalize {bool} -- A boolean flag to enable img_obs normalization.
             cache_size {int} -- A integer value to determine the size of the cache.
+            transformer {ImageDataTransformation object} -- An ImageDataTransformation object that applies transformation over the images.
         """
         #Required parameters
         self._source = source
@@ -126,6 +128,7 @@ class ImageDataGenerator:
         self._validation_split = validation_split
         self._normalize = normalize
         self._cache_size = cache_size
+        self._transformer = transformer
 
         #Caching
         self._image_cache = LRUCache(self._cache_size)
@@ -172,8 +175,8 @@ class ImageDataGenerator:
         self._logger.info("flow:: xcols: {} y_col: {}".format(x_cols, y_col))
 
         #Validate subset parameter
-        if subset not in ImageDataGenerator.valid_subsets:
-            raise ValueError("Valid values of subset are: {}".format(ImageDataGenerator.valid_subsets))
+        if subset not in ImageDataGeneration.valid_subsets:
+            raise ValueError("Valid values of subset are: {}".format(ImageDataGeneration.valid_subsets))
 
         dataframe = self._train_df if subset == 'training' else self._validation_df
 
@@ -217,7 +220,7 @@ class ImageDataGenerator:
             img_objs = np.asarray(img_objs)
 
             if x_col in transform_x_cols:
-                img_objs = self._apply_random_transformation(img_objs)
+                img_objs = self._apply_transformation(img_objs)
 
             df_slice_x.append(img_objs)
 
@@ -272,5 +275,10 @@ class ImageDataGenerator:
 
         return img_objs
 
-    def _apply_random_transformation(self, img_objs):
-        None
+    def _apply_transformation(self, img_objs):
+        transformed_objects = img_objs
+
+        if self._transformer:
+            transformed_objects = self._transformer.transform(img_objs)
+
+        return transformed_objects

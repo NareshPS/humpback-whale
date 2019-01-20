@@ -19,3 +19,8 @@ tqdm
 
 #Advanced code constructs
 funcy
+
+#Image transformation
+geos
+shapely
+imgaug
