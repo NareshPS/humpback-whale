@@ -13,6 +13,37 @@ import itertools
 #Transformation
 from image.transformation import ImageDataTransformation
 
+class TestParameters(ut.TestCase):
+    def test_parse_without_samplewise_mean(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.samplewise_mean)
+
+    def test_parse_with_samplewise_mean(self):
+        param_names = ['samplewise_mean']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.samplewise_mean)
+    
+    def test_parse_without_samplewise_std_normalization(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.samplewise_std_normalization)
+
+    def test_parse_with_samplewise_std_normalization(self):
+        param_names = ['samplewise_std_normalization']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.samplewise_std_normalization)
+
+    def test_parse_without_horizontal_flip(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.horizontal_flip)
+
+    def test_parse_with_horizontal_flip(self):
+        param_names = ['horizontal_flip']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.horizontal_flip)
+    
 class TestImageDataTransformation(ut.TestCase):
     @staticmethod
     def get_mean_transformed_examples():
@@ -32,7 +63,8 @@ class TestImageDataTransformation(ut.TestCase):
 
     def transform_samplewise_mean(self, samplewise_mean, images, results):
         #Transformation object
-        transformation = ImageDataTransformation(samplewise_mean = samplewise_mean)
+        parameters = ImageDataTransformation.Parameters(samplewise_mean = samplewise_mean)
+        transformation = ImageDataTransformation(parameters = parameters)
 
         #Transform
         transformed_images = transformation.transform(images)
@@ -62,7 +94,8 @@ class TestImageDataTransformation(ut.TestCase):
 
     def transform_samplewise_std_normalization(self, samplewise_std_normalization, images):
         #Transformation object
-        transformation = ImageDataTransformation(samplewise_std_normalization = samplewise_std_normalization)
+        parameters = ImageDataTransformation.Parameters(samplewise_std_normalization = samplewise_std_normalization)
+        transformation = ImageDataTransformation(parameters = parameters)
 
         #Transform
         transformed_images = transformation.transform(images)
@@ -72,10 +105,11 @@ class TestImageDataTransformation(ut.TestCase):
 
         #Assert
         if samplewise_std_normalization:
-            self.assertEqual(
+            self.assertAlmostEqual(
                 np.sum(standard_deviations), 
                 2.,
-                "standard_deviations: {} != expected: 2.".format(standard_deviations))
+                places = 2,
+                msg = "standard_deviations: {} != expected: 2.".format(standard_deviations))
         else:
             self.assertNotEqual(np.sum(standard_deviations), 2.)
 
@@ -107,7 +141,8 @@ class TestImageDataTransformation(ut.TestCase):
 
     def transform_horizontal_flip(self, horizontal_flip, images, results):
         #Transformation object
-        transformation = ImageDataTransformation(horizontal_flip = horizontal_flip)
+        parameters = ImageDataTransformation.Parameters(horizontal_flip = horizontal_flip, horizontal_flip_prob = 1.0)
+        transformation = ImageDataTransformation(parameters = parameters)
 
         #Transform
         transformed_images = transformation.transform(images)

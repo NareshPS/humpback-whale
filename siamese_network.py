@@ -92,11 +92,12 @@ def parse_args():
         help = 'It specifies a base model to use for the siamese network.')
     parser.add_argument(
         '-d', '--dataset',
-        default='train', choices = constants.DATASET_NAMES,
+        default='train',
+        choices = constants.DATASET_NAMES,
         help = 'It specifies the dataset to use for training.')
     parser.add_argument(
         '-n', '--num_inputs',
-        type = int,
+        type = int, nargs = '?',
         help = 'It specifies the number of inputs to use for training')
     parser.add_argument(
         '-e', '--epochs',
@@ -122,26 +123,52 @@ def parse_args():
         '-r', '--learning_rate',
         default = 0.0001, type = float,
         help = 'It specifies the learning rate of the optimization algorithm. It must be a float between 0 and 1')
+    parser.add_argument(
+        '-t', '--transformations',
+        nargs = '*', default = [],
+        choices = ImageDataTransformation.Parameters().__dict__.keys(),
+        help = 'It specifies transformation parameters')
 
     args = parser.parse_args()
 
-    return (args.base_model,
-            args.dataset, 
-            args.num_inputs, 
-            args.epochs, 
-            args.batch_size, 
-            args.cache_size, 
-            args.log_to_console,
-            args.validation_split,
-            args.learning_rate)
+    return args
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    base_model, dataset, n_inputs, n_epochs, batch_size, cache_size, log_to_console, validation_split, learning_rate = parse_args()
+    args = parse_args()
+
+    #Extract command line parameters
+    base_model, = args.base_model,
+    dataset, = args.dataset, 
+    n_inputs, = args.num_inputs, 
+    n_epochs, = args.epochs, 
+    batch_size, = args.batch_size, 
+    cache_size, = args.cache_size, 
+    log_to_console, = args.log_to_console,
+    validation_split, = args.validation_split,
+    learning_rate, = args.learning_rate,
+    transformation_params = ImageDataTransformation.Parameters.parse(args.transformations)
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
     logger = logging.get_logger(__name__)
+
+    #Log input parameters
+    logger.info(
+                'Running with parameters base_model: %s dataset: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
+                base_model, 
+                dataset, 
+                n_inputs, 
+                n_epochs, 
+                batch_size, 
+                cache_size)
+
+    #Additional parameters
+    logger.info(
+                'Additional parameters log_to_console: %s validation_split: %s learning_rate: %s',
+                log_to_console,
+                validation_split,
+                learning_rate)
 
     #Predictable randomness
     seed = 3
@@ -169,38 +196,21 @@ if __name__ == "__main__":
     model_state_file = base_model + ".model_state"
     history_file = base_model + ".history"
 
-    #Log input parameters
-    logger.info(
-                'Running with parameters base_model: %s dataset: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
-                base_model, 
-                dataset, 
-                n_inputs, 
-                n_epochs, 
-                batch_size, 
-                cache_size)
-
-    #Additional parameters
-    logger.info(
-                'Additional parameters log_to_console: %s validation_split: %s learning_rate: %s',
-                log_to_console,
-                validation_split,
-                learning_rate)
-
     #Output files
     logger.info(
                 'Output files:: model_file: %s model_state_file: %s history_file: %s',
                 model_file,
                 model_state_file,
                 history_file)
+
+    #Transformation parameters
+    logger.info('Transformation parameters: %s', transformation_params)
     
     #Log training metadata
     logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
 
     #Transformer
-    transformer = ImageDataTransformation(
-                        samplewise_mean = True,
-                        samplewise_std_normalization = True,
-                        horizontal_flip = True)
+    transformer = ImageDataTransformation(parameters = transformation_params)
 
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGeneration(

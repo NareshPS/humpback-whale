@@ -10,41 +10,77 @@ import numpy as np
 from common import logging
 
 class ImageDataTransformation:
+    class Parameters(object):
+        """It contains transformation parameters.
+        """
+        def __init__(
+                self,
+                samplewise_mean = False,
+                samplewise_std_normalization = False,
+                horizontal_flip = False,
+                horizontal_flip_prob = 0.5):
+            """It initializes the input parameters.
 
-    def __init__(
-            self,
-            samplewise_mean = False,
-            samplewise_std_normalization = False,
-            horizontal_flip = False,
-            horizontal_flip_prob = 0.5):
+            Arguments:
+                samplewise_mean {boolean} -- It is a boolean value to indicate the transformer to center the image around the mean.
+                samplewise_std_normalization {boolean} -- It is a boolean value to indicate the transformer to normalize the image using standard deviation. 
+                horizontal_flip {boolean} -- It is a boolean flag to enable horizontal flip transformation.
+                horizontal_flip_prob {A floating point number} -- It indicates the changes of horizontal flip.
+            """
+            #Input parameters
+            self.samplewise_mean = samplewise_mean
+            self.samplewise_std_normalization = samplewise_std_normalization
+            self.horizontal_flip = horizontal_flip
+            self.horizontal_flip_prob = horizontal_flip_prob
+
+        def __str__(self):
+            return """Parameters:: 
+                        samplewise_mean: {} samplewise_std_normalization: {}
+                        horizontal_flip: {} horizontal_flip_prob: {}""".format(
+                                                                            self.samplewise_mean,
+                                                                            self.samplewise_std_normalization,
+                                                                            self.horizontal_flip,
+                                                                            self.horizontal_flip_prob)
+
+        @classmethod
+        def parse(cls, param_names):
+            """It decodes the input list to identify parameters.
+            
+            Arguments:
+                params {[string]} -- A list of transformation parameters.
+            """
+            parameters = cls()
+
+            for name in param_names:
+                #Set the class parameters
+                getattr(parameters, name)
+                setattr(parameters, name, True)
+
+            return parameters
+
+    def __init__(self, parameters = Parameters()):
         """It initializes the input parameters.
 
         Arguments:
-            samplewise_mean {boolean} -- It is a boolean value to indicate the transformer to center the image around the mean.
-            samplewise_std_normalization {boolean} -- It is a boolean value to indicate the transformer to normalize the image using standard deviation. 
-            horizontal_flip {boolean} -- It is a boolean flag to enable horizontal flip transformation.
-            horizontal_flip_prob {A floating point number} -- It indicates the changes of horizontal flip.
+            parameters {A ImageDataTransformation.Parameters object} -- It is a Parameters object that contains the transformation parameters.
         """
         #Input parameters
-        self._samplewise_mean = samplewise_mean
-        self._samplewise_std_normalization = samplewise_std_normalization
-        self._horizontal_flip = horizontal_flip
-        self._horizontal_flip_prob = horizontal_flip_prob
+        self._parameters = parameters
 
         #Logging
         self._logger = logging.get_logger(__name__)
 
         #Process flag dependencies
-        if self._samplewise_std_normalization:
-            self._samplewise_mean = True
+        if self._parameters.samplewise_std_normalization:
+            self._parameters.samplewise_mean = True
 
         #Augmentation list
         augmentations = []
 
         #Horizontal flip
-        if self._horizontal_flip:
+        if self._parameters.horizontal_flip:
             #Flips images randomly with input probability.
-            augmentations.append(img_augmenters.Fliplr(self._horizontal_flip_prob))
+            augmentations.append(img_augmenters.Fliplr(self._parameters.horizontal_flip_prob))
         
         #Creates augmentor with the list of augmentations
         self._augmenter = img_augmenters.Sequential(augmentations, random_order = True) if len(augmentations) > 0 else None
@@ -52,13 +88,13 @@ class ImageDataTransformation:
         #Log input parameters
         self._logger.info(
                         "Samplewise transformations:: samplewise_mean: %s samplewise_std_normalization: %s",
-                        self._samplewise_mean,
-                        self._samplewise_std_normalization)
+                        self._parameters.samplewise_mean,
+                        self._parameters.samplewise_std_normalization)
 
         self._logger.info(
                         "Horizontal flip:: horizontal_flip: %s horizontal_flip_prob: %f",
-                        self._horizontal_flip,
-                        self._horizontal_flip_prob)
+                        self._parameters.horizontal_flip,
+                        self._parameters.horizontal_flip_prob)
 
     def fit(self, images):
         """It calculates statistics on the input dataset. These are used to perform transformation.
@@ -79,10 +115,10 @@ class ImageDataTransformation:
         """
         transformed_images = images
 
-        if self._samplewise_mean:
+        if self._parameters.samplewise_mean:
             transformed_images = np.asarray([image - np.mean(image) for image in transformed_images])
 
-        if self._samplewise_std_normalization:
+        if self._parameters.samplewise_std_normalization:
             transformed_images = self._apply_samplewise_std_normalization(transformed_images)
 
         if self._augmenter:

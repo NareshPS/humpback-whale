@@ -5,7 +5,7 @@ import unittest as ut
 import numpy as np
 
 #Local imports
-from image.operations import Operations
+from image.operations import convolve
 
 class TestOperations(ut.TestCase):
     def test_convolve(self):
@@ -15,7 +15,7 @@ class TestOperations(ut.TestCase):
                     np.random.randint(0, 255, size = image_size, dtype = np.uint8)
                  ]
         kernel = np.random.randint(-2, 2, size = (3, 3), dtype = np.int16)
-        convoluted_images = Operations.convolve(images, kernel, mode = 'same')
+        convoluted_images = convolve(images, kernel, mode = 'same')
         l_input = len(images)
         l_convoluted = len(convoluted_images)
 
