@@ -7,3 +7,5 @@ Epoch 1/1
 === Zero mean transformation ===
 $ python siamese_network.py -m inceptionv3 -d train_preprocessed -e 10 -c 1024 -b 128 -s 0.1 -e 1
 
+Epoch 1/1
+1640/1640 [==============================] - 60105s 37s/step - loss: 0.6757 - acc: 0.5738 - val_loss: 0.6027 - val_acc: 0.6597

@@ -16,6 +16,7 @@ from model.feature_models import feature_model
 #Data processing
 from image.generation import ImageDataGeneration
 from image.transformation import ImageDataTransformation
+from imgaug import seed as imgaug_seed
 import numpy as np
 import pandas as pd
 
@@ -146,6 +147,7 @@ if __name__ == "__main__":
     seed = 3
     np_seed(seed)
     tf_seed(seed)
+    imgaug_seed(seed)
 
     #Required parameters
     df_image_col = constants.IMAGE_HEADER_NAME
@@ -197,7 +199,8 @@ if __name__ == "__main__":
     #Transformer
     transformer = ImageDataTransformation(
                         samplewise_mean = True,
-                        samplewise_std_normalization = True)
+                        samplewise_std_normalization = True,
+                        horizontal_flip = True)
 
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGeneration(

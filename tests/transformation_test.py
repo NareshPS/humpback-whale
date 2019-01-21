@@ -7,6 +7,9 @@ from common import ut_constants
 #Numpy
 import numpy as np
 
+#Data creation
+import itertools
+
 #Transformation
 from image.transformation import ImageDataTransformation
 
@@ -89,3 +92,44 @@ class TestImageDataTransformation(ut.TestCase):
         self.transform_samplewise_std_normalization(
                 False, #samplewise_std_normalization
                 images)
+
+    @staticmethod
+    def get_horizontal_flip_examples(flipped = False):
+        #Create image data
+        pixel_values = range(1, 6)
+        image_slice = list(itertools.chain.from_iterable(itertools.repeat(value, 3) for value in pixel_values))
+        image_slice = list(reversed(image_slice)) if flipped else image_slice
+        image_slice = np.asarray(image_slice).reshape(5, 3)
+        image = [image_slice*multiplier for multiplier in range(1, 6)]
+        images = np.asarray(image).reshape(1, 5, 5, 3)
+        
+        return images
+
+    def transform_horizontal_flip(self, horizontal_flip, images, results):
+        #Transformation object
+        transformation = ImageDataTransformation(horizontal_flip = horizontal_flip)
+
+        #Transform
+        transformed_images = transformation.transform(images)
+
+        #Assert
+        self.assertTrue(
+                np.array_equal(transformed_images, results),
+                "transformed_images: {} != expected: {}".format(transformed_images, results))
+
+    def test_transform_with_horizontal_flip(self):
+        images = TestImageDataTransformation.get_horizontal_flip_examples(flipped = False)
+        flipped_images = TestImageDataTransformation.get_horizontal_flip_examples(flipped = True)
+
+        self.transform_horizontal_flip(
+                    True, #Horizontal flip
+                    images,
+                    flipped_images)
+
+    def test_transform_without_horizontal_flip(self):
+        images = TestImageDataTransformation.get_horizontal_flip_examples(flipped = False)
+
+        self.transform_horizontal_flip(
+                    False, #Horizontal flip
+                    images,
+                    images)
