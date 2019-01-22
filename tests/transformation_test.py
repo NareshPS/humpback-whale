@@ -53,6 +53,16 @@ class TestParameters(ut.TestCase):
         param_names = ['featurewise_mean']
         parameters = ImageDataTransformation.Parameters.parse(param_names)
         self.assertTrue(parameters.featurewise_mean)
+
+    def test_parse_without_featurewise_std_normalization(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.featurewise_std_normalization)
+
+    def test_parse_with_featurewise_std_normalization(self):
+        param_names = ['featurewise_std_normalization']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.featurewise_std_normalization)
     
 class TestImageDataTransformation(ut.TestCase):
     @staticmethod
@@ -236,3 +246,50 @@ class TestImageDataTransformation(ut.TestCase):
 
         with self.assertRaises(ValueError):
             transformation.transform(images)
+
+    @staticmethod
+    def get_featurewise_std_normalization_examples(standard_deviation):
+        #Create image data
+        images = np.random.normal(
+                                0, #Mean
+                                standard_deviation, #Standard deviation
+                                (5, 5, 5, 3))
+
+        return images
+
+    def transform_featurewise_std_normalization(self, featurewise_std_normalization, images, result):
+        #Transformation object
+        parameters = ImageDataTransformation.Parameters(featurewise_std_normalization = featurewise_std_normalization)
+        transformation = ImageDataTransformation(parameters = parameters)
+
+        #Fit and perform transformation
+        transformation.fit(images)
+        transformed_images = transformation.transform(images)
+        transformed_std = transformed_images.std(axis = 0)
+
+        #Assert
+        self.assertTrue(np.allclose(transformed_std, result))
+
+    def test_transform_with_featurewise_std_normalization(self):
+        #Arrange
+        standard_deviation = 0.1
+        images = TestImageDataTransformation.get_featurewise_std_normalization_examples(standard_deviation)
+        result = np.ones((5, 5, 3), dtype = float)
+
+        #Act
+        self.transform_featurewise_std_normalization(
+                    True, #Enable feature wise standard deviation normalization
+                    images,
+                    result)
+
+    def test_transform_without_featurewise_std_normalization(self):
+        #Arrange
+        standard_deviation = 0.1
+        images = TestImageDataTransformation.get_featurewise_std_normalization_examples(standard_deviation)
+        result = images.std(axis = 0)
+
+        #Act
+        self.transform_featurewise_std_normalization(
+                    False, #Disable feature wise standard deviation normalization
+                    images,
+                    result)

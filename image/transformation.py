@@ -18,14 +18,16 @@ class ImageDataTransformation:
                 samplewise_mean = False,
                 samplewise_std_normalization = False,
                 featurewise_mean = False,
+                featurewise_std_normalization = False,
                 horizontal_flip = False,
                 horizontal_flip_prob = 0.5):
             """It initializes the input parameters.
 
             Arguments:
                 samplewise_mean {boolean} -- It is a boolean value to indicate the transformer to center the image around the mean.
-                samplewise_std_normalization {boolean} -- It is a boolean value to indicate the transformer to normalize the image using standard deviation. 
+                samplewise_std_normalization {boolean} -- It is a boolean value to normalize the image using standard deviation. 
                 featurewise_mean {boolean} -- It is a boolean flag to set input mean to zero over the dataset, feature wise.
+                featurewise_std_normalization {boolean} -- It is a boolean flag to normalize the image using feature wise standard deviation calculated over the dataset.
                 horizontal_flip {boolean} -- It is a boolean flag to enable horizontal flip transformation.
                 horizontal_flip_prob {A floating point number} -- It indicates the changes of horizontal flip.
             """
@@ -33,17 +35,19 @@ class ImageDataTransformation:
             self.samplewise_mean = samplewise_mean
             self.samplewise_std_normalization = samplewise_std_normalization
             self.featurewise_mean = featurewise_mean
+            self.featurewise_std_normalization = featurewise_std_normalization
             self.horizontal_flip = horizontal_flip
             self.horizontal_flip_prob = horizontal_flip_prob
 
         def __str__(self):
             return """Parameters::
                         samplewise_mean: {} samplewise_std_normalization: {}
-                        featurewise_mean: {}
+                        featurewise_mean: {} featurewise_std_normalization: {}
                         horizontal_flip: {} horizontal_flip_prob: {}""".format(
                                                                             self.samplewise_mean,
                                                                             self.samplewise_std_normalization,
                                                                             self.featurewise_mean,
+                                                                            self.featurewise_std_normalization,
                                                                             self.horizontal_flip,
                                                                             self.horizontal_flip_prob)
 
@@ -75,6 +79,7 @@ class ImageDataTransformation:
         #Secondary parameters
         self._fit_called = False
         self._featurewise_mean = None
+        self._featurewise_std = None
 
         #Logging
         self._logger = logging.get_logger(__name__)
@@ -101,8 +106,9 @@ class ImageDataTransformation:
                         self._parameters.samplewise_std_normalization)
 
         self._logger.info(
-                        "Featurewise transformations:: featurewise_mean: %s",
-                        self._parameters.featurewise_mean)
+                        "Featurewise transformations:: featurewise_mean: %s featurewise_std_normalization: %s",
+                        self._parameters.featurewise_mean,
+                        self._parameters.featurewise_std_normalization)
 
         self._logger.info(
                         "Horizontal flip:: horizontal_flip: %s horizontal_flip_prob: %f",
@@ -118,11 +124,15 @@ class ImageDataTransformation:
         #Calculate feature wise mean.
         self._featurewise_mean = images.mean(axis = 0)
 
+        #Calculate feature wise standard deviation.
+        self._featurewise_std = images.std(axis = 0)
+
         self._logger.info(
                         """fit::
                             input images: {}
                             featurewise_mean: {}
-                        """.format(images.shape, self._featurewise_mean.shape))
+                            featurewise_std: {}
+                        """.format(images.shape, self._featurewise_mean.shape, self._featurewise_std))
 
         #Set the flag to indicate dataset statistics are available.
         self._fit_called = True
@@ -147,8 +157,14 @@ class ImageDataTransformation:
         if self._parameters.featurewise_mean and not self._fit_called:
             raise ValueError("Cannot calculate feature wise mean without calling fit()")
 
+        if self._parameters.featurewise_std_normalization and not self._fit_called:
+            raise ValueError("Cannot calculate feature wise standard deviation without calling fit()")
+
         if self._parameters.featurewise_mean:
             transformed_images = self._apply_featurewise_mean(transformed_images)
+
+        if self._parameters.featurewise_std_normalization:
+            transformed_images = self._apply_featurewise_std_normalization(transformed_images)
 
         if self._augmenter:
             transformed_images = self._apply_augmentations(transformed_images)
@@ -182,6 +198,17 @@ class ImageDataTransformation:
             A 4-D numpy array containing transformed image data.
         """
         return images - self._featurewise_mean
+
+    def _apply_featurewise_std_normalization(self, images):
+        """It normalizes the images with the feature wise standard deviation calculated over the dataset.
+        
+        Arguments:
+            images {A numpy.array} -- A 4-D numpy array containing image data.
+
+        Returns:
+            A 4-D numpy array containing transformed image data.
+        """
+        return images/self._featurewise_std
 
     def _apply_augmentations(self, images):
         """It applies image augmentations to the input images.
