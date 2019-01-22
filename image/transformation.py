@@ -17,6 +17,7 @@ class ImageDataTransformation:
                 self,
                 samplewise_mean = False,
                 samplewise_std_normalization = False,
+                featurewise_mean = False,
                 horizontal_flip = False,
                 horizontal_flip_prob = 0.5):
             """It initializes the input parameters.
@@ -24,21 +25,25 @@ class ImageDataTransformation:
             Arguments:
                 samplewise_mean {boolean} -- It is a boolean value to indicate the transformer to center the image around the mean.
                 samplewise_std_normalization {boolean} -- It is a boolean value to indicate the transformer to normalize the image using standard deviation. 
+                featurewise_mean {boolean} -- It is a boolean flag to set input mean to zero over the dataset, feature wise.
                 horizontal_flip {boolean} -- It is a boolean flag to enable horizontal flip transformation.
                 horizontal_flip_prob {A floating point number} -- It indicates the changes of horizontal flip.
             """
             #Input parameters
             self.samplewise_mean = samplewise_mean
             self.samplewise_std_normalization = samplewise_std_normalization
+            self.featurewise_mean = featurewise_mean
             self.horizontal_flip = horizontal_flip
             self.horizontal_flip_prob = horizontal_flip_prob
 
         def __str__(self):
-            return """Parameters:: 
+            return """Parameters::
                         samplewise_mean: {} samplewise_std_normalization: {}
+                        featurewise_mean: {}
                         horizontal_flip: {} horizontal_flip_prob: {}""".format(
                                                                             self.samplewise_mean,
                                                                             self.samplewise_std_normalization,
+                                                                            self.featurewise_mean,
                                                                             self.horizontal_flip,
                                                                             self.horizontal_flip_prob)
 
@@ -67,6 +72,10 @@ class ImageDataTransformation:
         #Input parameters
         self._parameters = parameters
 
+        #Secondary parameters
+        self._fit_called = False
+        self._featurewise_mean = None
+
         #Logging
         self._logger = logging.get_logger(__name__)
 
@@ -92,6 +101,10 @@ class ImageDataTransformation:
                         self._parameters.samplewise_std_normalization)
 
         self._logger.info(
+                        "Featurewise transformations:: featurewise_mean: %s",
+                        self._parameters.featurewise_mean)
+
+        self._logger.info(
                         "Horizontal flip:: horizontal_flip: %s horizontal_flip_prob: %f",
                         self._parameters.horizontal_flip,
                         self._parameters.horizontal_flip_prob)
@@ -102,7 +115,17 @@ class ImageDataTransformation:
         Arguments:
             images {An numpy.array object} -- It is a 4-D numpy array containing image data.
         """
-        pass
+        #Calculate feature wise mean.
+        self._featurewise_mean = images.mean(axis = 0)
+
+        self._logger.info(
+                        """fit::
+                            input images: {}
+                            featurewise_mean: {}
+                        """.format(images.shape, self._featurewise_mean.shape))
+
+        #Set the flag to indicate dataset statistics are available.
+        self._fit_called = True
 
     def transform(self, images):
         """It applies the transformations to the input images.
@@ -120,6 +143,12 @@ class ImageDataTransformation:
 
         if self._parameters.samplewise_std_normalization:
             transformed_images = self._apply_samplewise_std_normalization(transformed_images)
+
+        if self._parameters.featurewise_mean and not self._fit_called:
+            raise ValueError("Cannot calculate feature wise mean without calling fit()")
+
+        if self._parameters.featurewise_mean:
+            transformed_images = self._apply_featurewise_mean(transformed_images)
 
         if self._augmenter:
             transformed_images = self._apply_augmentations(transformed_images)
@@ -142,6 +171,17 @@ class ImageDataTransformation:
             transformed_images.append(transformed_image)
 
         return np.asarray(transformed_images)
+
+    def _apply_featurewise_mean(self, images):
+        """It sets input mean to zero over the dataset, feature wise.
+        
+        Arguments:
+            images {A numpy.array} -- A 4-D numpy array containing image data.
+
+        Returns:
+            A 4-D numpy array containing transformed image data.
+        """
+        return images - self._featurewise_mean
 
     def _apply_augmentations(self, images):
         """It applies image augmentations to the input images.

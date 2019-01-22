@@ -30,16 +30,14 @@ class TestImageDataGeneration(ut.TestCase):
 
     def flow_transformer(self, transformer, transform_x_cols):
         generator = ImageDataGeneration(
-                        train_set_loc,
-                        train_tuple_df,
-                        target_shape = input_shape[:2],
-                        batch_size = 1,
+                        train_set_loc, train_tuple_df,
+                        input_shape[:2], #Input shape
+                        1, #Batch size
+                        image_cols, output_col,
+                        transform_x_cols = transform_x_cols,
                         transformer = transformer)
 
-        iterator = generator.flow(
-                                image_cols,
-                                output_col,
-                                transform_x_cols = transform_x_cols)
+        iterator = generator.flow()
 
         _ = iterator.__getitem__(0)
 
@@ -62,3 +60,36 @@ class TestImageDataGeneration(ut.TestCase):
 
         #Assert
         image_data_transformation.transform.assert_not_called()
+
+    @classmethod
+    def get_image_objects(cls, image_name):
+        #Initial image object
+        image = np.ones(input_shape)
+
+        return {image_name: image}
+
+    @ut.mock.patch.object(ImageDataGeneration, '_get_image_objects')
+    def test_fit(self, get_image_objects_mock):
+        #Mock transformer
+        transformer = ut.mock.Mock()
+
+        #Override _get_image_objects return value
+        image_name = train_tuple_df.loc[0, 'Anchor']
+        img_objs_map = TestImageDataGeneration.get_image_objects(image_name)
+        get_image_objects_mock.return_value = img_objs_map
+
+        #Image generator
+        generator = ImageDataGeneration(
+                        train_set_loc, train_tuple_df,
+                        input_shape[:2], #Input shape
+                        1, #Batch size
+                        image_cols, output_col,
+                        transformer = transformer)
+
+        #Fit data
+        generator.fit(n_images = 2)
+
+        #Assert
+        img_objs = np.reshape(img_objs_map[image_name], (1, ) + input_shape)
+        transformer.fit.assert_called_once()
+        np.testing.assert_array_equal(img_objs, transformer.fit.call_args[0][0])

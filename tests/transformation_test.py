@@ -43,6 +43,16 @@ class TestParameters(ut.TestCase):
         param_names = ['horizontal_flip']
         parameters = ImageDataTransformation.Parameters.parse(param_names)
         self.assertTrue(parameters.horizontal_flip)
+
+    def test_parse_without_featurewise_mean(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.featurewise_mean)
+
+    def test_parse_with_featurewise_mean(self):
+        param_names = ['featurewise_mean']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.featurewise_mean)
     
 class TestImageDataTransformation(ut.TestCase):
     @staticmethod
@@ -168,3 +178,61 @@ class TestImageDataTransformation(ut.TestCase):
                     False, #Horizontal flip
                     images,
                     images)
+
+    @staticmethod
+    def get_featurewise_mean_examples():
+        #Create image data
+        images = np.ones((5, 5, 5, 3))
+
+        for image_id in range(5):
+            images[image_id] *= image_id
+
+        return images
+
+    def transform_featurewise_mean(self, featurewise_mean, images, result):
+        #Transformation object
+        parameters = ImageDataTransformation.Parameters(featurewise_mean = featurewise_mean)
+        transformation = ImageDataTransformation(parameters = parameters)
+
+        #Fit and perform transformation
+        transformation.fit(images)
+        transformed_images = transformation.transform(images)
+        sum_image = transformed_images.sum(axis = 0)
+
+        #Assert
+        self.assertTrue(
+                np.array_equal(sum_image, result),
+                "Sum images: {} expected: {}".format(sum_image, result))
+
+    def test_transform_with_featurewise_mean(self):
+        #Arrange
+        images = TestImageDataTransformation.get_featurewise_mean_examples()
+        result = np.zeros(images.shape[1:])
+
+        #Act
+        self.transform_featurewise_mean(
+                    True, #Enable feature wise mean
+                    images,
+                    result)
+
+    def test_transform_without_featurewise_mean(self):
+        #Arrange
+        images = TestImageDataTransformation.get_featurewise_mean_examples()
+        result = np.ones(images.shape[1:]) * 10 #Initialize with the sum of all features
+
+        #Act
+        self.transform_featurewise_mean(
+                    False, #Disable feature wise mean
+                    images,
+                    result)
+
+    def test_transform_with_featurewise_mean_fit_not_called(self):
+        #Arrange
+        images = TestImageDataTransformation.get_featurewise_mean_examples()
+
+        #Transformation object
+        parameters = ImageDataTransformation.Parameters(featurewise_mean = True)
+        transformation = ImageDataTransformation(parameters = parameters)
+
+        with self.assertRaises(ValueError):
+            transformation.transform(images)

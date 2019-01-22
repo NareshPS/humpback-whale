@@ -3,6 +3,7 @@
 
 #Randomization
 from random import shuffle as random_shuffle
+from random import randrange
 
 #Caching
 from cachetools import LRUCache
@@ -22,16 +23,13 @@ class ImageDataIterator(Sequence):
         """It iterates over the dataframe to return a batch of input per next() call.
         """
 
-        def __init__(self, image_data_generator, dataframe, batch_size, x_cols, y_col, transform_x_cols, subset):
+        def __init__(self, image_data_generator, dataframe, batch_size, subset):
             """It initializes the required and optional parameters
             
             Arguments:
                 image_data_generator {An ImageDataGenerator object} -- A generator object that allows loading a data slice.
                 dataframe {A pandas.DataFrame object} -- A data frame object containing the input data.
                 batch_size {int} -- An integer value that indicates the size of a batch.
-                x_cols {[string]} -- A list of names of columns that contain image file names.
-                y_col {string} -- A string value of the name of column with labels.
-                transform_x_cols {[string]} -- A list of names of columns that are eligible for image transformation.
                 subset {string} -- A string to indicate the dataset name.
             """
 
@@ -39,9 +37,6 @@ class ImageDataIterator(Sequence):
             self._image_data_generator = image_data_generator
             self._dataframe = dataframe
             self._batch_size = batch_size
-            self._x_cols = x_cols
-            self._y_col = y_col
-            self._transform_x_cols = transform_x_cols
             self._subset = subset
 
             #Internal parameters
@@ -83,11 +78,7 @@ class ImageDataIterator(Sequence):
             indices_slice = self._shuffled_indices[start:end]
             df_slice = self._dataframe.loc[indices_slice, :]
 
-            return self._image_data_generator._load_slice(
-                            df_slice,
-                            self._x_cols,
-                            self._y_col,
-                            self._transform_x_cols)
+            return self._image_data_generator._load_slice(df_slice)
 
         def on_epoch_end(self):
             self._logger.info("End of epoch. Shuffling the dataset:{}".format(self._subset))
@@ -102,6 +93,7 @@ class ImageDataGeneration:
 
     def __init__(self,
                     source, dataframe, target_shape, batch_size,
+                    x_cols, y_col, transform_x_cols = [],
                     validation_split = None,
                     normalize = True,
                     cache_size = 512,
@@ -114,6 +106,9 @@ class ImageDataGeneration:
             target_shape {(width, height)} -- A tuple that indicates the target image dimensions.
             batch_size {int} -- A number indicating the size of each batch.
             validation_split {float} -- A float indicating the fraction of validation split of the dataset.
+            x_cols {[string]} -- A list of column names with image paths.
+            y_col {[type]} -- The column name for labels.
+            transform_x_cols {[string]} -- A list of column names to apply transformations.
             normalize {bool} -- A boolean flag to enable img_obs normalization.
             cache_size {int} -- A integer value to determine the size of the cache.
             transformer {ImageDataTransformation object} -- An ImageDataTransformation object that applies transformation over the images.
@@ -123,6 +118,9 @@ class ImageDataGeneration:
         self._dataframe = dataframe
         self._batch_size = batch_size
         self._target_shape = target_shape
+        self._x_cols = x_cols
+        self._y_col = y_col
+        self._transform_x_cols = transform_x_cols
 
         #Optional parameters
         self._validation_split = validation_split
@@ -135,6 +133,12 @@ class ImageDataGeneration:
 
         #Logging
         self._logger = logging.get_logger(__name__)
+
+        #Validate parameters
+        invalid_transform_x_cols = [col for col in self._transform_x_cols if col not in self._x_cols]
+
+        if invalid_transform_x_cols:
+            raise ValueError("Transform cols: {} not found in x_cols".format(invalid_transform_x_cols))
 
         #Training and validation set boundaries
         if self._validation_split is not None:
@@ -156,24 +160,57 @@ class ImageDataGeneration:
         self._logger.info(
                 "Dataframe size: {} training size: {} validation size: {}".format(n_dataframe, n_train_df, n_validation_df))
 
-    def flow(self, x_cols, y_col, transform_x_cols = [], subset = 'training'):
-        """It creates an iterator to the input dataframe.
-        For y_col, only binary inputs are supported.
+        self._logger.info("Column parameters:: xcols: {} y_col: {}".format(self._x_cols, self._y_col))
+
+    def _get_images(self, n_images):
+        """It extracts the image names from the dataframe.
         
         Arguments:
-            x_cols {[string]} -- A list of column names with image paths.
-            y_col {[type]} -- The column name for labels.
-            transform_x_cols {[string]} -- A list of column names to apply transformations.
+            n_images {An numpy.array object} -- It is a 4-D numpy array containing image data.
+        """
+        df_size = len(self._train_df)
+        loop_count = 0
+        images = set()
+
+        while len(images) <= n_images and loop_count < df_size:
+            random_index = randrange(df_size)
+
+            for image_col in self._x_cols:
+                images.add(self._train_df.loc[random_index, image_col])
+
+            loop_count += 1
+
+        return list(images)
+
+    def fit(self, n_images):
+        """It calculates statistics on the input dataset. These are used to perform transformation.
+        
+        Arguments:
+            n_images {An numpy.array object} -- It is a 4-D numpy array containing image data.
+        """
+        if n_images <= 0:
+            ValueError("Expected a positive integer for n_images. Got: {}".format(n_images))
+
+        #Input list for data fitting
+        images = self._get_images(n_images)
+
+        self._logger.info("%d images to use for data fitting", len(images))
+
+        #Image objects
+        img_objs_map = self._get_image_objects(images)
+        img_objs = np.asarray(list(img_objs_map.values()))
+        
+        self._logger.info("fit:: images: {} to the transformer to compute statistics".format(img_objs.shape))
+
+        #Fit the data in the transformer
+        self._transformer.fit(img_objs)
+
+    def flow(self, subset = 'training'):
+        """It creates an iterator to the input dataframe.
+        
+        Arguments:
             subset {string} -- A string to indicate select between training and validation splits.
         """
-        #Validate parameters
-        invalid_transform_x_cols = [col for col in transform_x_cols if col not in x_cols]
-
-        if invalid_transform_x_cols:
-            raise ValueError("Transform cols: {} not found in x_cols".format(invalid_transform_x_cols))
-
-        self._logger.info("flow:: xcols: {} y_col: {}".format(x_cols, y_col))
-
         #Validate subset parameter
         if subset not in ImageDataGeneration.valid_subsets:
             raise ValueError("Valid values of subset are: {}".format(ImageDataGeneration.valid_subsets))
@@ -186,30 +223,24 @@ class ImageDataGeneration:
                     self,
                     dataframe,
                     self._batch_size,
-                    x_cols,
-                    y_col,
-                    transform_x_cols,
                     subset)
 
-    def _load_slice(self, df_slice, x_cols, y_col, transform_x_cols):
+    def _load_slice(self, df_slice):
         """It loads the image objects for the data frame slice.
         
         Arguments:
             df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
-            x_cols {[string]} -- A list of dataframe columns that contain the image names.
-            y_col {string} -- A string value indicating the name of the label column in the dataframe.
-            transform_x_cols {[string]} -- A list of dataframe columns that have transformation enabled.
         
         Returns:
             (Numpy object, Numpy object) -- A tuple of input data and labels.
         """
         #Process labels
-        df_slice_y = np.asarray(df_slice[y_col].tolist())
+        df_slice_y = np.asarray(df_slice[self._y_col].tolist())
         df_slice_y = np.expand_dims(df_slice_y, axis = -1)
 
         #Process image columns
         df_slice_x = []  
-        for x_col in x_cols:
+        for x_col in self._x_cols:
             images = df_slice[x_col].tolist()
 
             #Load images
@@ -219,13 +250,13 @@ class ImageDataGeneration:
             img_objs = [img_objs_map[image] for image in images]
             img_objs = np.asarray(img_objs)
 
-            if x_col in transform_x_cols:
+            if x_col in self._transform_x_cols:
                 img_objs = self._apply_transformation(img_objs)
 
             df_slice_x.append(img_objs)
 
         return (df_slice_x, df_slice_y)
-            
+
     def _get_image_objects(self, images):
         """It loads the image objects for the list of images.
         If the image is available, it is loaded from the cache.

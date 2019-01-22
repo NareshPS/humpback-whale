@@ -128,6 +128,10 @@ def parse_args():
         nargs = '*', default = [],
         choices = ImageDataTransformation.Parameters().__dict__.keys(),
         help = 'It specifies transformation parameters')
+    parser.add_argument(
+        '-f', '--num_fit_images',
+        default = 1000, type = int,
+        help = 'It specifies the number of images to send to fit()')
 
     args = parser.parse_args()
 
@@ -138,16 +142,17 @@ if __name__ == "__main__":
     args = parse_args()
 
     #Extract command line parameters
-    base_model, = args.base_model,
-    dataset, = args.dataset, 
-    n_inputs, = args.num_inputs, 
-    n_epochs, = args.epochs, 
-    batch_size, = args.batch_size, 
-    cache_size, = args.cache_size, 
-    log_to_console, = args.log_to_console,
-    validation_split, = args.validation_split,
-    learning_rate, = args.learning_rate,
+    base_model = args.base_model
+    dataset = args.dataset
+    n_inputs = args.num_inputs
+    n_epochs = args.epochs
+    batch_size = args.batch_size
+    cache_size = args.cache_size
+    log_to_console = args.log_to_console
+    validation_split = args.validation_split
+    learning_rate = args.learning_rate
     transformation_params = ImageDataTransformation.Parameters.parse(args.transformations)
+    n_fit_images = args.num_fit_images
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -205,34 +210,34 @@ if __name__ == "__main__":
 
     #Transformation parameters
     logger.info('Transformation parameters: %s', transformation_params)
+
+    #Fit images parameter
+    logger.info('Fit images:: n_fit_images: %d', n_fit_images)
     
     #Log training metadata
     logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
 
     #Transformer
     transformer = ImageDataTransformation(parameters = transformation_params)
-
+    
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGeneration(
-                    train_set_loc, 
-                    train_tuples_df, 
-                    input_shape[:2], 
-                    batch_size,
+                    train_set_loc, train_tuples_df, 
+                    input_shape[:2], batch_size,
+                    image_cols, output_col,
+                    transform_x_cols = image_cols,
                     validation_split = validation_split,
                     cache_size = cache_size,
                     transformer = transformer)
 
-    train_gen = datagen.flow(
-                            image_cols, 
-                            output_col,
-                            transform_x_cols = image_cols,
-                            subset = 'training')
+    #Fit the data generator
+    datagen.fit(n_images = n_fit_images)
 
-    validation_gen = datagen.flow(
-                                image_cols,
-                                output_col,
-                                transform_x_cols = image_cols,
-                                subset = 'validation') if validation_split else None
+    #Training flow
+    train_gen = datagen.flow(subset = 'training')
+
+    #Validation flow
+    validation_gen = datagen.flow(subset = 'validation') if validation_split else None
 
     #Create a model placeholder to create or load a model.
     model = None
