@@ -88,6 +88,9 @@ class ImageDataTransformation:
         if self._parameters.samplewise_std_normalization:
             self._parameters.samplewise_mean = True
 
+        if self._parameters.featurewise_std_normalization:
+            self._parameters.featurewise_mean = True
+
         #Augmentation list
         augmentations = []
 
@@ -121,11 +124,14 @@ class ImageDataTransformation:
         Arguments:
             images {An numpy.array object} -- It is a 4-D numpy array containing image data.
         """
+        #Apply sample wise corrections.
+        corrected_images = self._apply_samplewise_before_featurewise_operations(images)
+
         #Calculate feature wise mean.
-        self._featurewise_mean = images.mean(axis = 0)
+        self._featurewise_mean = corrected_images.mean(axis = 0)
 
         #Calculate feature wise standard deviation.
-        self._featurewise_std = images.std(axis = 0)
+        self._featurewise_std = corrected_images.std(axis = 0)
 
         self._logger.info(
                         """fit::
@@ -149,7 +155,7 @@ class ImageDataTransformation:
         transformed_images = images
 
         if self._parameters.samplewise_mean:
-            transformed_images = np.asarray([image - np.mean(image) for image in transformed_images])
+            transformed_images = self._apply_samplewise_mean(transformed_images)
 
         if self._parameters.samplewise_std_normalization:
             transformed_images = self._apply_samplewise_std_normalization(transformed_images)
@@ -171,6 +177,17 @@ class ImageDataTransformation:
 
         return transformed_images
 
+    def _apply_samplewise_mean(self, images):
+        """It transform the sample to zero mean.
+        
+        Arguments:
+            images {A numpy.array} -- A 4-D numpy array containing image data.
+
+        Returns:
+            A 4-D numpy array containing transformed image data.
+        """
+        return np.asarray([image - np.mean(image) for image in images])
+
     def _apply_samplewise_std_normalization(self, images):
         """It normalizes an image using its standard deviation.
         
@@ -180,13 +197,29 @@ class ImageDataTransformation:
         Returns:
             A 4-D numpy array containing transformed image data.
         """
-        transformed_images = []
+        return np.asarray([image/np.std(image) for image in images])
 
-        for image in images:
-            transformed_image = image/np.std(image)
-            transformed_images.append(transformed_image)
+    def _apply_samplewise_before_featurewise_operations(self, images):
+        """It applies sample wise operations on the fit dataset before calculating feature wise statistics.
+            When both sample wise mean and feature wise means are enabled, feature wise means must be calculated over
+            sample wise mean adjusted inputs. If sample wise std normalization is also enabled, then it must be applied prior
+            to feature wise calculations
+        
+        Arguments:
+            images {A numpy.array} -- A 4-D numpy array containing image data.
 
-        return np.asarray(transformed_images)
+        Returns:
+            A 4-D numpy array containing transformed image data.
+        """
+        transformed_images = images
+
+        if self._parameters.samplewise_mean:
+            transformed_images = self._apply_samplewise_mean(transformed_images)
+
+        if self._parameters.samplewise_std_normalization:
+            transformed_images = self._apply_samplewise_std_normalization(transformed_images)
+
+        return transformed_images
 
     def _apply_featurewise_mean(self, images):
         """It sets input mean to zero over the dataset, feature wise.

@@ -3,12 +3,20 @@ $ python siamese_network.py -m inceptionv3 -d train_preprocessed -e 10 -c 1024 -
 Epoch 1/1
 1640/1640 [==============================] - 60105s 37s/step - loss: 0.6746 - acc: 0.5750 - val_loss: 0.6042 - val_acc: 0.7047
 
-=== Samplewise zero mean transformation ===
+=== Samplewise zero mean ===
 $ python siamese_network.py -m inceptionv3 -d train_preprocessed -e 10 -c 1024 -b 128 -s 0.1 -e 1
 Epoch 1/1
 1640/1640 [==============================] - 60105s 37s/step - loss: 0.6757 - acc: 0.5738 - val_loss: 0.6027 - val_acc: 0.6597
 
-=== Samplewise standard deviation normalization transformation ===
+=== Samplewise standard deviation normalization ===
 $ python siamese_network.py -m inceptionv3 -d train_preprocessed -e 10 -c 1024 -b 128 -s 0.1 -e 1 -t horizontal_flip
 Epoch 1/1
 1640/1640 [==============================] - 59937s 37s/step - loss: 0.6776 - acc: 0.5676 - val_loss: 0.6280 - val_acc: 0.6678
+
+=== Horizontal flip ===
+$ python siamese_network.py -m inceptionv3  -d train_preprocessed -c 1024 -b 128 -s 0.1 -e 1 -t horizontal_flip
+Epoch 1/1
+1640/1640 [==============================] - 60832s 37s/step - loss: 0.6812 - acc: 0.5591 - val_loss: 0.7661 - val_acc: 0.4677
+
+=== Featurewise mean ===
+$ python siamese_network.py -m inceptionv3  -d train_preprocessed -c 1024 -b 128 -s 0.1 -e 1 -t featurewise_mean
