@@ -20,7 +20,8 @@ class ImageDataTransformation:
                 featurewise_mean = False,
                 featurewise_std_normalization = False,
                 horizontal_flip = False,
-                horizontal_flip_prob = 0.5):
+                horizontal_flip_prob = 0.5,
+                rotation_range = None):
             """It initializes the input parameters.
 
             Arguments:
@@ -30,6 +31,7 @@ class ImageDataTransformation:
                 featurewise_std_normalization {boolean} -- It is a boolean flag to normalize the image using feature wise standard deviation calculated over the dataset.
                 horizontal_flip {boolean} -- It is a boolean flag to enable horizontal flip transformation.
                 horizontal_flip_prob {A floating point number} -- It indicates the changes of horizontal flip.
+                rotation_range {A  number} -- It indicates the maximum amount of rotational transformations. 
             """
             #Input parameters
             self.samplewise_mean = samplewise_mean
@@ -38,18 +40,21 @@ class ImageDataTransformation:
             self.featurewise_std_normalization = featurewise_std_normalization
             self.horizontal_flip = horizontal_flip
             self.horizontal_flip_prob = horizontal_flip_prob
+            self.rotation_range = rotation_range
 
         def __str__(self):
             return """Parameters::
                         samplewise_mean: {} samplewise_std_normalization: {}
                         featurewise_mean: {} featurewise_std_normalization: {}
-                        horizontal_flip: {} horizontal_flip_prob: {}""".format(
+                        horizontal_flip: {} horizontal_flip_prob: {}
+                        rotation_range: {}""".format(
                                                                             self.samplewise_mean,
                                                                             self.samplewise_std_normalization,
                                                                             self.featurewise_mean,
                                                                             self.featurewise_std_normalization,
                                                                             self.horizontal_flip,
-                                                                            self.horizontal_flip_prob)
+                                                                            self.horizontal_flip_prob,
+                                                                            self.rotation_range)
 
         @classmethod
         def parse(cls, param_names):
@@ -97,7 +102,14 @@ class ImageDataTransformation:
         #Horizontal flip
         if self._parameters.horizontal_flip:
             #Flips images randomly with input probability.
-            augmentations.append(img_augmenters.Fliplr(self._parameters.horizontal_flip_prob))
+            augmentations.append(
+                    img_augmenters.Fliplr(self._parameters.horizontal_flip_prob))
+
+        #Rotation range
+        if self._parameters.rotation_range:
+            #Rotate images randomly limited with maximum rotation limited by rotation range.
+            augmentations.append(
+                    img_augmenters.Affine(rotate = (-self._parameters.rotation_range, self._parameters.rotation_range)))
         
         #Creates augmentor with the list of augmentations
         self._augmenter = img_augmenters.Sequential(augmentations, random_order = True) if len(augmentations) > 0 else None
@@ -117,6 +129,10 @@ class ImageDataTransformation:
                         "Horizontal flip:: horizontal_flip: %s horizontal_flip_prob: %f",
                         self._parameters.horizontal_flip,
                         self._parameters.horizontal_flip_prob)
+
+        self._logger.info(
+                        "Rotation:: rotation_range: %s",
+                        self._parameters.rotation_range)
 
     def fit(self, images):
         """It calculates statistics on the input dataset. These are used to perform transformation.

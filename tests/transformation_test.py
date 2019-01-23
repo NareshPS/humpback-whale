@@ -63,6 +63,16 @@ class TestParameters(ut.TestCase):
         param_names = ['featurewise_std_normalization']
         parameters = ImageDataTransformation.Parameters.parse(param_names)
         self.assertTrue(parameters.featurewise_std_normalization)
+
+    def test_parse_without_rotation_range(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.rotation_range)
+
+    def test_parse_with_rotation_range(self):
+        param_names = ['rotation_range']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.rotation_range)
     
 class TestImageDataTransformation(ut.TestCase):
     @staticmethod
@@ -293,3 +303,40 @@ class TestImageDataTransformation(ut.TestCase):
                     False, #Disable feature wise standard deviation normalization
                     images,
                     result)
+
+    def transform_rotation_range(self, rotation_range, images, same_as_input):
+        #Transformation object
+        parameters = ImageDataTransformation.Parameters(rotation_range = rotation_range)
+        transformation = ImageDataTransformation(parameters = parameters)
+
+        #Act
+        transformed_images = transformation.transform(images)
+
+        #Assertions
+        if same_as_input:
+            np.testing.assert_array_almost_equal(
+                            transformed_images,
+                            images,
+                            err_msg = "Unexpected rotation transformation for rotation_range: {}".format(rotation_range))
+        else:
+            self.assertFalse(
+                    np.array_equal(transformed_images, images),
+                    "Expected rotation transformation for rotation_range: {}".format(rotation_range))
+
+    def test_transform_without_rotation_range(self):
+        #Image dataset
+        images = np.random.rand(5, 50, 50, 3)
+
+        self.transform_rotation_range(
+                None, #No rotation
+                images,
+                True) #Input should be unchanged
+
+    def test_transform_with_rotation_range(self):
+        #Image dataset
+        images = np.random.rand(5, 50, 50, 3)
+
+        self.transform_rotation_range(
+                10, #10-degree rotation
+                images,
+                False) #Input should be rotated.

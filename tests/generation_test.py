@@ -1,5 +1,6 @@
 #Unittest
 import unittest as ut
+from unittest.mock import mock_patch
 
 #Constants
 from common import ut_constants
@@ -68,7 +69,7 @@ class TestImageDataGeneration(ut.TestCase):
 
         return {image_name: image}
 
-    @ut.mock.patch.object(ImageDataGeneration, '_get_image_objects')
+    @mock_patch.object(ImageDataGeneration, '_get_image_objects')
     def test_fit(self, get_image_objects_mock):
         #Mock transformer
         transformer = ut.mock.Mock()
