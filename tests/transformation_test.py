@@ -324,76 +324,38 @@ class TestImageDataTransformation(ut.TestCase):
                     images,
                     result)
 
-    def transform_rotation_range(self, rotation_range, images, same_as_input):
+    def transform_affine(self, parameters):
+        #Image dataset
+        images = np.random.rand(5, 50, 50, 3)
+
         #Transformation object
-        parameters = ImageDataTransformation.Parameters(rotation_range = rotation_range)
         transformation = ImageDataTransformation(parameters = parameters)
+        no_transformation = ImageDataTransformation()
 
         #Act
         transformed_images = transformation.transform(images)
+        no_transformed_images = no_transformation.transform(images)
 
-        #Assertions
-        if same_as_input:
-            np.testing.assert_array_almost_equal(
-                            transformed_images,
-                            images,
-                            err_msg = "Unexpected rotation transformation for rotation_range: {}".format(rotation_range))
-        else:
-            self.assertFalse(
-                    np.array_equal(transformed_images, images),
-                    "Expected rotation transformation for rotation_range: {}".format(rotation_range))
+        #No transformation assertions
+        np.testing.assert_array_almost_equal(
+                        no_transformed_images,
+                        images,
+                        err_msg = "Unexpected transformation for parameters: {}".format(parameters))
 
-    def test_transform_without_rotation_range(self):
-        #Image dataset
-        images = np.random.rand(5, 50, 50, 3)
+        #Transformation assertions
+        self.assertFalse(
+                np.array_equal(transformed_images, images),
+                "Expected rotation transformation for parameters: {}".format(parameters))
 
-        self.transform_rotation_range(
-                None, #No rotation
-                images,
-                True) #Input should be unchanged
+    def test_transform_affine(self):
+        #Rotation transformation
+        parameters = ImageDataTransformation.Parameters(rotation_range = 20)
+        self.transform_affine(parameters)
 
-    def test_transform_with_rotation_range(self):
-        #Image dataset
-        images = np.random.rand(5, 50, 50, 3)
+        #Shear transformation
+        parameters = ImageDataTransformation.Parameters(shear_range = 10)
+        self.transform_affine(parameters)
 
-        self.transform_rotation_range(
-                10, #10-degree rotation
-                images,
-                False) #Input should be rotated.
-
-    def transform_shear_range(self, shear_range, images, same_as_input):
-        #Transformation object
-        parameters = ImageDataTransformation.Parameters(shear_range = shear_range)
-        transformation = ImageDataTransformation(parameters = parameters)
-
-        #Act
-        transformed_images = transformation.transform(images)
-
-        #Assertions
-        if same_as_input:
-            np.testing.assert_array_almost_equal(
-                            transformed_images,
-                            images,
-                            err_msg = "Unexpected shear transformation for shear_range: {}".format(shear_range))
-        else:
-            self.assertFalse(
-                    np.array_equal(transformed_images, images),
-                    "Expected shear transformation for shear_range: {}".format(shear_range))
-
-    def test_transform_without_shear_range(self):
-        #Image dataset
-        images = np.random.rand(5, 50, 50, 3)
-
-        self.transform_shear_range(
-                None, #No shear
-                images,
-                True) #Input should be unchanged
-
-    def test_transform_with_shear_range(self):
-        #Image dataset
-        images = np.random.rand(5, 50, 50, 3)
-
-        self.transform_shear_range(
-                10, #10-degree shear
-                images,
-                False) #Input should be rotated.
+        #Zoom transformation
+        parameters = ImageDataTransformation.Parameters(zoom_range = 0.2)
+        self.transform_affine(parameters)

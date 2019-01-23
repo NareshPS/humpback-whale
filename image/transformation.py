@@ -128,6 +128,14 @@ class ImageDataTransformation:
             #Shear images randomly limited by the shear range.
             affine_parameters['shear'] = (-self._parameters.shear_range, self._parameters.shear_range)
 
+        #Zoom range
+        if self._parameters.zoom_range:
+            #Scale images randomly limited by zoom range.
+            lower_limit = 1. - self._parameters.zoom_range
+            upper_limit = 1. + self._parameters.zoom_range
+            
+            affine_parameters['scale'] = (lower_limit, upper_limit)
+
         #Affine transformations
         if len(affine_parameters) > 1:
             augmentations.append(img_augmenters.Affine(**affine_parameters))
