@@ -1,6 +1,7 @@
 """It provides utilities for image transformation.
 """
 #Image augmentation
+import imgaug as ia
 from imgaug import augmenters as img_augmenters
 
 #Numpy
@@ -21,7 +22,9 @@ class ImageDataTransformation:
                 featurewise_std_normalization = False,
                 horizontal_flip = False,
                 horizontal_flip_prob = 0.5,
-                rotation_range = None):
+                rotation_range = None,
+                shear_range = None,
+                zoom_range = None):
             """It initializes the input parameters.
 
             Arguments:
@@ -31,7 +34,9 @@ class ImageDataTransformation:
                 featurewise_std_normalization {boolean} -- It is a boolean flag to normalize the image using feature wise standard deviation calculated over the dataset.
                 horizontal_flip {boolean} -- It is a boolean flag to enable horizontal flip transformation.
                 horizontal_flip_prob {A floating point number} -- It indicates the changes of horizontal flip.
-                rotation_range {A  number} -- It indicates the maximum amount of rotational transformations. 
+                rotation_range {A  number} -- It indicates the maximum amount of rotational transformations.
+                shear_range {A number} -- It indicates the shear angle range of the transformation.
+                zoom_range {A number} -- It indicates the amount of zoom transformation.
             """
             #Input parameters
             self.samplewise_mean = samplewise_mean
@@ -41,20 +46,25 @@ class ImageDataTransformation:
             self.horizontal_flip = horizontal_flip
             self.horizontal_flip_prob = horizontal_flip_prob
             self.rotation_range = rotation_range
+            self.shear_range = shear_range
+            self.zoom_range = zoom_range
 
         def __str__(self):
             return """Parameters::
                         samplewise_mean: {} samplewise_std_normalization: {}
                         featurewise_mean: {} featurewise_std_normalization: {}
                         horizontal_flip: {} horizontal_flip_prob: {}
-                        rotation_range: {}""".format(
+                        rotation_range: {} shear_range: {}
+                        zoom_range: {} """.format(
                                                                             self.samplewise_mean,
                                                                             self.samplewise_std_normalization,
                                                                             self.featurewise_mean,
                                                                             self.featurewise_std_normalization,
                                                                             self.horizontal_flip,
                                                                             self.horizontal_flip_prob,
-                                                                            self.rotation_range)
+                                                                            self.rotation_range,
+                                                                            self.shear_range,
+                                                                            self.zoom_range)
 
         @classmethod
         def parse(cls, param_names):
@@ -105,11 +115,22 @@ class ImageDataTransformation:
             augmentations.append(
                     img_augmenters.Fliplr(self._parameters.horizontal_flip_prob))
 
+        #Affine transformation parameters
+        affine_parameters = dict(mode = ia.ALL)
+
         #Rotation range
         if self._parameters.rotation_range:
             #Rotate images randomly limited with maximum rotation limited by rotation range.
-            augmentations.append(
-                    img_augmenters.Affine(rotate = (-self._parameters.rotation_range, self._parameters.rotation_range)))
+            affine_parameters['rotate'] = (-self._parameters.rotation_range, self._parameters.rotation_range)
+
+        #Shear range
+        if self._parameters.shear_range:
+            #Shear images randomly limited by the shear range.
+            affine_parameters['shear'] = (-self._parameters.shear_range, self._parameters.shear_range)
+
+        #Affine transformations
+        if len(affine_parameters) > 1:
+            augmentations.append(img_augmenters.Affine(**affine_parameters))
         
         #Creates augmentor with the list of augmentations
         self._augmenter = img_augmenters.Sequential(augmentations, random_order = True) if len(augmentations) > 0 else None

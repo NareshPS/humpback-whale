@@ -73,6 +73,26 @@ class TestParameters(ut.TestCase):
         param_names = ['rotation_range']
         parameters = ImageDataTransformation.Parameters.parse(param_names)
         self.assertTrue(parameters.rotation_range)
+
+    def test_parse_without_shear_range(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.shear_range)
+
+    def test_parse_with_shear_range(self):
+        param_names = ['shear_range']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.shear_range)
+
+    def test_parse_without_zoom_range(self):
+        param_names = []
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertFalse(parameters.zoom_range)
+
+    def test_parse_with_zoom_range(self):
+        param_names = ['zoom_range']
+        parameters = ImageDataTransformation.Parameters.parse(param_names)
+        self.assertTrue(parameters.zoom_range)
     
 class TestImageDataTransformation(ut.TestCase):
     @staticmethod
@@ -338,5 +358,42 @@ class TestImageDataTransformation(ut.TestCase):
 
         self.transform_rotation_range(
                 10, #10-degree rotation
+                images,
+                False) #Input should be rotated.
+
+    def transform_shear_range(self, shear_range, images, same_as_input):
+        #Transformation object
+        parameters = ImageDataTransformation.Parameters(shear_range = shear_range)
+        transformation = ImageDataTransformation(parameters = parameters)
+
+        #Act
+        transformed_images = transformation.transform(images)
+
+        #Assertions
+        if same_as_input:
+            np.testing.assert_array_almost_equal(
+                            transformed_images,
+                            images,
+                            err_msg = "Unexpected shear transformation for shear_range: {}".format(shear_range))
+        else:
+            self.assertFalse(
+                    np.array_equal(transformed_images, images),
+                    "Expected shear transformation for shear_range: {}".format(shear_range))
+
+    def test_transform_without_shear_range(self):
+        #Image dataset
+        images = np.random.rand(5, 50, 50, 3)
+
+        self.transform_shear_range(
+                None, #No shear
+                images,
+                True) #Input should be unchanged
+
+    def test_transform_with_shear_range(self):
+        #Image dataset
+        images = np.random.rand(5, 50, 50, 3)
+
+        self.transform_shear_range(
+                10, #10-degree shear
                 images,
                 False) #Input should be rotated.
