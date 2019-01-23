@@ -1,6 +1,6 @@
 #Unittest
 import unittest as ut
-from unittest.mock import mock_patch
+from unittest.mock import patch as mock_patch
 
 #Constants
 from common import ut_constants
