@@ -10,6 +10,9 @@ import numpy as np
 #Logging
 from common import logging
 
+#Parse parameter values
+from common.parse import kv_str_to_tuple
+
 class ImageDataTransformation:
     class Parameters(object):
         """It contains transformation parameters.
@@ -67,18 +70,18 @@ class ImageDataTransformation:
                                                                             self.zoom_range)
 
         @classmethod
-        def parse(cls, param_names):
+        def parse(cls, param_dict):
             """It decodes the input list to identify parameters.
             
             Arguments:
-                params {[string]} -- A list of transformation parameters.
+                param_dict {dict} -- A dictionary of transformation parameters.
             """
             parameters = cls()
 
-            for name in param_names:
+            for name, value in param_dict.items():
                 #Set the class parameters
                 getattr(parameters, name)
-                setattr(parameters, name, True)
+                setattr(parameters, name, value)
 
             return parameters
 
@@ -183,7 +186,7 @@ class ImageDataTransformation:
                             input images: {}
                             featurewise_mean: {}
                             featurewise_std: {}
-                        """.format(images.shape, self._featurewise_mean.shape, self._featurewise_std))
+                        """.format(images.shape, self._featurewise_mean.shape, self._featurewise_std.shape))
 
         #Set the flag to indicate dataset statistics are available.
         self._fit_called = True

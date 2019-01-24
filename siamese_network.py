@@ -33,6 +33,7 @@ from common import constants
 
 #Commandline arguments
 from argparse import ArgumentParser
+from common.parse import kv_str_to_tuple
 
 #Path manipulations
 from os import path
@@ -125,9 +126,10 @@ def parse_args():
         help = 'It specifies the learning rate of the optimization algorithm. It must be a float between 0 and 1')
     parser.add_argument(
         '-t', '--transformations',
-        nargs = '*', default = [],
-        choices = ImageDataTransformation.Parameters().__dict__.keys(),
-        help = 'It specifies transformation parameters')
+        nargs = '+', default = [],
+        type = kv_str_to_tuple,
+        help = 'It specifies transformation parameters. Options: {}'
+                    .format(ImageDataTransformation.Parameters().__dict__.keys()))
     parser.add_argument(
         '-f', '--num_fit_images',
         default = 1000, type = int,
@@ -151,7 +153,7 @@ if __name__ == "__main__":
     log_to_console = args.log_to_console
     validation_split = args.validation_split
     learning_rate = args.learning_rate
-    transformation_params = ImageDataTransformation.Parameters.parse(args.transformations)
+    transformation_params = ImageDataTransformation.Parameters.parse(dict(args.transformations))
     n_fit_images = args.num_fit_images
 
     #Initialize logging
