@@ -37,9 +37,6 @@ INPUT_SHAPE = (224, 224, 3)
 IMAGE_HEADER_NAME = "Image"
 LABEL_HEADER_NAME = "Id"
 
-#Feature vector dimensions
-FEATURE_VECTOR_DIMS = 300
-
 #Feature model options
 FEATURE_MODELS = ["resnet", "inceptionv3"]
 

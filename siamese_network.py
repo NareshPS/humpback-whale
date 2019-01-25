@@ -131,8 +131,12 @@ def parse_args():
         help = 'It specifies transformation parameters. Options: {}'
                     .format(ImageDataTransformation.Parameters().__dict__.keys()))
     parser.add_argument(
-        '-f', '--num_fit_images',
+        '-x', '--num_fit_images',
         default = 1000, type = int,
+        help = 'It specifies the number of images to send to fit()')
+    parser.add_argument(
+        '-f', '--feature_dimensions',
+        default = 90, type = int,
         help = 'It specifies the number of images to send to fit()')
 
     args = parser.parse_args()
@@ -155,6 +159,7 @@ if __name__ == "__main__":
     learning_rate = args.learning_rate
     transformation_params = ImageDataTransformation.Parameters.parse(dict(args.transformations))
     n_fit_images = args.num_fit_images
+    feature_dims = args.feature_dimensions
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -187,7 +192,6 @@ if __name__ == "__main__":
     df_image_col = constants.IMAGE_HEADER_NAME
     df_class_col = constants.LABEL_HEADER_NAME
     input_shape = constants.INPUT_SHAPE
-    feature_dims = constants.FEATURE_VECTOR_DIMS
     train_set_loc = constants.DATASET_MAPPINGS[dataset]
     anchor_field = constants.TRAIN_TUPLE_HEADERS[0]
     sample_field = constants.TRAIN_TUPLE_HEADERS[1]
