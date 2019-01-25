@@ -168,11 +168,11 @@ if __name__ == "__main__":
     #Log input parameters
     logger.info(
                 'Running with parameters base_model: %s dataset: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
-                base_model, 
-                dataset, 
-                n_inputs, 
-                n_epochs, 
-                batch_size, 
+                base_model,
+                dataset,
+                n_inputs,
+                n_epochs,
+                batch_size,
                 cache_size)
 
     #Additional parameters

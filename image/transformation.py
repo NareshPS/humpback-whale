@@ -128,7 +128,7 @@ class ImageDataTransformation:
                     img_augmenters.Fliplr(self._parameters.horizontal_flip_prob))
 
         #Affine transformation parameters
-        affine_parameters = dict(mode = ia.ALL)
+        affine_parameters = dict(mode = 'edge')
 
         #Rotation range
         if self._parameters.rotation_range:
