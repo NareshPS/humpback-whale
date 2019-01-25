@@ -27,7 +27,9 @@ class ImageDataTransformation:
                 horizontal_flip_prob = 0.5,
                 rotation_range = None,
                 shear_range = None,
-                zoom_range = None):
+                zoom_range = None,
+                width_shift_range = None,
+                height_shift_range = None):
             """It initializes the input parameters.
 
             Arguments:
@@ -40,6 +42,8 @@ class ImageDataTransformation:
                 rotation_range {A  number} -- It indicates the maximum amount of rotational transformations.
                 shear_range {A number} -- It indicates the shear angle range of the transformation.
                 zoom_range {A number} -- It indicates the amount of zoom transformation.
+                width_shift_range {A float} -- It indicates the percentage of image translation width-wise. It takes values between [0, 1).
+                height_shift_range {A float} -- It indicates the percentage of image translation height-wise. It takes values between [0, 1).
             """
             #Input parameters
             self.samplewise_mean = samplewise_mean
@@ -51,14 +55,16 @@ class ImageDataTransformation:
             self.rotation_range = rotation_range
             self.shear_range = shear_range
             self.zoom_range = zoom_range
+            self.width_shift_range = width_shift_range
+            self.height_shift_range = height_shift_range
 
         def __str__(self):
             return """Parameters::
                         samplewise_mean: {} samplewise_std_normalization: {}
                         featurewise_mean: {} featurewise_std_normalization: {}
                         horizontal_flip: {} horizontal_flip_prob: {}
-                        rotation_range: {} shear_range: {}
-                        zoom_range: {} """.format(
+                        rotation_range: {} shear_range: {} zoom_range: {}
+                        width_shift_range: {} height_shift_range: {}""".format(
                                                                             self.samplewise_mean,
                                                                             self.samplewise_std_normalization,
                                                                             self.featurewise_mean,
@@ -67,7 +73,9 @@ class ImageDataTransformation:
                                                                             self.horizontal_flip_prob,
                                                                             self.rotation_range,
                                                                             self.shear_range,
-                                                                            self.zoom_range)
+                                                                            self.zoom_range,
+                                                                            self.width_shift_range,
+                                                                            self.height_shift_range)
 
         @classmethod
         def parse(cls, param_dict):
@@ -98,6 +106,7 @@ class ImageDataTransformation:
         self._fit_called = False
         self._featurewise_mean = None
         self._featurewise_std = None
+        self._augmenter = None
 
         #Logging
         self._logger = logging.get_logger(__name__)
@@ -139,32 +148,34 @@ class ImageDataTransformation:
             
             affine_parameters['scale'] = (lower_limit, upper_limit)
 
+        #Image translation parameters container
+        translation_parameters = {}
+
+        #Width translation
+        if self._parameters.width_shift_range:
+            lower_limit = -self._parameters.width_shift_range
+            upper_limit = self._parameters.width_shift_range
+
+            translation_parameters['x'] = (lower_limit, upper_limit)
+
+        #Height translation
+        if self._parameters.height_shift_range:
+            lower_limit = -self._parameters.height_shift_range
+            upper_limit = self._parameters.height_shift_range
+
+            translation_parameters['y'] = (lower_limit, upper_limit)
+
+        #Update translation affine parameters.
+        if len(translation_parameters) > 0:
+            affine_parameters['translate_percent'] = translation_parameters
+
         #Affine transformations
         if len(affine_parameters) > 1:
+            self._logger.info("Augmentations are enabled with parameters: {}".format(affine_parameters))
             augmentations.append(img_augmenters.Affine(**affine_parameters))
         
-        #Creates augmentor with the list of augmentations
-        self._augmenter = img_augmenters.Sequential(augmentations, random_order = True) if len(augmentations) > 0 else None
-
-        #Log input parameters
-        self._logger.info(
-                        "Samplewise transformations:: samplewise_mean: %s samplewise_std_normalization: %s",
-                        self._parameters.samplewise_mean,
-                        self._parameters.samplewise_std_normalization)
-
-        self._logger.info(
-                        "Featurewise transformations:: featurewise_mean: %s featurewise_std_normalization: %s",
-                        self._parameters.featurewise_mean,
-                        self._parameters.featurewise_std_normalization)
-
-        self._logger.info(
-                        "Horizontal flip:: horizontal_flip: %s horizontal_flip_prob: %f",
-                        self._parameters.horizontal_flip,
-                        self._parameters.horizontal_flip_prob)
-
-        self._logger.info(
-                        "Rotation:: rotation_range: %s",
-                        self._parameters.rotation_range)
+            #Creates augmentor with the list of augmentations
+            self._augmenter = img_augmenters.Sequential(augmentations, random_order = True) if len(augmentations) > 0 else None
 
     def fit(self, images):
         """It calculates statistics on the input dataset. These are used to perform transformation.
@@ -220,6 +231,7 @@ class ImageDataTransformation:
         if self._parameters.featurewise_std_normalization:
             transformed_images = self._apply_featurewise_std_normalization(transformed_images)
 
+        #Apply image augmentations
         if self._augmenter:
             transformed_images = self._apply_augmentations(transformed_images)
 

@@ -14,95 +14,62 @@ import itertools
 from image.transformation import ImageDataTransformation
 
 class TestParameters(ut.TestCase):
+    def parse_parameters(self, param_dict, name, default = None):
+        parameters = ImageDataTransformation.Parameters.parse(param_dict)
+        value = getattr(parameters, name)
+        input_value = default if param_dict.get(name) is None else param_dict.get(name)
+        self.assertEqual(input_value, value)
+
+    def parse_parameters_when_set_or_unset(self, name, value, default = None):
+        #Property is unset
+        self.parse_parameters({}, name, default = default)
+
+        #Property is set
+        self.parse_parameters({name: value}, name)
+
     def test_parse_without_samplewise_mean(self):
         param_dict = {}
         parameters = ImageDataTransformation.Parameters.parse(param_dict)
         self.assertFalse(parameters.samplewise_mean)
 
-    def test_parse_with_samplewise_mean(self):
-        param_dict = {'samplewise_mean': True}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertTrue(parameters.samplewise_mean)
-    
-    def test_parse_without_samplewise_std_normalization(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertFalse(parameters.samplewise_std_normalization)
+    def test_parse_samplewise_mean(self):
+        self.parse_parameters_when_set_or_unset('samplewise_mean', True, default = False)
 
-    def test_parse_with_samplewise_std_normalization(self):
-        param_dict = {'samplewise_std_normalization': True}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertTrue(parameters.samplewise_std_normalization)
+    def test_parse_samplewise_std_normalization(self):
+        self.parse_parameters_when_set_or_unset('samplewise_std_normalization', True, default = False)
 
-    def test_parse_without_horizontal_flip(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertFalse(parameters.horizontal_flip)
+    def test_parse_horizontal_flip(self):
+        self.parse_parameters_when_set_or_unset('horizontal_flip', True, default = False)
 
-    def test_parse_with_horizontal_flip(self):
-        param_dict = {'horizontal_flip': True}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertTrue(parameters.horizontal_flip)
+    def test_parse_horizontal_flip_prob(self):
+        self.parse_parameters_when_set_or_unset('horizontal_flip_prob', .3, default = .5)
 
-    def test_parse_without_horizontal_flip_prob(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(0.5, parameters.horizontal_flip_prob)
+    def test_parse_featurewise_mean(self):
+        self.parse_parameters_when_set_or_unset('featurewise_mean', True, default = False)
 
-    def test_parse_with_horizontal_flip_prob(self):
-        param_dict = {'horizontal_flip_prob': 0.5}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(list(param_dict.values())[0], parameters.horizontal_flip_prob)
+    def test_parse_featurewise_std_normalization(self):
+        #Property name
+        self.parse_parameters_when_set_or_unset('featurewise_std_normalization', True, default = False)
 
-    def test_parse_without_featurewise_mean(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertFalse(parameters.featurewise_mean)
+    def test_parse_rotation_range(self):
+        #Property name
+        self.parse_parameters_when_set_or_unset('rotation_range', 20)
 
-    def test_parse_with_featurewise_mean(self):
-        param_dict = {'featurewise_mean': True}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertTrue(parameters.featurewise_mean)
+    def test_parse_shear_range(self):
+        #Property name
+        self.parse_parameters_when_set_or_unset('shear_range', 10)
 
-    def test_parse_without_featurewise_std_normalization(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertFalse(parameters.featurewise_std_normalization)
+    def test_parse_zoom_range(self):
+        #Property name
+        self.parse_parameters_when_set_or_unset('zoom_range', .2)
 
-    def test_parse_with_featurewise_std_normalization(self):
-        param_dict = {'featurewise_std_normalization': True}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertTrue(parameters.featurewise_std_normalization)
+    def test_parse_width_shift_range(self):
+        #Property name
+        self.parse_parameters_when_set_or_unset('width_shift_range', .2)
 
-    def test_parse_without_rotation_range(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(None, parameters.rotation_range)
-
-    def test_parse_with_rotation_range(self):
-        param_dict = {'rotation_range': 20}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(list(param_dict.values())[0], parameters.rotation_range)
-
-    def test_parse_without_shear_range(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(None, parameters.shear_range)
-
-    def test_parse_with_shear_range(self):
-        param_dict = {'shear_range': 10}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(list(param_dict.values())[0], parameters.shear_range)
-
-    def test_parse_without_zoom_range(self):
-        param_dict = {}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(None, parameters.zoom_range)
-
-    def test_parse_with_zoom_range(self):
-        param_dict = {'zoom_range': 0.2}
-        parameters = ImageDataTransformation.Parameters.parse(param_dict)
-        self.assertEqual(list(param_dict.values())[0], parameters.zoom_range)
+    def test_parse_height_shift_range(self):
+        #Property name
+        self.parse_parameters_when_set_or_unset('height_shift_range', .2)
     
 class TestImageDataTransformation(ut.TestCase):
     @staticmethod
@@ -368,4 +335,12 @@ class TestImageDataTransformation(ut.TestCase):
 
         #Zoom transformation
         parameters = ImageDataTransformation.Parameters(zoom_range = 0.2)
+        self.transform_affine(parameters)
+
+        #Width translation
+        parameters = ImageDataTransformation.Parameters(width_shift_range = 0.2)
+        self.transform_affine(parameters)
+
+        #Height translation
+        parameters = ImageDataTransformation.Parameters(height_shift_range = 0.2)
         self.transform_affine(parameters)
