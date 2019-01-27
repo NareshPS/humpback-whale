@@ -1,17 +1,8 @@
 #Keras imports
-from keras.layers import Input, Dense, BatchNormalization, Activation, Concatenate
-from keras.models import Model
-from keras.optimizers import Adam
 from keras import backend as K
 
 #Load models from the disk
 from keras.models import load_model
-
-#Load/Save model states
-from model.state import ModelState
-
-#Feature models
-from model.feature_models import feature_model
 
 #Data processing
 from image.generation import ImageDataGeneration
@@ -41,56 +32,12 @@ from os import path
 #Logging
 from common import logging
 
-top_layer_name_prefix = 'siamese_network'
-
-def layer_name(layer_type, param):
-    return "{}_{}_{}".format(top_layer_name_prefix, layer_type, param)
-
-def siamese_network_model(base_model, input_shape, feature_dims, learning_rate):
-    """It creates a siamese network model using the input as a base model.
-    
-    Arguments:
-        base_model {A Model object.} -- A base model to generate feature vector.
-        input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
-        feature_dims {int} -- An integer indicating the dimensions of the feature vector.
-        learning_rate {float} -- A float value to control speed of learning.
-    
-    Returns:
-        {A Model object} -- A keras model.
-    """
-
-    anchor_input = Input(shape = input_shape, name = 'Anchor')
-    sample_input = Input(shape = input_shape, name = 'Sample')
-
-    anchor_features = feature_model(base_model, input_shape, feature_dims)(anchor_input)
-    sample_features = feature_model(base_model, input_shape, feature_dims)(sample_input)
-
-    X = Concatenate()([anchor_features, sample_features])
-    X = Dense(16, activation = 'linear', name = layer_name('dense', 16))(X)
-    X = BatchNormalization()(X)
-    X = Activation('relu')(X)
-
-    X = Dense(4, activation = 'linear', name = layer_name('dense', 4))(X)
-    X = BatchNormalization()(X)
-    X = Activation('relu')(X)
-
-    X = Dense(1, activation = 'sigmoid', name = layer_name('dense', 1))(X)
-    
-    #Create an optimizer object
-    adam_optimizer = Adam(lr = learning_rate)
-
-    siamese_network = Model(inputs = [anchor_input, sample_input], outputs = [X], name = 'Siamese Model')
-    siamese_network.compile(loss='binary_crossentropy', optimizer=adam_optimizer, metrics = ['accuracy'])
-    siamese_network.summary()
-
-    return siamese_network
-
 def parse_args():
     parser = ArgumentParser(description = 'It trains a siamese network for whale identification.')
     parser.add_argument(
-        '-m', '--base_model',
+        '-m', '--model_name',
         required = True,
-        help = 'It specifies a base model to use for the siamese network.')
+        help = 'It specifies the name of the model to train.')
     parser.add_argument(
         '-d', '--dataset',
         default='train',
@@ -122,7 +69,7 @@ def parse_args():
         help = 'It specifies the validation split on the training dataset. It must be a float between 0 and 1')
     parser.add_argument(
         '-r', '--learning_rate',
-        default = 0.0001, type = float,
+        type = float,
         help = 'It specifies the learning rate of the optimization algorithm. It must be a float between 0 and 1')
     parser.add_argument(
         '-t', '--transformations',
@@ -134,10 +81,6 @@ def parse_args():
         '-x', '--num_fit_images',
         default = 1000, type = int,
         help = 'It specifies the number of images to send to fit()')
-    parser.add_argument(
-        '-f', '--feature_dimensions',
-        default = 90, type = int,
-        help = 'It specifies the number of images to send to fit()')
 
     args = parser.parse_args()
 
@@ -148,7 +91,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     #Extract command line parameters
-    base_model = args.base_model
+    model_name = args.model_name
     dataset = args.dataset
     n_inputs = args.num_inputs
     n_epochs = args.epochs
@@ -159,7 +102,6 @@ if __name__ == "__main__":
     learning_rate = args.learning_rate
     transformation_params = ImageDataTransformation.Parameters.parse(dict(args.transformations))
     n_fit_images = args.num_fit_images
-    feature_dims = args.feature_dimensions
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -167,8 +109,8 @@ if __name__ == "__main__":
 
     #Log input parameters
     logger.info(
-                'Running with parameters base_model: %s dataset: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
-                base_model,
+                'Running with parameters model_name: %s dataset: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
+                model_name,
                 dataset,
                 n_inputs,
                 n_epochs,
@@ -203,9 +145,9 @@ if __name__ == "__main__":
     image_cols = constants.TRAIN_TUPLE_HEADERS[0:2]
     output_col = constants.TRAIN_TUPLE_HEADERS[-1]
 
-    model_file = base_model + ".h5"
-    model_state_file = base_model + ".model_state"
-    history_file = base_model + ".history"
+    model_file = model_name + ".h5"
+    model_state_file = model_name + ".model_state"
+    history_file = model_name + ".history"
 
     #Output files
     logger.info(
@@ -245,26 +187,14 @@ if __name__ == "__main__":
     #Validation flow
     validation_gen = datagen.flow(subset = 'validation') if validation_split else None
 
-    #Create a model placeholder to create or load a model.
-    model = None
+    #Load the model
+    model = load_model(model_file)
+    logger.info("Loaded model from: {}".format(model_file))
 
-    if path.exists(model_file):
-        #Try to load the trained model from the disk.
-        model = load_model(model_file)
-        logger.info("Loaded model from: {}".format(model_file))
-
+    if learning_rate:
         #Update the learning rate
         logger.info("Switching leraning rate from: {} to: {}".format(K.get_value(model.optimizer.lr), learning_rate))
         K.set_value(model.optimizer.lr, learning_rate)
-    else:
-        #Create siamese network model
-        model = siamese_network_model(base_model, input_shape, feature_dims, learning_rate)
-        logger.info("Created a new model using base_model: {}".format(base_model))
-
-        #Write model trainable state
-        model_state = ModelState(model)
-        model_state.save(".", model_state_file)
-        logger.info("Writing model state to: {}".format(model_state_file))
 
     #Fit the model the input.
     history = model.fit_generator(

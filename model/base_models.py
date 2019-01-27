@@ -7,13 +7,13 @@ from keras.models import Model
 #Constants
 from common import constants
 
-def feature_model(base_model_name, input_shape, feature_dims):
+def cnn(base_model_name, input_shape, dimensions):
     """It selects a base model based on the input parameter.
     
     Arguments:
         base_model_name {string} -- A string containing the name of a base model.
         input_shape {(int, int)} -- A tuple indicating the dimensions of model input.
-        feature_dims {int} -- An integer indicating the size of feature vector.
+        dimensions {int} -- An integer indicating the size of feature vector.
     """
     #Base model placeholder to be updated in the if/else clause
     base_model = None
@@ -31,7 +31,7 @@ def feature_model(base_model_name, input_shape, feature_dims):
     #Feature model
     x = GlobalAveragePooling2D()(base_model.output)
     x = Dense(1024, activation='relu')(x)
-    predictions = Dense(feature_dims, activation='softmax')(x)
+    predictions = Dense(dimensions, activation='softmax')(x)
 
     #Model object
     model = Model(inputs=base_model.input, outputs=predictions)

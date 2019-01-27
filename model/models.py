@@ -1,103 +1,51 @@
 """Various NN models.
 """
-
 #Keras imports
-from keras.models import Sequential
-from keras.layers import Dense, Flatten, MaxPool1D, Conv1D, Dropout, Conv2D, MaxPool2D
-from keras.optimizers import SGD
+from keras.models import Sequential, Model
+from keras.layers import Input, Concatenate, Dense, BatchNormalization, Activation
+from keras.optimizers import SGD, Adam
+
+#Base models
+from model.base_models import cnn
 
 #Local imports
 from common import constants
 
-class ModelParameters:
-    """Encapsulates model parameters
-    """
-    valid_names = ['n_classes', 'l_rate']
-    def __init__(self, parameters):
-        """Initializes the model parameters
-        
-        Arguments:
-            parameters {dict} -- A dictionary of model parameters.
-        """
-        ModelParameters.validate_names(parameters)
-        self._parameters = parameters
-    
-    @classmethod
-    def validate_names(cls, names):
-        invalid_names = [name for name in names if name not in ModelParameters.valid_names]
-        if invalid_names:
-            ValueError("Invalid parameters: {}".format(invalid_names))
-    
-    def parameters(self):
-        return self._parameters
-
-def cnn_model_1d_1(input_shape, n_classes, l_rate = 0.01):
-    """A grayscale CNN model based on VGG.
+def siamese_network(base_model, input_shape, feature_dims, learning_rate):
+    """It creates a siamese network model using the input as a base model.
     
     Arguments:
-        input_shape {(int, int)} -- A tuple of input image dimensions.
-        n_classes {int} -- The number of classification classes.
-        l_rate {float} -- The learning rate of the gradient descent algorithm.
+        base_model {A Model object.} -- A base model to generate feature vector.
+        input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
+        feature_dims {int} -- An integer indicating the dimensions of the feature vector.
+        learning_rate {float} -- A float value to control speed of learning.
     
     Returns:
-        A keras model object -- A trained keras model object.
+        {A Model object} -- A keras model.
     """
 
-    model = Sequential()
+    anchor_input = Input(shape = input_shape, name = 'Anchor')
+    sample_input = Input(shape = input_shape, name = 'Sample')
 
-    model.add(Conv1D(32, kernel_size = 3, activation='relu', input_shape=input_shape))
-    model.add(Conv1D(32, kernel_size = 3, activation='relu'))
-    model.add(MaxPool1D(pool_size=2))
-    model.add(Dropout(0.25))
+    anchor_features = cnn(base_model, input_shape, feature_dims)(anchor_input)
+    sample_features = cnn(base_model, input_shape, feature_dims)(sample_input)
 
-    model.add(Conv1D(64, kernel_size = 3, activation='relu'))
-    model.add(Conv1D(64, kernel_size = 3, activation='relu'))
-    model.add(MaxPool1D(pool_size=2))
-    model.add(Dropout(0.25))
+    X = Concatenate()([anchor_features, sample_features])
+    X = Dense(16, activation = 'linear')(X)
+    X = BatchNormalization()(X)
+    X = Activation('relu')(X)
 
-    model.add(Flatten())
-    model.add(Dense(256, activation='relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(n_classes, activation='softmax'))
+    X = Dense(4, activation = 'linear')(X)
+    X = BatchNormalization()(X)
+    X = Activation('relu')(X)
 
-    #Compile the model
-    print("Using learning rate: {l_rate}".format(l_rate = l_rate))
-    sgd = SGD(lr=l_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-
-    return model
-
-def cnn_model_2d_1(input_shape, n_classes, l_rate = 0.01):
-    """A grayscale CNN model based on VGG.
+    X = Dense(1, activation = 'sigmoid')(X)
     
-    Arguments:
-        input_shape {(int, int, int)} -- A tuple of input image dimensions.
-        n_classes {int} -- The number of classification classes.
-        l_rate {float} -- The learning rate of the gradient descent algorithm.
-    
-    Returns:
-        A keras model object -- A trained keras model object.
-    """
-    model = Sequential()
+    #Create an optimizer object
+    adam_optimizer = Adam(lr = learning_rate)
 
-    model.add(Conv2D(32, kernel_size = 3, activation='relu', input_shape=input_shape))
-    model.add(Conv2D(32, kernel_size = 3, activation='relu'))
-    model.add(MaxPool2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+    network = Model(inputs = [anchor_input, sample_input], outputs = [X], name = 'Siamese Model')
+    network.compile(loss='binary_crossentropy', optimizer = adam_optimizer, metrics = ['accuracy'])
+    network.summary()
 
-    model.add(Conv2D(64, kernel_size = 3, activation='relu'))
-    model.add(Conv2D(64, kernel_size = 3, activation='relu'))
-    model.add(MaxPool2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    model.add(Flatten())
-    # Note: Keras does automatic shape inference.
-    model.add(Dense(256, activation='relu'))
-    model.add(Dropout(0.5))
-
-    model.add(Dense(n_classes, activation='softmax'))
-
-    sgd = SGD(lr=l_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics = ['accuracy'])
-
-    return model
+    return network

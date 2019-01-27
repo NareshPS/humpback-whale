@@ -29,4 +29,7 @@ Epoch 1/1
 1640/1640 [==============================] - 60361s 37s/step - loss: 0.6862 - acc: 0.5472 - val_loss: 0.6503 - val_acc: 0.6711
 
 === Affine transformations, high learning rate ===
-$ python siamese_network.py -m inceptionv3  -d train_preprocessed -c 1024 -b 128 -r 0.01 -s 0.1 -e 2 -t horizontal_flip=true rotation_range=20 shear_range=10 zoom_range=0.25
+$ python siamese_network.py -m inceptionv3  -d train_preprocessed -c 1024 -b 128 -r 0.01 -s 0.1 -e 2 -t samplewise_std_normalization=true horizontal_flip=true rotation_range=20 shear_range=10 zoom_range=0.25 width_shift_range=10 height_shift_range=20
+Same result
+
+=== 
