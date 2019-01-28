@@ -9,7 +9,7 @@ handlers:
     formatter: simple
     maxBytes: 10485760
     backupCount: 5
-    filename: 'create_model.log'
+    filename: 'model_generation.log'
     mode: 'w'
   console:
     class: logging.StreamHandler

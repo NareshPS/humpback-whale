@@ -11,7 +11,7 @@ from model.base_models import cnn
 #Local imports
 from common import constants
 
-def siamese_network(base_model, input_shape, feature_dims, learning_rate):
+def siamese_network(base_model, input_shape, feature_dims, learning_rate, train_base_layers = False):
     """It creates a siamese network model using the input as a base model.
     
     Arguments:
@@ -19,6 +19,7 @@ def siamese_network(base_model, input_shape, feature_dims, learning_rate):
         input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
         feature_dims {int} -- An integer indicating the dimensions of the feature vector.
         learning_rate {float} -- A float value to control speed of learning.
+        train_base_layers {boolean} -- A boolean value to indicate training of base layers.
     
     Returns:
         {A Model object} -- A keras model.
@@ -27,8 +28,8 @@ def siamese_network(base_model, input_shape, feature_dims, learning_rate):
     anchor_input = Input(shape = input_shape, name = 'Anchor')
     sample_input = Input(shape = input_shape, name = 'Sample')
 
-    anchor_features = cnn(base_model, input_shape, feature_dims)(anchor_input)
-    sample_features = cnn(base_model, input_shape, feature_dims)(sample_input)
+    anchor_features = cnn(base_model, input_shape, feature_dims, train_base_layers)(anchor_input)
+    sample_features = cnn(base_model, input_shape, feature_dims, train_base_layers)(sample_input)
 
     X = Concatenate()([anchor_features, sample_features])
     X = Dense(16, activation = 'linear')(X)

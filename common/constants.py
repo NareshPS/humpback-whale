@@ -44,7 +44,7 @@ FEATURE_MODELS = ["resnet", "inceptionv3"]
 LOG_CONFIG_PATH = 'configuration'
 LOG_CONFIGS = {
                 'siamese_input_tuples.py' : 'siamese_input_tuples.yml',
-                'siamese_network.py' : 'siamese_network.yml',
+                'model_generation.py' : 'model_generation.yml',
                 'insights.py' : 'insights.yml',
                 'train.py' : 'train.yml'
             }

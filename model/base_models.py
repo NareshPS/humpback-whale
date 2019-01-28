@@ -7,13 +7,14 @@ from keras.models import Model
 #Constants
 from common import constants
 
-def cnn(base_model_name, input_shape, dimensions):
+def cnn(base_model_name, input_shape, dimensions, train_base_layers):
     """It selects a base model based on the input parameter.
     
     Arguments:
         base_model_name {string} -- A string containing the name of a base model.
         input_shape {(int, int)} -- A tuple indicating the dimensions of model input.
         dimensions {int} -- An integer indicating the size of feature vector.
+        train_base_layers {boolean} -- A boolean value to indicate training of base layers.
     """
     #Base model placeholder to be updated in the if/else clause
     base_model = None
@@ -36,8 +37,9 @@ def cnn(base_model_name, input_shape, dimensions):
     #Model object
     model = Model(inputs=base_model.input, outputs=predictions)
 
-    #Disable base model training to make sure consistent image representation.
-    for layer in base_model.layers:
-        layer.trainable = False
+    if not train_base_layers:
+        #Disable base model training to make sure consistent image representation.
+        for layer in base_model.layers:
+            layer.trainable = False
 
     return model

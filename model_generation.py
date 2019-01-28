@@ -23,7 +23,6 @@ def parse_args():
         help = 'It specifies the name of the model.')
     parser.add_argument(
         '-b', '--base_model',
-        required = True,
         help = 'It specifies a base model to use for the models.')
     parser.add_argument(
         '-d', '--dimensions',
@@ -37,14 +36,21 @@ def parse_args():
         '-l', '--log_to_console',
         action = 'store_true', default = False,
         help = 'It enables logging to console')
+    parser.add_argument(
+        '-a', '--train_all',
+        action = 'store_true', default = False,
+        help = 'It enables training the base model.')
 
     args = parser.parse_args()
 
-    return args.name, args.base_model, args.dimensions, args.learning_rate, args.log_to_console
+    return args.name, args.base_model, args.dimensions, args.learning_rate, args.log_to_console, args.train_all
+
+def process_create():
+    pass
 
 if __name__ == "__main__":
     #Extract command line parameters
-    name, base_model, dimensions, learning_rate, log_to_console = parse_args()
+    name, base_model, dimensions, learning_rate, log_to_console, train_all = parse_args()
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -59,9 +65,10 @@ if __name__ == "__main__":
 
     #Additional parameters
     logger.info(
-                'Additional parameters learning_rate: %d log_to_console: %s',
+                'Additional parameters learning_rate: %d log_to_console: %s train_all: %s',
                 learning_rate,
-                log_to_console)
+                log_to_console,
+                train_all)
 
     #Model function
     model_func = getattr(models, name)
@@ -79,7 +86,7 @@ if __name__ == "__main__":
     input_shape = constants.INPUT_SHAPE
 
     #Create the model
-    model = model_func(base_model, input_shape, dimensions, learning_rate)
+    model = model_func(base_model, input_shape, dimensions, learning_rate, train_all)
     logger.info("Created a new model using base_model: {}".format(base_model))
 
     #Write model trainable state
