@@ -4,6 +4,9 @@ from keras.applications import InceptionV3
 from keras.layers import Input, Dense, GlobalAveragePooling2D
 from keras.models import Model
 
+#Model specification
+from model.definition import ModelSpecification, LayerSpecification, LayerType
+
 #Constants
 from common import constants
 
@@ -30,12 +33,26 @@ def cnn(base_model_name, input_shape, dimensions, train_base_layers):
         raise ValueError("Invalid base model: {}".format(base_model_name))
 
     #Feature model
-    x = GlobalAveragePooling2D()(base_model.output)
-    x = Dense(1024, activation='relu')(x)
-    predictions = Dense(dimensions, activation='softmax')(x)
+    #Layer specifications
+    layer_specifications = [
+                                #Pooling
+                                LayerSpecification(LayerType.GlobalAveragePooling2D),
+
+                                #Dense units
+                                LayerSpecification(LayerType.Dense, 1024, activation = 'relu'),
+
+                                #Output unit
+                                LayerSpecification(LayerType.Dense, dimensions, activation = 'softmax')
+                            ]
+
+    #Model specification
+    model_specification = ModelSpecification(layer_specifications)
+
+    #Output
+    predictions = model_specification.get_specification(base_model.output)
 
     #Model object
-    model = Model(inputs=base_model.input, outputs=predictions)
+    model = Model(inputs = base_model.input, outputs = predictions)
 
     if not train_base_layers:
         #Disable base model training to make sure consistent image representation.

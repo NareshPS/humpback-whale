@@ -4,7 +4,7 @@
 from enum import Enum, unique
 
 #Keras layers
-from keras.layers import Input, Concatenate, Dense, BatchNormalization, Activation, Dropout
+from keras.layers import Input, Concatenate, Dense, BatchNormalization, Activation, Dropout, GlobalAveragePooling2D
 
 #Keras applications
 from keras.applications.resnet50 import ResNet50 as ResNet
@@ -19,6 +19,7 @@ class LayerType(Enum):
     Concatenate = 5
     Inception = 6
     Resnet = 7
+    GlobalAveragePooling2D = 8
 
 class LayerSpecification:
     """A container for layer specification.
@@ -29,6 +30,7 @@ class LayerSpecification:
                         LayerType.Dropout : (Dropout, 'dropout_'),
                         LayerType.Activation : (Activation, 'activation_'),
                         LayerType.Concatenate : (Concatenate, 'concatenate_'),
+                        LayerType.GlobalAveragePooling2D : (GlobalAveragePooling2D, 'global_average_pool_2d'),
                         LayerType.Inception : (InceptionV3, 'inception_v3'),
                         LayerType.Resnet : (ResNet, 'resnet50')
                     }

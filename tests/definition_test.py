@@ -8,19 +8,19 @@ from model.definition import ModelSpecification, LayerSpecification, LayerType
 from keras.layers import Input
 
 class TestLayerSpecification(ut.TestCase):
-    def get_specification(self, layer_type, parameter, results):
-        #Input parameters
-        shape = (2, 2)
-
+    def get_specification_shape(self, layer_type, shape, parameter, results, **kwargs):
         #Act
         inputs = Input(shape = shape)
-        layer_specification = LayerSpecification(layer_type, parameter) if parameter is not None else LayerSpecification(layer_type)
+        layer_specification = LayerSpecification(layer_type, parameter, **kwargs) if parameter is not None else LayerSpecification(layer_type, **kwargs)
         layer = layer_specification.get_specification()
         output = layer(inputs)
 
         #Assert
         self.assertEqual(output.get_shape().as_list()[1: ], results)
         self.assertTrue(layer.name.startswith(LayerSpecification.get_prefix(layer_type)))
+
+    def get_specification(self, layer_type, parameter, results, **kwargs):
+        self.get_specification_shape(layer_type, (2, 2), parameter, results, **kwargs)
 
     def test_get_specification_dense(self):
         self.get_specification(LayerType.Dense, 5, [2, 5])
@@ -33,6 +33,9 @@ class TestLayerSpecification(ut.TestCase):
 
     def test_get_specification_dropout(self):
         self.get_specification(LayerType.Dropout, 0.5, [2, 2])
+
+    def test_get_specification_globalaveragepooling2d(self):
+        self.get_specification(LayerType.GlobalAveragePooling2D, None, [2, 2])
 
     def test_get_specification_concatenate(self):
         #Input parameters
@@ -50,18 +53,11 @@ class TestLayerSpecification(ut.TestCase):
 
     def test_get_specification_resnet(self):
         #Input parameters
-        shape = (2, 2, 3)
+        shape = (32, 32, 3)
         resnet_params = dict(include_top=False, weights = None, input_shape = shape)
 
         #Act
-        inputs = Input(shape = shape)
-        layer_specification = LayerSpecification(LayerType.Resnet, resnet_params)
-        layer = layer_specification.get_specification()
-        output = layer(inputs)
-
-        #Assert
-        self.assertEqual(output.get_shape().as_list()[1: ], [1000])
-        self.assertTrue(layer.name.startswith(LayerSpecification.get_prefix(LayerType.Resnet)))
+        self.get_specification_shape(LayerType.Resnet, shape, None, [1, 1, 2048], **resnet_params)
 
     def test_get_specification_inception(self):
         #Input parameters
@@ -69,15 +65,7 @@ class TestLayerSpecification(ut.TestCase):
         inception_params = dict(include_top=False, weights = None, input_shape = shape)
 
         #Act
-        inputs = Input(shape = shape)
-        layer_specification = LayerSpecification(LayerType.Inception, inception_params)
-        layer = layer_specification.get_specification()
-        output = layer(inputs)
-
-        #Assert
-        print(layer.name)
-        self.assertEqual(output.get_shape().as_list()[1: ], [1000])
-        self.assertTrue(layer.name.startswith(LayerSpecification.get_prefix(LayerType.Inception)))
+        self.get_specification_shape(LayerType.Inception, shape, None, [1, 1, 2048], **inception_params)
 
 class TestModelSpecification(ut.TestCase):
     def test_get_specification(self):
