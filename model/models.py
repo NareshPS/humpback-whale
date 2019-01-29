@@ -1,12 +1,15 @@
 """Various NN models.
 """
 #Keras imports
-from keras.models import Sequential, Model
-from keras.layers import Input, Concatenate, Dense, BatchNormalization, Activation
-from keras.optimizers import SGD, Adam
+from keras.models import Model
+from keras.layers import Input
+from keras.optimizers import Adam
 
 #Base models
 from model.base_models import cnn
+
+#Model specification
+from model.definition import ModelSpecification, LayerSpecification, LayerType
 
 #Local imports
 from common import constants
@@ -31,17 +34,29 @@ def siamese_network(base_model, input_shape, feature_dims, learning_rate, train_
     anchor_features = cnn(base_model, input_shape, feature_dims, train_base_layers)(anchor_input)
     sample_features = cnn(base_model, input_shape, feature_dims, train_base_layers)(sample_input)
 
-    X = Concatenate()([anchor_features, sample_features])
-    X = Dense(16, activation = 'linear')(X)
-    X = BatchNormalization()(X)
-    X = Activation('relu')(X)
+    #Layer specifications
+    layer_specifications = [
+                                #Unit 1
+                                LayerSpecification(LayerType.Concatenate),
+                                LayerSpecification(LayerType.Dense, 16, activation = 'linear'),
+                                LayerSpecification(LayerType.Normalization),
+                                LayerSpecification(LayerType.Activation, 'relu'),
 
-    X = Dense(4, activation = 'linear')(X)
-    X = BatchNormalization()(X)
-    X = Activation('relu')(X)
+                                #Unit 2
+                                LayerSpecification(LayerType.Dense, 4, activation = 'linear'),
+                                LayerSpecification(LayerType.Normalization),
+                                LayerSpecification(LayerType.Activation, 'relu'),
 
-    X = Dense(1, activation = 'sigmoid')(X)
-    
+                                #Output unit
+                                LayerSpecification(LayerType.Dense, 1, activation = 'sigmoid')
+                            ]
+
+    #Model specification
+    model_specification = ModelSpecification(layer_specifications)
+
+    #Output
+    X = model_specification.get_specification([anchor_features, sample_features])
+
     #Create an optimizer object
     adam_optimizer = Adam(lr = learning_rate)
 
