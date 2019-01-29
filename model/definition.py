@@ -4,7 +4,11 @@
 from enum import Enum, unique
 
 #Keras layers
-from keras.layers import Input, Concatenate, Dense, BatchNormalization, Activation
+from keras.layers import Input, Concatenate, Dense, BatchNormalization, Activation, Dropout
+
+#Keras applications
+from keras.applications.resnet50 import ResNet50 as ResNet
+from keras.applications import InceptionV3
 
 @unique
 class LayerType(Enum):
@@ -13,40 +17,43 @@ class LayerType(Enum):
     Dropout = 3
     Activation = 4
     Concatenate = 5
+    Inception = 6
+    Resnet = 7
 
 class LayerSpecification:
     """A container for layer specification.
     """
     layer_prefixes = {
-                        LayerType.Dense : 'dense_',
-                        LayerType.Normalization : 'batch_normalization_',
-                        LayerType.Dropout : 'dropout_',
-                        LayerType.Activation : 'activation_',
-                        LayerType.Concatenate : 'concatenate_'
+                        LayerType.Dense : (Dense, 'dense_'),
+                        LayerType.Normalization : (BatchNormalization, 'batch_normalization_'),
+                        LayerType.Dropout : (Dropout, 'dropout_'),
+                        LayerType.Activation : (Activation, 'activation_'),
+                        LayerType.Concatenate : (Concatenate, 'concatenate_'),
+                        LayerType.Inception : (InceptionV3, 'inception_v3'),
+                        LayerType.Resnet : (ResNet, 'resnet50')
                     }
 
     def __init__(self, layer_type, *args, **kwargs):
+        #Required parameters
         self._layer_type = layer_type
+
         self._args = args
         self._kwargs = kwargs
 
+        #Dependent parameters
+        self._layer = LayerSpecification.get_layer_object(self._layer_type)
+
     def get_specification(self):
-        #Dense layer
-        if self._layer_type is LayerType.Dense:
-            return Dense(*self._args, **self._kwargs)
-        #Batch normalization
-        elif self._layer_type is LayerType.Normalization:
-            return BatchNormalization()
-        #Activation
-        elif self._layer_type == LayerType.Activation:
-            return Activation(*self._args)
-        #Concatenation
-        elif self._layer_type == LayerType.Concatenate:
-            return Concatenate(*self._args)
+        #Layer object
+        return self._layer(*self._args, **self._kwargs)
 
     @classmethod
     def get_prefix(cls, layer_type):
-        return cls.layer_prefixes[layer_type]
+        return cls.layer_prefixes[layer_type][1]
+
+    @classmethod
+    def get_layer_object(cls, layer_type):
+        return cls.layer_prefixes[layer_type][0]
 
 class ModelSpecification:
     """A container for model specifications.
