@@ -12,7 +12,7 @@ from common import constants
 
 def cnn(base_model_name, input_shape, dimensions, train_base_layers):
     """It selects a base model based on the input parameter.
-    
+
     Arguments:
         base_model_name {string} -- A string containing the name of a base model.
         input_shape {(int, int)} -- A tuple indicating the dimensions of model input.
