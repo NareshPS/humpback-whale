@@ -88,6 +88,10 @@ def parse_args():
         action = 'store_true', default=False,
         help = 'If specified, overwrites the existing tuple file.')
     parser.add_argument(
+        '-d', '--dataset',
+        choices = constants.DATASET_NAMES, default = constants.DATASET_NAMES[0],
+        help = 'It specifies the dataset to use.')
+    parser.add_argument(
         '-s', '--samples_per_image',
         default = 10, type = int,
         help = 'It specified the number of samples to create for each image.')
@@ -102,19 +106,20 @@ def parse_args():
 
     args = parser.parse_args()
     
-    return args.overwrite, args.samples_per_image, args.positive_sample_ratio, args.log_to_console
+    return args.overwrite, args.dataset, args.samples_per_image, args.positive_sample_ratio, args.log_to_console
 
 if __name__ == "__main__":
+    #Parse commandline arguments
+    overwrite_output_file, dataset, samples_per_image, positive_sample_ratio, log_to_console = parse_args()
+
+
     df_image_col = constants.IMAGE_HEADER_NAME
     df_class_col = constants.LABEL_HEADER_NAME
     batch_size = 32
     label_df = read_csv(constants.DATASET_MAPPINGS['labels'])
-    train_set_loc = constants.DATASET_MAPPINGS['train_preprocessed']
+    train_set_loc = constants.DATASET_MAPPINGS[dataset]
     train_tuples_loc = constants.DATASET_MAPPINGS['train_tuples']
     train_tuples_columns = constants.TRAIN_TUPLE_HEADERS
-
-    #Parse commandline arguments
-    overwrite_output_file, samples_per_image, positive_sample_ratio, log_to_console = parse_args()
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -122,8 +127,9 @@ if __name__ == "__main__":
 
     #Log input parameters
     logger.info(
-                'Running with parameters overwrite_output_file: %s samples_per_image: %d positive_sample_ratio: %f',
-                overwrite_output_file, 
+                'Running with parameters overwrite_output_file: %s dataset: %s samples_per_image: %d positive_sample_ratio: %f',
+                overwrite_output_file,
+                dataset,
                 samples_per_image, 
                 positive_sample_ratio)
 
@@ -139,4 +145,4 @@ if __name__ == "__main__":
 
         logger.info("Wrote {} image tuples".format(len(train_tuples_df)))
     else:
-        logger.error("File already exists. Please specify overwrite flag to regenerate.")
+        raise ValueError("File already exists. Please specify overwrite flag to regenerate.")

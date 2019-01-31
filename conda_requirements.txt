@@ -1,0 +1,4 @@
+### Conda based project dependencies ###
+
+#GTK and graphics visualization
+pycairo

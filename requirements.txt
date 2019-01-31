@@ -1,5 +1,8 @@
 ### Project dependencies ###
 
+#Kaggle
+kaggle
+
 #Deep learning
 tensorflow
 keras
@@ -24,3 +27,6 @@ funcy
 geos
 shapely
 imgaug
+
+#Graphics visualization
+pydub
