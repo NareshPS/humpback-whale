@@ -38,7 +38,7 @@ IMAGE_HEADER_NAME = "Image"
 LABEL_HEADER_NAME = "Id"
 
 #Feature model options
-FEATURE_MODELS = ["resnet", "inceptionv3"]
+FEATURE_MODELS = ["resnet", "inceptionv3", "input"]
 
 #Logging constants
 LOG_CONFIG_PATH = 'configuration'

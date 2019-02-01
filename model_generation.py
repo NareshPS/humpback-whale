@@ -12,8 +12,11 @@ from argparse import ArgumentParser
 #Models
 from model import models
 
-#Load/Save model states
-from model.state import ModelState
+#Keras imports
+from keras.models import load_model
+
+#Model operation
+from model.operation import Operation
 
 #Logger
 logger = None
@@ -21,9 +24,9 @@ program_actions = ['create', 'update']
 
 def define_common_parameters(parser):
     parser.add_argument(
-        '-t', '--train_all',
-        action = 'store_true', default = False,
-        help = 'It enables training the base model.')
+        '-u', '--num_unfrozen_base_layers',
+        type = int, default = 0,
+        help = 'It unfreezes the specified number of bottom layers in the base model.')
 
     return parser
 
@@ -58,6 +61,13 @@ def parse_update_parameters(params):
     
     parser = ArgumentParser()
 
+    #Update parameters
+    parser.add_argument(
+        '--base_level',
+        required = True,
+        type = int, choices = [1, 2],
+        help = 'It specifies the base level depth to update the trainable parameters.')
+
     #Append common parameters
     parser = define_common_parameters(parser)
 
@@ -87,7 +97,7 @@ def parse_args():
         required = True,
         help = 'It specifies the name of the model.')
     parser.add_argument(
-        '-b', '--base_model',
+        '-b', '--base_model_name',
         help = 'It specifies a base model to use for the models.')
     parser.add_argument(
         '-a', '--action',
@@ -103,11 +113,25 @@ def parse_args():
 
     args = parser.parse_args()
 
-    return args.name, args.base_model, args.action, args.action_parameters, args.log_to_console
+    return args.name, args.base_model_name, args.action, args.action_parameters, args.log_to_console
 
-def create(name, base_model, args):
+def create(name, base_model_name, args):
+    """It creates a model based on the input parameters.
+    
+    Arguments:
+        name {string} -- A string to represent the name of the model.
+        base_model_name {string} -- A string to represent the base model to use.
+        args {An ArgParse object} -- It provides access to the input parameters
+    """
     #Input parameters
-    dimensions, learning_rate, train_all = args.dimensions, args.learning_rate, args.train_all
+    dimensions, learning_rate, num_unfrozen_base_layers = args.dimensions, args.learning_rate, args.num_unfrozen_base_layers
+
+    #Log input parameters
+    logger.info(
+                'Create:: Running with parameters dimensions: %d learning_rate: %f num_unfrozen_base_layers: %d',
+                dimensions,
+                learning_rate,
+                num_unfrozen_base_layers)
     
     #Model function
     model_func = getattr(models, name)
@@ -116,35 +140,69 @@ def create(name, base_model, args):
     input_shape = constants.INPUT_SHAPE
 
     #Create the model
-    model = model_func(base_model, input_shape, dimensions, learning_rate, train_all)
-    logger.info("Created a new model using base_model: {}".format(base_model))
+    model = model_func(base_model_name, input_shape, dimensions, learning_rate, num_unfrozen_base_layers)
+    logger.info("Created a new model using base_model_name: {}".format(base_model_name))
 
     return model
 
-def update(args):
-    pass
+def update(model_file_name, args):
+    """It updates the input model based on the input arguments.
+    
+    Arguments:
+        model_file_name {string} -- The name of the model file.
+        args {An ArgParse object} -- It provides access to the input parameters
+    """
 
-def act(action, name, base_model, args):
+    #Input parameters
+    num_unfrozen_base_layers, base_level = args.num_unfrozen_base_layers, args.base_level
+
+    #Log input parameters
+    logger.info(
+            'Update:: Running with parameters num_unfrozen_base_layers: %d base_level: %d',
+            num_unfrozen_base_layers,
+            base_level)
+
+    #Load the model
+    model = load_model(model_file_name)
+    
+    #Configure the model
+    op = Operation(num_unfrozen_base_layers, configure_base = True, base_level = base_level)
+    model = op.configure(model)
+
+    ### Recompile the model for base layer changes ###
+    #Extract compile parameters
+    loss = model.loss
+    optimizer = model.optimizer
+    metrics = model.metrics
+
+    #Compile the configured model
+    model.compile(loss = loss, optimizer = optimizer, metrics = metrics)
+    model.summary()
+
+    return model
+
+def act(action, name, base_model_name, model_file, args):
     """It runs the input action with the input arguments.
     
     Arguments:
-        name {string} -- A string to represent the name of the model.
-        base_model {string} -- A string to represent the base model to use.
         action {string} -- A string to represent the name of the action. 
+        name {string} -- A string to represent the name of the model.
+        base_model_name {string} -- A string to represent the base model to use.
+        model_file {string} -- The name of the model file.
         args {An object} -- An argument object.
     """
     model = None
 
     if action == program_actions[0]:
-        model = create(name, base_model, args)
+        model = create(name, base_model_name, args)
     elif action == program_actions[1]:
-        model = update(args)
+        model = update(model_file, args)
 
     return model
 
 if __name__ == "__main__":
     #Extract command line parameters
-    name, base_model, action, action_parameters, log_to_console = parse_args()
+    name, model_file_name, action, action_parameters, log_to_console = parse_args()
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -152,9 +210,9 @@ if __name__ == "__main__":
 
     #Log input parameters
     logger.info(
-                'Running with parameters name: %s base_model: %s action: %s action_parameters: %s',
+                'Running with parameters name: %s model_file_name: %s action: %s action_parameters: %s',
                 name,
-                base_model,
+                model_file_name,
                 action,
                 action_parameters)
 
@@ -165,21 +223,12 @@ if __name__ == "__main__":
     args = parse_action_parameters(action, action_parameters)
 
     #Output files
-    model_file = "{}_{}.h5".format(name, base_model)
-    model_state_file = "{}_{}.model_state".format(name, base_model)
+    model_file = "{}_{}.h5".format(name, model_file_name)
 
-    logger.info(
-                'Output files model_file: %s model_state_file: %s',
-                model_file,
-                model_state_file)
+    logger.info('Output files model_file: %s', model_file)
 
     #Run action
-    model = act(action, name, base_model, args)
-
-    #Write model trainable state
-    model_state = ModelState(model)
-    model_state.save(".", model_state_file)
-    logger.info("Saved model state to: {}".format(model_state_file))
+    model = act(action, name, model_file_name, model_file, args)
 
     #Save the trained model.
     model.save(model_file)

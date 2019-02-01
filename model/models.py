@@ -6,7 +6,7 @@ from keras.layers import Input
 from keras.optimizers import Adam
 
 #Base models
-from model.base_models import cnn
+from model.basemodel import BaseModel
 
 #Model specification
 from model.definition import ModelSpecification, LayerSpecification, LayerType
@@ -14,25 +14,30 @@ from model.definition import ModelSpecification, LayerSpecification, LayerType
 #Local imports
 from common import constants
 
-def siamese_network(base_model, input_shape, feature_dims, learning_rate, train_base_layers = False):
+def siamese_network(base_model_name, input_shape, feature_dims, learning_rate, num_unfrozen_base_layers = 0):
     """It creates a siamese network model using the input as a base model.
     
     Arguments:
-        base_model {A Model object.} -- A base model to generate feature vector.
+        base_model_name {string} -- A string containing the name of a base model.
         input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
         feature_dims {int} -- An integer indicating the dimensions of the feature vector.
         learning_rate {float} -- A float value to control speed of learning.
-        train_base_layers {boolean} -- A boolean value to indicate training of base layers.
+        num_unfrozen_base_layers {int} -- The number of bottom layers of base model to train.
     
     Returns:
         {A Model object} -- A keras model.
     """
 
+    #Base model
+    base_model = BaseModel(base_model_name, input_shape, feature_dims, num_unfrozen_base_layers)
+
+    #Siamese inputs
     anchor_input = Input(shape = input_shape, name = 'Anchor')
     sample_input = Input(shape = input_shape, name = 'Sample')
 
-    anchor_features = cnn(base_model, input_shape, feature_dims, train_base_layers)(anchor_input)
-    sample_features = cnn(base_model, input_shape, feature_dims, train_base_layers)(sample_input)
+    #Feature inputs
+    anchor_features = base_model.cnn()(anchor_input)
+    sample_features = base_model.cnn()(sample_input)
 
     #Layer specifications
     layer_specifications = [
