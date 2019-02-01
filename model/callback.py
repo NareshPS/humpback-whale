@@ -34,12 +34,16 @@ class ModelDropboxCheckpoint(Callback):
         #Additional parameters
         self._dropbox_dir = dropbox_dir
 
+        #Derived parameters
+        self._dropbox = None
+
         #Validation
         if dropbox_auth is not None and self._dropbox_dir is None:
             raise ValueError("No dropbox dir provided.")
 
         #Dropbox client
-        self._dropbox = Dropbox(dropbox_auth)
+        if dropbox_auth:
+            self._dropbox = Dropbox(dropbox_auth)
 
         #Logging
         self._logger = logging.get_logger(__name__)
@@ -56,8 +60,9 @@ class ModelDropboxCheckpoint(Callback):
         self._logger.info('Wrote the model object: %s', model_file)
 
         #Upload the model
-        self._upload(model_file)
-        self._logger.info('Uploaded the model to dropbox: %s', model_file)
+        if self._dropbox:
+            self._upload(model_file)
+            self._logger.info('Uploaded the model to dropbox: %s', model_file)
         
     def _upload(self, filename):
         with open(filename, 'rb') as handle:
