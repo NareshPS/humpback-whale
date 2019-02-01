@@ -94,8 +94,7 @@ class ModelDropboxCheckpoint(Callback):
                     else:
                         self._dropbox.files_upload_session_append_v2(
                                         handle.read(constants.DROPBOX_CHUNK_SIZE),
-                                        cursor,
-                                        close = True)
+                                        cursor)
                         
                         #Update the cursor
                         cursor.offset = handle.tell()
