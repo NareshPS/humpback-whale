@@ -1,17 +1,9 @@
 #Unittests
 import unittest as ut
-from unittest.mock import Mock
 from unittest.mock import MagicMock
-
-#Constants
-from common import ut_constants
-from common import constants
 
 #Callback
 from model.callback import ModelDropboxCheckpoint
-
-#Keras
-from keras.engine.training import Model
 
 #Parameters
 model_name = 'model_1'
