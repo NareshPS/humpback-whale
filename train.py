@@ -19,6 +19,9 @@ from pickle import dump as pickle_dump
 from numpy.random import seed as np_seed
 from tensorflow import set_random_seed as tf_seed
 
+#Save checkpoints
+from model.callback import ModelDropboxCheckpoint
+
 #Constants
 from common import constants
 
@@ -81,6 +84,10 @@ def parse_args():
         '-x', '--num_fit_images',
         default = 1000, type = int,
         help = 'It specifies the number of images to send to fit()')
+    parser.add_argument(
+        '-p', '--dropbox_parameters',
+        nargs = 2,
+        help = 'It specifies dropbox parameters required to upload the checkpoints.')
 
     args = parser.parse_args()
 
@@ -102,6 +109,7 @@ if __name__ == "__main__":
     learning_rate = args.learning_rate
     transformation_params = ImageDataTransformation.Parameters.parse(dict(args.transformations))
     n_fit_images = args.num_fit_images
+    dropbox_parameters = args.dropbox_parameters
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -161,6 +169,16 @@ if __name__ == "__main__":
 
     #Fit images parameter
     logger.info('Fit images:: n_fit_images: %d', n_fit_images)
+
+    #Dropbox parameters
+    dropbox_auth = None
+    dropbox_dir = None
+
+    if dropbox_parameters:
+        dropbox_auth = dropbox_parameters[0]
+        dropbox_dir = path.join(constants.DROPBOX_APP_PATH_PREFIX, dropbox_parameters[1])
+    
+    logger.info('Dropbox parameters:: dir: %s', dropbox_dir)
     
     #Log training metadata
     logger.info("Training set size: {} image_cols: {} output_col: {}".format(len(train_tuples_df), image_cols, output_col))
@@ -195,19 +213,21 @@ if __name__ == "__main__":
         #Update the learning rate
         logger.info("Switching leraning rate from: {} to: {}".format(K.get_value(model.optimizer.lr), learning_rate))
         K.set_value(model.optimizer.lr, learning_rate)
+        
+    #Training callbacks
+    dropbox_callback = ModelDropboxCheckpoint(
+                                model_name,
+                                dropbox_auth = dropbox_auth,
+                                dropbox_dir = dropbox_dir)
 
     #Fit the model the input.
     history = model.fit_generator(
-                    generator = train_gen,
-                    validation_data = validation_gen,
-                    epochs = n_epochs)
+                        generator = train_gen,
+                        validation_data = validation_gen,
+                        epochs = n_epochs,
+                        callbacks = [dropbox_callback])
 
     logger.info('Training finished. Trained: %d epochs', n_epochs)
-
-    #Save the trained model.
-    model.save(model_file)
-
-    logger.info('Wrote the model object: %s', model_file)
 
     #Save training history
     with open(history_file, 'wb') as handle:

@@ -48,3 +48,8 @@ LOG_CONFIGS = {
                 'insights.py' : 'insights.yml',
                 'train.py' : 'train.yml'
             }
+
+#Dropbox connection configuration
+DROPBOX_ENDPOINT = "https://content.dropboxapi.com/2/files/upload"
+DROPBOX_APP_PATH_PREFIX = "/run_data/"
+DROPBOX_CHUNK_SIZE = 4 * 1024 * 1024 #4 megabytes
