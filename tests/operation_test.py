@@ -1,23 +1,14 @@
 #Unittests
 import unittest as ut
-from unittest.mock import MagicMock
-
-#Constants
-from common import ut_constants
-from common import constants
 
 #Operation
 from model.operation import Operation
 
-#Keras
-from keras.models import load_model
-
-#Path manipulations
-from os import path
+#Test utils
+from utils import load_test_model
 
 #Basic parameters
 num_unfrozen_layers = 2
-model_file_name = 'cnn_model2d_1.h5'
 
 class TestOperation(ut.TestCase):
     def test_init_success(self):
@@ -49,15 +40,6 @@ class TestOperation(ut.TestCase):
         #Higher than the allowed limit asserts
         self.init_level(3, True)
 
-    def load_test_model(self):
-        #Model file path
-        model_file_path = path.join(ut_constants.UT_DATA_STORE, model_file_name)
-
-        #Model object
-        model = load_model(model_file_path)
-
-        return model
-
     def verify_unfrozen_layers(self, model, num_unfrozen_layers):
         #Arrange
         expected_results = [False]*(len(model.layers) - num_unfrozen_layers) + [True]*num_unfrozen_layers
@@ -69,7 +51,7 @@ class TestOperation(ut.TestCase):
     def test_configure_model(self):
         #Arrange
         op = Operation(num_unfrozen_layers)
-        model = self.load_test_model()
+        model = load_test_model()
 
         #Act
         model = op.configure(model)
@@ -80,7 +62,7 @@ class TestOperation(ut.TestCase):
     def test_configure_base_model(self):
         #Arrange
         op = Operation(num_unfrozen_layers, configure_base = True, base_level = 0)
-        model = self.load_test_model()
+        model = load_test_model()
 
         #Act
         model = op.configure(model)

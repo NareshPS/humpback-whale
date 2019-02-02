@@ -104,13 +104,12 @@ class BaseModel(object):
         """
         #Model placeholder
         model = base_model
+        
+        #Output
+        predictions = additional_layers_spec.get_specification(base_model.output)
 
-        if additional_layers_spec:
-            #Output
-            predictions = additional_layers_spec.get_specification(base_model.output)
-
-            #Model object
-            model = Model(inputs = base_model.input, outputs = predictions)
+        #Model object
+        model = Model(inputs = base_model.input, outputs = predictions)
 
         return model
 

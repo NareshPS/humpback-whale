@@ -35,7 +35,7 @@ class TestLayerSpecification(ut.TestCase):
         self.get_specification(LayerType.Dropout, 0.5, [2, 2])
 
     def test_get_specification_globalaveragepooling2d(self):
-        self.get_specification(LayerType.GlobalAveragePooling2D, None, [2, 2])
+        self.get_specification_shape(LayerType.GlobalAveragePooling2D, (2, 2, 3), None, [3])
 
     def test_get_specification_concatenate(self):
         #Input parameters

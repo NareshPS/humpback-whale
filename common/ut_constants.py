@@ -14,3 +14,6 @@ else:
 
 #Training data path
 UT_TRAIN_STORE = path.join(UT_DATA_STORE, "train")
+
+#Unitest logging class
+UT_LOGGING_CLASS = 'unittest'

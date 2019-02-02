@@ -127,6 +127,8 @@ class ImageDataTransformation:
             augmentations.append(
                     img_augmenters.Fliplr(self._parameters.horizontal_flip_prob))
 
+            self._logger.info("Horizontal flip is enabled with probability: {}".format(self._parameters.horizontal_flip_prob))
+
         #Affine transformation parameters
         affine_parameters = dict(mode = 'edge')
 
@@ -174,8 +176,8 @@ class ImageDataTransformation:
             self._logger.info("Augmentations are enabled with parameters: {}".format(affine_parameters))
             augmentations.append(img_augmenters.Affine(**affine_parameters))
         
-            #Creates augmentor with the list of augmentations
-            self._augmenter = img_augmenters.Sequential(augmentations, random_order = True) if len(augmentations) > 0 else None
+        #Creates augmentor with the list of augmentations
+        self._augmenter = img_augmenters.Sequential(augmentations, random_order = True) if len(augmentations) > 0 else None
 
     def fit(self, images):
         """It calculates statistics on the input dataset. These are used to perform transformation.

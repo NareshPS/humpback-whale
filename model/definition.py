@@ -30,7 +30,7 @@ class LayerSpecification:
                         LayerType.Dropout : (Dropout, 'dropout_'),
                         LayerType.Activation : (Activation, 'activation_'),
                         LayerType.Concatenate : (Concatenate, 'concatenate_'),
-                        LayerType.GlobalAveragePooling2D : (GlobalAveragePooling2D, 'global_average_pool_2d'),
+                        LayerType.GlobalAveragePooling2D : (GlobalAveragePooling2D, 'global_average_pooling2d_'),
                         LayerType.Inception : (InceptionV3, 'inception_v3'),
                         LayerType.Resnet : (ResNet, 'resnet50')
                     }

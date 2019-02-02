@@ -13,6 +13,9 @@ import itertools
 #Transformation
 from image.transformation import ImageDataTransformation
 
+#Logging
+from common import logging
+
 class TestParameters(ut.TestCase):
     def parse_parameters(self, param_dict, name, default = None):
         parameters = ImageDataTransformation.Parameters.parse(param_dict)
@@ -72,6 +75,13 @@ class TestParameters(ut.TestCase):
         self.parse_parameters_when_set_or_unset('height_shift_range', .2)
     
 class TestImageDataTransformation(ut.TestCase):
+    def __init__(self, methodName = 'runTest'):
+        super(TestImageDataTransformation, self).__init__(methodName)
+
+        #Logging
+        logging.initialize(ut_constants.UT_LOGGING_CLASS)
+        self._logger = logging.get_logger(__name__)
+
     @staticmethod
     def get_mean_transformed_examples():
         image_shape =  (1, 3, 3, 1)

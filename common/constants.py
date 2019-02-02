@@ -38,7 +38,7 @@ IMAGE_HEADER_NAME = "Image"
 LABEL_HEADER_NAME = "Id"
 
 #Feature model options
-FEATURE_MODELS = ["resnet", "inceptionv3", "input"]
+FEATURE_MODELS = ["resnet", "inceptionv3"]
 
 #Logging constants
 LOG_CONFIG_PATH = 'configuration'
@@ -46,7 +46,8 @@ LOG_CONFIGS = {
                 'siamese_input_tuples.py' : 'siamese_input_tuples.yml',
                 'model_generation.py' : 'model_generation.yml',
                 'insights.py' : 'insights.yml',
-                'train.py' : 'train.yml'
+                'train.py' : 'train.yml',
+                'unittest' : 'unittest.yml'
             }
 
 #Dropbox connection configuration
