@@ -11,6 +11,7 @@ from common import constants
 #Path manipulations
 from pathlib import Path
 from os import path
+from os import rename
 
 #Logging
 from common import logging
@@ -172,10 +173,16 @@ class DropboxConnection:
         #Download
         _, result = self._client.files_download(remote_file_path.as_posix())
 
-        with open(dest_file_name, 'wb') as handle:
+        #Temporary dest_file_name
+        tmp_dest_file_name = "{}.tmp".format(dest_file_name)
+
+        with open(tmp_dest_file_name, 'wb') as handle:
             with tqdm(desc = 'Downloading: {}'.format(remote_file_path.as_posix()), total = download_size) as pbar:
                 for bytes_read in result.iter_content(constants.DROPBOX_CHUNK_SIZE):
                     handle.write(bytes_read)
 
                     #Update the progress
-                    pbar.update(bytes_read)
+                    pbar.update(len(bytes_read))
+
+        if Path(tmp_dest_file_name).exists():
+            rename(tmp_dest_file_name, dest_file_name)

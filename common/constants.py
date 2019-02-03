@@ -50,7 +50,8 @@ LOG_CONFIGS = {
                 'model_generation.py' : 'model_generation.yml',
                 'insights.py' : 'insights.yml',
                 'train.py' : 'train.yml',
-                'unittest' : 'unittest.yml'
+                'unittest' : 'unittest.yml',
+                'evaluate.py' : 'evaluate.yml'
             }
 
 #Dropbox connection configuration

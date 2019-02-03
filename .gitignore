@@ -13,6 +13,7 @@ logs/
 logs
 *.log.*
 *.history
+*.tmp
 
 #Ignore VSCode project files
 .vscode/
