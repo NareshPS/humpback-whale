@@ -3,6 +3,9 @@
 #Identify the platform
 from sys import platform
 
+#Path manipulations
+from pathlib import Path
+
 #Dataset constants for Windows
 if platform.startswith("win"):
     DATASET_MAPPINGS = {
@@ -52,5 +55,5 @@ LOG_CONFIGS = {
 
 #Dropbox connection configuration
 DROPBOX_ENDPOINT = "https://content.dropboxapi.com/2/files/upload"
-DROPBOX_APP_PATH_PREFIX = "/run_data/"
+DROPBOX_APP_PATH_PREFIX = Path('/run_data/')
 DROPBOX_CHUNK_SIZE = 4 * 1024 * 1024 #4 megabytes

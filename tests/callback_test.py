@@ -24,7 +24,9 @@ class TestModelDropboxCheckpoint(ut.TestCase):
     def on_epoch_end(self, checkpoint, call_dropbox):
         #Arrange
         checkpoint.model = MagicMock()
-        checkpoint._upload = MagicMock()
+        
+        if call_dropbox is True:
+            checkpoint._dropbox.upload = MagicMock()
 
         #Act
         checkpoint.on_epoch_end(epoch)
@@ -33,9 +35,9 @@ class TestModelDropboxCheckpoint(ut.TestCase):
         checkpoint.model.save.assert_called_with(model_file)
 
         if call_dropbox:
-            checkpoint._upload.assert_called_with(model_file)
+            checkpoint._dropbox.upload.assert_called_with(model_file)
         else:
-            checkpoint._upload.assert_not_called()
+            self.assertIsNone(checkpoint._dropbox)
 
 
     def test_on_epoch_end_dropbox_called(self):

@@ -5,9 +5,7 @@ from keras import backend as K
 from keras.callbacks import Callback
 
 #Dropbox
-from dropbox import Dropbox
-from dropbox.files import UploadSessionCursor as Dropbox_UploadSessionCursor
-from dropbox.files import CommitInfo as Dropbox_CommitInfo
+from client.dropbox import DropboxConnection
 
 #Constants
 from common import constants
@@ -43,7 +41,7 @@ class ModelDropboxCheckpoint(Callback):
 
         #Dropbox client
         if dropbox_auth:
-            self._dropbox = Dropbox(dropbox_auth)
+            self._dropbox = DropboxConnection(dropbox_auth, self._dropbox_dir)
 
         #Logging
         self._logger = logging.get_logger(__name__)
@@ -61,48 +59,5 @@ class ModelDropboxCheckpoint(Callback):
 
         #Upload the model
         if self._dropbox:
-            self._upload(model_file)
+            self._dropbox.upload(model_file)
             self._logger.info('Uploaded the model to dropbox: %s', model_file)
-        
-    def _upload(self, filename):
-        with open(filename, 'rb') as handle:
-            #Target path
-            dropbox_path = (Path(self._dropbox_dir) / filename).as_posix()
-
-            #File size
-            upload_size = path.getsize(filename)
-
-            #Upload session
-            session = self._dropbox.files_upload_session_start(handle.read(constants.DROPBOX_CHUNK_SIZE))
-            cursor = Dropbox_UploadSessionCursor(session_id = session.session_id, offset = handle.tell())
-            commit = Dropbox_CommitInfo(path = dropbox_path)
-
-            #Upload look
-            with tqdm(desc = 'Uploading file: {}'.format(dropbox_path), total = upload_size) as pbar:
-                #Update the progress bar for the session start reads
-                pbar.update(handle.tell())
-
-                while handle.tell() < upload_size:
-                    #Calculate remaining bytes
-                    remaining_bytes = upload_size - handle.tell()
-
-                    #If it is the last chunk, finalize the upload
-                    if remaining_bytes <= constants.DROPBOX_CHUNK_SIZE:
-                        self._dropbox.files_upload_session_finish(
-                                        handle.read(remaining_bytes),
-                                        cursor,
-                                        commit)
-
-                        #Update progress
-                        pbar.update(remaining_bytes)
-                    #More than chunk size remaining to upload
-                    else:
-                        self._dropbox.files_upload_session_append_v2(
-                                        handle.read(constants.DROPBOX_CHUNK_SIZE),
-                                        cursor)
-                        
-                        #Update the cursor
-                        cursor.offset = handle.tell()
-
-                        #Update the progress
-                        pbar.update(constants.DROPBOX_CHUNK_SIZE)
