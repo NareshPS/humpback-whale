@@ -79,7 +79,7 @@ class TestImageDataTransformation(ut.TestCase):
         super(TestImageDataTransformation, self).__init__(methodName)
 
         #Logging
-        logging.initialize(ut_constants.UT_LOGGING_CLASS)
+        logging.initialize(ut_constants.LOGGING_CLASS)
         self._logger = logging.get_logger(__name__)
 
     @staticmethod

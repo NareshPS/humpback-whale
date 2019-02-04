@@ -12,9 +12,7 @@ if platform.startswith("win"):
         "train" : "..\\Humpback Whale\\dataset\\train",
         "test" : "..\\Humpback Whale\\dataset\\test",
         "train_preprocessed" : "..\\Humpback Whale\\dataset\\train_preprocessed",
-        "test_preprocessed" : "..\\Humpback Whale\\dataset\\test_preprocessed",
-        "labels" : "..\\Humpback Whale\\dataset\\train.csv",
-        "train_tuples" : "..\\Humpback Whale\\dataset\\train_tuples.bin"
+        "test_preprocessed" : "..\\Humpback Whale\\dataset\\test_preprocessed"
     }
 
     TENSORBOARD_LOGS_LOC = "logs\\"
@@ -23,15 +21,18 @@ else:
         "train" : "dataset/train",
         "test" : "dataset/test",
         "train_preprocessed" : "dataset/train_preprocessed",
-        "test_preprocessed" : "dataset/test_preprocessed",
-        "labels" : "dataset/train.csv",
-        "train_tuples" : "dataset/train_tuples.bin"
+        "test_preprocessed" : "dataset/test_preprocessed"
     }
 
     TENSORBOARD_LOGS_LOC = "logs/"
 
 DATASET_NAMES = ["train", "test", "train_preprocessed", "test_preprocessed"]
-TRAIN_TUPLE_HEADERS = ['Anchor', 'Sample', 'Label', 'Similar']
+
+#Siamese tuples
+TRAIN_TUPLE_HEADERS = ['Anchor', 'Sample', 'Label']
+TUPLE_FILE_PREFIX = 'input_tuples'
+TUPLE_FILE_EXTENSION = "tuples"
+TRAIN_TUPLE_LABEL_COL = TRAIN_TUPLE_HEADERS[2]
 
 #Input image shape
 INPUT_SHAPE = (224, 224, 3)
@@ -51,7 +52,8 @@ LOG_CONFIGS = {
                 'insights.py' : 'insights.yml',
                 'train.py' : 'train.yml',
                 'unittest' : 'unittest.yml',
-                'evaluate.py' : 'evaluate.yml'
+                'evaluate.py' : 'evaluate.yml',
+                'evaluate_inputs.py' : 'evaluate_inputs.yml'
             }
 
 #Dropbox connection configuration

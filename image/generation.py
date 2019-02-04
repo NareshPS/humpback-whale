@@ -20,71 +20,71 @@ from keras.utils import Sequence
 from common import logging
 
 class ImageDataIterator(Sequence):
-        """It iterates over the dataframe to return a batch of input per next() call.
+    """It iterates over the dataframe to return a batch of input per next() call.
+    """
+
+    def __init__(self, image_data_generator, dataframe, batch_size, subset):
+        """It initializes the required and optional parameters
+        
+        Arguments:
+            image_data_generator {An ImageDataGenerator object} -- A generator object that allows loading a data slice.
+            dataframe {A pandas.DataFrame object} -- A data frame object containing the input data.
+            batch_size {int} -- An integer value that indicates the size of a batch.
+            subset {string} -- A string to indicate the dataset name.
         """
 
-        def __init__(self, image_data_generator, dataframe, batch_size, subset):
-            """It initializes the required and optional parameters
-            
-            Arguments:
-                image_data_generator {An ImageDataGenerator object} -- A generator object that allows loading a data slice.
-                dataframe {A pandas.DataFrame object} -- A data frame object containing the input data.
-                batch_size {int} -- An integer value that indicates the size of a batch.
-                subset {string} -- A string to indicate the dataset name.
-            """
+        #Required parameters
+        self._image_data_generator = image_data_generator
+        self._dataframe = dataframe
+        self._batch_size = batch_size
+        self._subset = subset
 
-            #Required parameters
-            self._image_data_generator = image_data_generator
-            self._dataframe = dataframe
-            self._batch_size = batch_size
-            self._subset = subset
+        #Internal parameters
+        self._dataset_size = len(dataframe)
 
-            #Internal parameters
-            self._dataset_size = len(dataframe)
+        #Randomize dataset
+        self._shuffled_indices = list(range(self._dataset_size))
 
-            #Randomize dataset
-            self._shuffled_indices = list(range(self._dataset_size))
+        #Logging
+        self._logger = logging.get_logger(__name__)
 
-            #Logging
-            self._logger = logging.get_logger(__name__)
+    def __len__(self):
+        """It calculates the number of batches per epoch
+        
+        Returns:
+            {int} -- An integer indicating the number of batches.
+        """
 
-        def __len__(self):
-            """It calculates the number of batches per epoch
-            
-            Returns:
-                {int} -- An integer indicating the number of batches.
-            """
+        batches_per_epoch = int((self._dataset_size + self._batch_size - 1)/self._batch_size)
+        return batches_per_epoch
 
-            batches_per_epoch = int((self._dataset_size + self._batch_size - 1)/self._batch_size)
-            return batches_per_epoch
+    def __getitem__(self, batch_id):
+        """It loads the data for a given batch_id.
+        
+        Arguments:
+            batch_id {int} -- An integer indicating the batch id.
+        
+        Returns:
+            {(Numpy data, Numpy data)} -- A tuple of input data and labels for the input batch id.
+        """
 
-        def __getitem__(self, batch_id):
-            """It loads the data for a given batch_id.
-            
-            Arguments:
-                batch_id {int} -- An integer indicating the batch id.
-            
-            Returns:
-                {(Numpy data, Numpy data)} -- A tuple of input data and labels for the input batch id.
-            """
+        #Mark start and end of the current slice
+        start = batch_id*self._batch_size
+        end = start + self._batch_size
+        
+        self._logger.info("Using dataset:{} slice [{}, {}] for batch_id: {}".format(self._subset, start, end, batch_id))
 
-            #Mark start and end of the current slice
-            start = batch_id*self._batch_size
-            end = start + self._batch_size
-            
-            self._logger.info("Using dataset:{} slice [{}, {}] for batch_id: {}".format(self._subset, start, end, batch_id))
+        #Make a data frame slice
+        indices_slice = self._shuffled_indices[start:end]
+        df_slice = self._dataframe.loc[indices_slice, :]
 
-            #Make a data frame slice
-            indices_slice = self._shuffled_indices[start:end]
-            df_slice = self._dataframe.loc[indices_slice, :]
+        return self._image_data_generator._load_slice(df_slice)
 
-            return self._image_data_generator._load_slice(df_slice)
+    def on_epoch_end(self):
+        self._logger.info("End of epoch. Shuffling the dataset:{}".format(self._subset))
 
-        def on_epoch_end(self):
-            self._logger.info("End of epoch. Shuffling the dataset:{}".format(self._subset))
-
-            #Shuffle indices before iterating over the datset.
-            random_shuffle(self._shuffled_indices)
+        #Shuffle indices before iterating over the datset.
+        random_shuffle(self._shuffled_indices)
 
 class ImageDataGeneration:
     """It has functionality to create generators to feed data to keras.

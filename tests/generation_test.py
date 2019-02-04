@@ -17,13 +17,13 @@ from pandas import DataFrame
 
 columns = constants.TRAIN_TUPLE_HEADERS
 train_tuple_df = DataFrame(
-                    [['0000e88ab.jpg', '0000e88ab.jpg', 'xyz', 1]],
+                    [['0000e88ab.jpg', '0000e88ab.jpg', 1]],
                     columns = columns)
-train_set_loc = ut_constants.UT_TRAIN_STORE
+train_set_loc = ut_constants.TRAIN_STORE
 
 input_shape = constants.INPUT_SHAPE
 image_cols = constants.TRAIN_TUPLE_HEADERS[0:2]
-output_col = constants.TRAIN_TUPLE_HEADERS[-1]
+label_col = constants.TRAIN_TUPLE_LABEL_COL
 
 class TestImageDataGeneration(ut.TestCase):
     def __init__(self, *args, **kwargs):
@@ -34,7 +34,7 @@ class TestImageDataGeneration(ut.TestCase):
                         train_set_loc, train_tuple_df,
                         input_shape[:2], #Input shape
                         1, #Batch size
-                        image_cols, output_col,
+                        image_cols, label_col,
                         transform_x_cols = transform_x_cols,
                         transformer = transformer)
 
@@ -84,7 +84,7 @@ class TestImageDataGeneration(ut.TestCase):
                         train_set_loc, train_tuple_df,
                         input_shape[:2], #Input shape
                         1, #Batch size
-                        image_cols, output_col,
+                        image_cols, label_col,
                         transformer = transformer)
 
         #Fit data

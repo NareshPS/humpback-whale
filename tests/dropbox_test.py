@@ -62,7 +62,7 @@ class TestDropboxConnection(ut.TestCase):
         client = self.get_client()
         client._upload_small_file = MagicMock()
         remote_file_path = Path(remote_dir_path) / small_file
-        local_file_path = ut_constants.UT_DROPBOX_STORE / small_file
+        local_file_path = ut_constants.DROPBOX_STORE / small_file
 
         #Act
         client.upload(local_file_path)
@@ -77,7 +77,7 @@ class TestDropboxConnection(ut.TestCase):
         client = self.get_client()
         client._upload_large_file = MagicMock()
         remote_file_path = Path(remote_dir_path) / cnn_model_file
-        local_file_path = ut_constants.UT_DATA_STORE / cnn_model_file
+        local_file_path = ut_constants.DATA_STORE / cnn_model_file
 
         #Act
         client.upload(local_file_path)
@@ -122,8 +122,8 @@ class TestDropboxConnection(ut.TestCase):
         client = DropboxConnection(auth_token, 'test_1')
 
         #Act
-        client.upload(ut_constants.UT_DATA_STORE / cnn_model_file)
-        client.upload(ut_constants.UT_DROPBOX_STORE / small_file)
+        client.upload(ut_constants.DATA_STORE / cnn_model_file)
+        client.upload(ut_constants.DROPBOX_STORE / small_file)
 
     def download(self):
         #Arrange

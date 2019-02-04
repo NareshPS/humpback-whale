@@ -10,7 +10,7 @@ from visualization import PlottingUtils
 from common import ut_constants
 
 model_name = "cnn_model2d_1"
-store = ut_constants.UT_DATA_STORE
+store = ut_constants.DATA_STORE
 
 class TestHistoryInsights(ut.TestCase):
     def test_accuracy(self):

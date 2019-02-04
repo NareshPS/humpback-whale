@@ -16,7 +16,7 @@ dimensions = 12
 
 def load_test_model():
     #Model file path
-    model_file_path = path.join(ut_constants.UT_DATA_STORE, model_file_name)
+    model_file_path = path.join(ut_constants.DATA_STORE, model_file_name)
 
     #Model object
     model = load_model(model_file_path)

@@ -30,19 +30,19 @@ model_layers_state = {
 
 class TestModelState(ut.TestCase):
     def test_load_model(self):
-        model_state = ModelState.load_model(ut_constants.UT_DATA_STORE, model_filename)
+        model_state = ModelState.load_model(ut_constants.DATA_STORE, model_filename)
         self.assertDictEqual(model_state.layers, model_layers_state)
         self.assertListEqual(model_state.sub_models, [])
 
     def test_save(self):
-        model_state = ModelState.load_model(ut_constants.UT_DATA_STORE, model_filename)
-        model_state.save(ut_constants.UT_DATA_STORE, model_state_output_file)
-        model_state_output_path = path.join(ut_constants.UT_DATA_STORE, model_state_output_file)
+        model_state = ModelState.load_model(ut_constants.DATA_STORE, model_filename)
+        model_state.save(ut_constants.DATA_STORE, model_state_output_file)
+        model_state_output_path = path.join(ut_constants.DATA_STORE, model_state_output_file)
         
         self.assertTrue(path.exists(model_state_output_path))
 
     def test_load(self):
-        model_state = ModelState.load(ut_constants.UT_DATA_STORE, model_state_input_file)
+        model_state = ModelState.load(ut_constants.DATA_STORE, model_state_input_file)
         self.assertDictEqual(model_state.layers, model_layers_state)
         self.assertListEqual(model_state.sub_models, [])
 
