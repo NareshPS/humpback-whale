@@ -5,8 +5,8 @@ from keras import backend as K
 from keras.models import load_model
 
 #Data processing
-from image.generation import ImageDataGeneration
-from image.transformation import ImageDataTransformation
+from generation.image import ImageDataGeneration
+from generation.transform import ImageDataTransformation
 from imgaug import seed as imgaug_seed
 import numpy as np
 import pandas as pd

@@ -53,7 +53,8 @@ LOG_CONFIGS = {
                 'train.py' : 'train.yml',
                 'unittest' : 'unittest.yml',
                 'evaluate.py' : 'evaluate.yml',
-                'evaluate_inputs.py' : 'evaluate_inputs.yml'
+                'evaluate_inputs.py' : 'evaluate_inputs.yml',
+                'predict.py' : 'predict.yml'
             }
 
 #Dropbox connection configuration

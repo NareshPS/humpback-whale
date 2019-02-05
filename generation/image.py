@@ -10,7 +10,7 @@ from cachetools import LRUCache
 
 #Dataset processing
 from funcy import chunks
-from image import operations
+from generation import operations
 import numpy as np
 
 #Keras sequence

@@ -10,7 +10,7 @@ from common import constants
 import numpy as np
 
 #Transformation
-from image.generation import ImageDataGeneration
+from generation.image import ImageDataGeneration
 
 #Data manipulations
 from pandas import DataFrame

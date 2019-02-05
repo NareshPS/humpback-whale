@@ -11,7 +11,7 @@ import numpy as np
 import itertools
 
 #Transformation
-from image.transformation import ImageDataTransformation
+from generation.transform import ImageDataTransformation
 
 #Logging
 from common import logging
