@@ -7,7 +7,6 @@ from keras.models import load_model
 #Data processing
 from generation.image import ImageDataGeneration
 from generation.transform import ImageDataTransformation
-from imgaug import seed as imgaug_seed
 import numpy as np
 import pandas as pd
 
@@ -18,6 +17,7 @@ from pickle import dump as pickle_dump
 #Allow reproducible results
 from numpy.random import seed as np_seed
 from tensorflow import set_random_seed as tf_seed
+from imgaug import seed as imgaug_seed
 
 #Save checkpoints
 from model.callback import ModelDropboxCheckpoint
@@ -43,7 +43,7 @@ def parse_args():
         help = 'It specifies the name of the model to train.')
     parser.add_argument(
         '-d', '--dataset',
-        default='train',
+        default = 'train',
         choices = constants.DATASET_NAMES,
         help = 'It specifies the dataset to use for training.')
     parser.add_argument(
@@ -67,10 +67,6 @@ def parse_args():
         default = 512, type = int,
         help = 'It specifies the image cache size.')
     parser.add_argument(
-        '-l', '--log_to_console',
-        action = 'store_true', default = False,
-        help = 'It enables logging to console')
-    parser.add_argument(
         '-s', '--validation_split',
         type = float,
         help = 'It specifies the validation split on the training dataset. It must be a float between 0 and 1')
@@ -92,6 +88,10 @@ def parse_args():
         '-p', '--dropbox_parameters',
         nargs = 2,
         help = 'It specifies dropbox parameters required to upload the checkpoints.')
+    parser.add_argument(
+        '-l', '--log_to_console',
+        action = 'store_true', default = False,
+        help = 'It enables logging to console')
 
     args = parser.parse_args()
 
@@ -146,17 +146,17 @@ if __name__ == "__main__":
 
     #Required parameters
     input_shape = constants.INPUT_SHAPE
-    train_set_loc = constants.DATASET_MAPPINGS[dataset]
+    dataset_loc = constants.DATASET_MAPPINGS[dataset]
 
     #Validation
     if not input_tuples.exists():
         raise ValueError('The input tuples file: {} is not found'.format(input_tuples))
 
-    train_tuples_df = read_csv(input_tuples)
-    train_tuples_df = train_tuples_df.loc[:(n_inputs - 1), :] if n_inputs else train_tuples_df
+    input_tuples_df = read_csv(input_tuples)
+    input_tuples_df = input_tuples_df.loc[:(n_inputs - 1), :] if n_inputs else input_tuples_df
 
-    image_cols = constants.TRAIN_TUPLE_HEADERS[0:2]
-    label_col = constants.TRAIN_TUPLE_LABEL_COL
+    image_cols = constants.INPUT_TUPLE_HEADERS[0:2]
+    label_col = constants.INPUT_TUPLE_LABEL_COL
 
     model_file = model_name + ".h5"
     model_state_file = model_name + ".model_state"
@@ -186,14 +186,14 @@ if __name__ == "__main__":
     logger.info('Dropbox parameters:: dir: %s', dropbox_dir)
     
     #Log training metadata
-    logger.info("Training set size: {} image_cols: {} label_col: {}".format(len(train_tuples_df), image_cols, label_col))
+    logger.info("Training set size: {} image_cols: {} label_col: {}".format(len(input_tuples_df), image_cols, label_col))
 
     #Transformer
     transformer = ImageDataTransformation(parameters = transformation_params)
     
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGeneration(
-                    train_set_loc, train_tuples_df, 
+                    dataset_loc, input_tuples_df, 
                     input_shape[:2], batch_size,
                     image_cols, label_col,
                     transform_x_cols = image_cols,

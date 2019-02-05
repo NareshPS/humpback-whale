@@ -77,13 +77,13 @@ if __name__ == "__main__":
 
     #Required inputs
     label_df = read_csv(input_labels)
-    train_tuples_columns = constants.TRAIN_TUPLE_HEADERS
+    train_tuples_columns = constants.INPUT_TUPLE_HEADERS
     output_file_name = Path(
                         "{}_p{}_n{}.{}".format(
-                                            constants.TUPLE_FILE_PREFIX,
+                                            constants.INPUT_TUPLE_FILE_PREFIX,
                                             num_positive_samples, 
                                             num_negative_samples,
-                                            constants.TUPLE_FILE_EXTENSION))
+                                            constants.INPUT_TUPLE_FILE_EXTENSION))
     image_col, label_col = input_cols
 
     if not output_file_name.exists() or overwrite:

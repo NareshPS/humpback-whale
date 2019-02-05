@@ -11,7 +11,7 @@ from argparse import ArgumentParser
 
 #Siamese tuples
 from siamese.tuple import TupleGeneration
-from siamese.evaluation import TupleEvaluation
+from model.evaluation import LabelEvaluation
 
 #Path manipulations
 from pathlib import Path
@@ -77,9 +77,9 @@ if __name__ == "__main__":
     label_df = read_csv(input_labels)
 
     #Tuple generation
-    generation = TupleGeneration(label_df, image_col, label_col, constants.TRAIN_TUPLE_HEADERS)
+    generation = TupleGeneration(label_df, image_col, label_col, constants.INPUT_TUPLE_HEADERS)
     input_tuples = generation.get_tuples(num_positive_samples, num_negative_samples)
 
-    #Tuple evaluation
-    tuple_evaluation = TupleEvaluation(input_tuples)
-    print(tuple_evaluation.evaluate())
+    #Label evaluation
+    label_evaluation = LabelEvaluation(input_tuples)
+    print(tuple_evaluation.evaluate(constants.INPUT_TUPLE_LABEL_COL))

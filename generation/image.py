@@ -16,6 +16,10 @@ import numpy as np
 #Keras sequence
 from keras.utils import Sequence
 
+#Enum
+from enum import Enum, unique
+from bidict import frozenbidict
+
 #Logging
 from common import logging
 
@@ -23,14 +27,15 @@ class ImageDataIterator(Sequence):
     """It iterates over the dataframe to return a batch of input per next() call.
     """
 
-    def __init__(self, image_data_generator, dataframe, batch_size, subset):
+    def __init__(self, image_data_generator, dataframe, batch_size, subset, randomize = True):
         """It initializes the required and optional parameters
         
         Arguments:
             image_data_generator {An ImageDataGenerator object} -- A generator object that allows loading a data slice.
             dataframe {A pandas.DataFrame object} -- A data frame object containing the input data.
             batch_size {int} -- An integer value that indicates the size of a batch.
-            subset {string} -- A string to indicate the dataset name.
+            subset {A ImageDataSubset object} -- A ImageDataSubset value to indicate the dataset subset.
+            randomize {boolean} -- It indicates to randomize the dataframe.
         """
 
         #Required parameters
@@ -38,15 +43,20 @@ class ImageDataIterator(Sequence):
         self._dataframe = dataframe
         self._batch_size = batch_size
         self._subset = subset
+        self._randomize = randomize
 
         #Internal parameters
         self._dataset_size = len(dataframe)
 
-        #Randomize dataset
+        #Randomization
         self._shuffled_indices = list(range(self._dataset_size))
 
         #Logging
         self._logger = logging.get_logger(__name__)
+
+        #Pre-randomization
+        if self._randomize:
+            random_shuffle(self._shuffled_indices)
 
     def __len__(self):
         """It calculates the number of batches per epoch
@@ -72,24 +82,42 @@ class ImageDataIterator(Sequence):
         start = batch_id*self._batch_size
         end = start + self._batch_size
         
-        self._logger.info("Using dataset:{} slice [{}, {}] for batch_id: {}".format(self._subset, start, end, batch_id))
+        self._logger.info(
+                        "Using dataset:{} slice [{}, {}] for batch_id: {}".format(
+                                                                            ImageDataGeneration.valid_subsets.inv[self._subset],
+                                                                            start,
+                                                                            end,
+                                                                            batch_id))
 
         #Make a data frame slice
         indices_slice = self._shuffled_indices[start:end]
         df_slice = self._dataframe.loc[indices_slice, :]
 
-        return self._image_data_generator._load_slice(df_slice)
+        return self._image_data_generator._load_subset_slice(df_slice, self._subset)
 
     def on_epoch_end(self):
-        self._logger.info("End of epoch. Shuffling the dataset:{}".format(self._subset))
+        self._logger.info("End of epoch. Shuffling the dataset:{}".format(ImageDataGeneration.valid_subsets.inv[self._subset]))
 
         #Shuffle indices before iterating over the datset.
-        random_shuffle(self._shuffled_indices)
+        if self._randomize:
+            random_shuffle(self._shuffled_indices)
+
+@unique
+class ImageDataSubset(Enum):
+    """The enum values for data generator subsets.
+    """
+    Training = 1
+    Validation = 2
+    Prediction = 3
 
 class ImageDataGeneration:
     """It has functionality to create generators to feed data to keras.
     """
-    valid_subsets = ['training', 'validation']
+    valid_subsets = frozenbidict({
+                                    'training' : ImageDataSubset.Training,
+                                    'validation' : ImageDataSubset.Validation,
+                                    'prediction' : ImageDataSubset.Prediction
+                                })
 
     def __init__(self,
                     source, dataframe, target_shape, batch_size,
@@ -97,7 +125,8 @@ class ImageDataGeneration:
                     validation_split = None,
                     normalize = True,
                     cache_size = 512,
-                    transformer = None):
+                    transformer = None,
+                    randomize = True):
         """It initializes the dataframe object.
         
         Arguments:
@@ -112,6 +141,7 @@ class ImageDataGeneration:
             normalize {bool} -- A boolean flag to enable img_obs normalization.
             cache_size {int} -- A integer value to determine the size of the cache.
             transformer {ImageDataTransformation object} -- An ImageDataTransformation object that applies transformation over the images.
+            randomize {boolean} -- It indicates to randomize the dataframe.
         """
         #Required parameters
         self._source = source
@@ -127,6 +157,7 @@ class ImageDataGeneration:
         self._normalize = normalize
         self._cache_size = cache_size
         self._transformer = transformer
+        self._randomize = randomize
 
         #Caching
         self._image_cache = LRUCache(self._cache_size)
@@ -148,17 +179,17 @@ class ImageDataGeneration:
             self._logger.info("Validation split: {} Identified boundary: {}".format(self._validation_split, boundary))
 
             #Split the dataframe into training and validation.
-            self._train_df = self._dataframe.loc[:(boundary - 1), :]
+            self._main_df = self._dataframe.loc[:(boundary - 1), :]
             self._validation_df = self._dataframe.loc[boundary:, :].reset_index(drop=True)
         else:
-            self._train_df = self._dataframe
+            self._main_df = self._dataframe
         
         n_dataframe = len(self._dataframe)
-        n_train_df = len(self._train_df)
+        n_main_df = len(self._main_df)
         n_validation_df = len(self._validation_df) if validation_split is not None else 0
 
         self._logger.info(
-                "Dataframe size: {} training size: {} validation size: {}".format(n_dataframe, n_train_df, n_validation_df))
+                "Dataframe size: {} main set size: {} validation size: {}".format(n_dataframe, n_main_df, n_validation_df))
 
         self._logger.info("Column parameters:: xcols: {} y_col: {}".format(self._x_cols, self._y_col))
 
@@ -168,7 +199,7 @@ class ImageDataGeneration:
         Arguments:
             n_images {An numpy.array object} -- It is a 4-D numpy array containing image data.
         """
-        df_size = len(self._train_df)
+        df_size = len(self._main_df)
         loop_count = 0
         images = set()
 
@@ -176,7 +207,7 @@ class ImageDataGeneration:
             random_index = randrange(df_size)
 
             for image_col in self._x_cols:
-                images.add(self._train_df.loc[random_index, image_col])
+                images.add(self._main_df.loc[random_index, image_col])
 
             loop_count += 1
 
@@ -212,10 +243,20 @@ class ImageDataGeneration:
             subset {string} -- A string to indicate select between training and validation splits.
         """
         #Validate subset parameter
-        if subset not in ImageDataGeneration.valid_subsets:
-            raise ValueError("Valid values of subset are: {}".format(ImageDataGeneration.valid_subsets))
+        if not ImageDataGeneration.valid_subsets.get(subset):
+            raise ValueError("Valid values of subset are: {}".format(list(ImageDataGeneration.valid_subsets.keys())))
 
-        dataframe = self._train_df if subset == 'training' else self._validation_df
+        #Qualified subset
+        q_subset = ImageDataGeneration.valid_subsets[subset]
+
+        #Dataframe placeholder
+        dataframe = None
+        
+        #Pick the correct dataframe
+        if q_subset == ImageDataSubset.Training or q_subset == ImageDataSubset.Prediction:
+            dataframe = self._main_df
+        elif q_subset == ImageDataSubset.Validation:
+            dataframe = self._validation_df
 
         self._logger.info("flow:: subset: {} dataset size: {}".format(subset, len(dataframe)))
 
@@ -223,7 +264,52 @@ class ImageDataGeneration:
                     self,
                     dataframe,
                     self._batch_size,
-                    subset)
+                    q_subset,
+                    randomize = self._randomize)
+
+    def _load_subset_slice(self, df_slice, subset):
+        """It loads the image objects and the labels for the data frame slice.
+        
+        Arguments:
+            df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
+        
+        Returns:
+            {An object} -- A list of image objects in prediction phase. A tuple of image objects and their labels in training phase.
+        """
+        #Results placeholder
+        results = None
+
+        #Load the slice
+        if subset == ImageDataSubset.Training or subset == ImageDataSubset.Validation:
+            results = self._load_train_phase_slice(df_slice)
+        elif subset == ImageDataSubset.Prediction:
+            results = self._load_predict_phase_slice(df_slice)
+
+        return results
+
+    def _load_train_phase_slice(self, df_slice):
+        """It loads the image objects and the labels for the data frame slice.
+        
+        Arguments:
+            df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
+        
+        Returns:
+            (Numpy object, Numpy object) -- A tuple of input data and labels.
+        """
+        return self._load_slice(df_slice)
+
+    def _load_predict_phase_slice(self, df_slice):
+        """It loads the image objects for the data frame slice.
+        
+        Arguments:
+            df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
+        
+        Returns:
+            (Numpy object, Numpy object) -- A tuple of input data and labels.
+        """
+        images, _ = self._load_slice(df_slice)
+
+        return images
 
     def _load_slice(self, df_slice):
         """It loads the image objects for the data frame slice.

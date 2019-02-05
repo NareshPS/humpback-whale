@@ -29,10 +29,10 @@ else:
 DATASET_NAMES = ["train", "test", "train_preprocessed", "test_preprocessed"]
 
 #Siamese tuples
-TRAIN_TUPLE_HEADERS = ['Anchor', 'Sample', 'Label']
-TUPLE_FILE_PREFIX = 'input_tuples'
-TUPLE_FILE_EXTENSION = "tuples"
-TRAIN_TUPLE_LABEL_COL = TRAIN_TUPLE_HEADERS[2]
+INPUT_TUPLE_HEADERS = ['Anchor', 'Sample', 'Label']
+INPUT_TUPLE_FILE_PREFIX = 'input_tuples'
+INPUT_TUPLE_FILE_EXTENSION = "tuples"
+INPUT_TUPLE_LABEL_COL = INPUT_TUPLE_HEADERS[2]
 
 #Input image shape
 INPUT_SHAPE = (224, 224, 3)
@@ -61,3 +61,6 @@ LOG_CONFIGS = {
 DROPBOX_ENDPOINT = "https://content.dropboxapi.com/2/files/upload"
 DROPBOX_APP_PATH_PREFIX = Path('/run_data/')
 DROPBOX_CHUNK_SIZE = 4 * 1024 * 1024 #4 megabytes
+
+#Pandas count aggregation column
+PANDAS_COUNT_AGG_COLUMN = 'Count'

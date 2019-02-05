@@ -33,3 +33,6 @@ pydub
 
 #Dropbox
 dropbox
+
+#Bidirectional dictionary
+bidict
