@@ -1,6 +1,7 @@
 #Keras support
 from keras.applications.resnet50 import ResNet50 as ResNet
 from keras.applications import InceptionV3
+from keras.applications import MobileNetV2
 from keras.layers import Input, Dense, GlobalAveragePooling2D
 from keras.models import Model
 
@@ -19,6 +20,13 @@ from common import logging
 class BaseModel(object):
     """It defines the base models for the network.
     """
+    #Base models
+    base_models = dict({
+                            'inceptionv3' : InceptionV3,
+                            'resnet' : ResNet,
+                            'mobilenet' : MobileNetV2
+                        })
+    
     def __init__(self, base_model_name, input_shape, dimensions, num_unfrozen_base_layers = 0):
         """It initializes the base model parameters.
 
@@ -37,6 +45,13 @@ class BaseModel(object):
         #Derived parameters
         self._operation = Operation(self._num_unfrozen_base_layers, configure_base = False)
 
+        #Validation
+        if BaseModel.base_models.get(base_model_name) is None:
+            raise ValueError(
+                    'Base model: {} is invalid. Supported models are: {}'.format(
+                                                                            base_model_name,
+                                                                            BaseModel.base_models.keys()))
+
         #Logging
         self._logger = logging.get_logger(__name__)
 
@@ -52,17 +67,10 @@ class BaseModel(object):
         """It creates a base model object
         """
         #Base model placeholder to be updated in the if/else clause
-        base_model = None
-        base_model_params = dict(include_top=False, weights='imagenet', input_shape = self._input_shape)
+        base_model_params = dict(include_top=False, weights='imagenet', input_shape = self._input_shape, pooling = 'max')
 
-        if self._base_model_name == constants.FEATURE_MODELS[0]:
-            #Use ResNet to represent images.
-            base_model = ResNet(**base_model_params)
-        elif self._base_model_name == constants.FEATURE_MODELS[1]:
-            #Use Inception V3
-            base_model = InceptionV3(**base_model_params)
-        else:
-            raise ValueError("Invalid base model: {}".format(self._base_model_name))
+        #Base model object
+        base_model = BaseModel.base_models[self._base_model_name](**base_model_params)
 
         return base_model
 
@@ -122,11 +130,8 @@ class BaseModel(object):
 
         #Layer specifications
         layer_specifications = [
-                                    #Pooling
-                                    LayerSpecification(LayerType.GlobalAveragePooling2D),
-
                                     #Dense units
-                                    LayerSpecification(LayerType.Dense, 1024, activation = 'relu'),
+                                    LayerSpecification(LayerType.Dense, 128, activation = 'relu'),
 
                                     #Output unit
                                     LayerSpecification(LayerType.Dense, self._dimensions, activation = 'softmax')

@@ -12,7 +12,7 @@ from pandas import read_csv
 from keras.models import load_model
 
 #Image data generation
-from generation.image import ImageDataGeneration
+from operation.image import ImageDataGeneration
 
 #Useful constants
 from common import constants

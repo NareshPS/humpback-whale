@@ -11,7 +11,7 @@ from common import constants
 import numpy as np
 
 #Transformation
-from generation.image import ImageDataGeneration, ImageDataIterator
+from operation.image import ImageDataGeneration, ImageDataIterator
 
 #Data manipulations
 from pandas import DataFrame

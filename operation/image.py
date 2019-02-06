@@ -10,7 +10,7 @@ from cachetools import LRUCache
 
 #Dataset processing
 from funcy import chunks
-from generation import operations
+from operation import utils
 import numpy as np
 
 #Keras sequence
@@ -368,7 +368,7 @@ class ImageDataGeneration:
         self._logger.info("Cached images: {} missing images: {}".format(cached_images, missing_images))
 
         #Load the missing image objects, and apply parameters.
-        missing_img_objs = operations.imload(self._source, missing_images, self._target_shape)
+        missing_img_objs = utils.imload(self._source, missing_images, self._target_shape)
         missing_img_objs = self._apply_parameters(missing_img_objs)
 
         #Update the cache
@@ -388,7 +388,7 @@ class ImageDataGeneration:
             img_objs {numpy.ndarray} -- A numpy array of image objects.
         """
         if self._normalize:
-            img_objs = operations.normalize(img_objs)
+            img_objs = utils.normalize(img_objs)
 
         return img_objs
 

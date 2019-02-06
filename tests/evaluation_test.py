@@ -16,7 +16,7 @@ from model.evaluation import LabelEvaluation
 from model.evaluation import ModelEvaluation
 
 #Image data generator
-from generation.image import ImageDataGeneration
+from operation.image import ImageDataGeneration
 
 #Load models from the disk
 from keras.models import load_model
@@ -42,10 +42,6 @@ def get_model():
 
     return load_model(str(model_file_path))
 
-def get_generator():
-    input_tuples = get_tuples()
-    generator = ImageDataGeneration()
-
 class TestTupleEvaluation(ut.TestCase):
     def test_init(self):
         with self.assertRaises(ValueError):
@@ -62,7 +58,7 @@ class TestTupleEvaluation(ut.TestCase):
 
         #Tuple evaluation object
         label_evaluation = LabelEvaluation(input_tuples_df)
-        label_pcts = label_evaluation.evaluate(constants.IN)
+        label_pcts = label_evaluation.evaluate(constants.INPUT_TUPLE_LABEL_COL)
 
         #Assert
         self.assertAlmostEqual(label_pcts[0], 66.84491, places = 2)

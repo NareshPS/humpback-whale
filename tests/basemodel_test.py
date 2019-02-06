@@ -33,15 +33,16 @@ class TestBaseModel(ut.TestCase):
         base_model = BaseModel(feature_model_name, test_utils.input_shape, test_utils.dimensions)
 
         #Act & Assert
-        with mock_patch(module_path) as resnet_mock:
+        with mock_patch(module_path) as base_mock:
             base_model._prepare_model = MagicMock()
             base_model._prepare_specification = MagicMock()
             base_model.cnn()
-            resnet_mock.assert_called_once()
+            base_mock.assert_called_once()
 
     def test_cnn_validate_base_model_creation(self):  
-        self.cnn_validate_base_model_creation(constants.FEATURE_MODELS[0], 'keras_applications.resnet50.ResNet50')
-        self.cnn_validate_base_model_creation(constants.FEATURE_MODELS[1], 'keras_applications.inception_v3.InceptionV3')
+        self.cnn_validate_base_model_creation('resnet', 'keras_applications.resnet50.ResNet50')
+        self.cnn_validate_base_model_creation('inceptionv3', 'keras_applications.inception_v3.InceptionV3')
+        self.cnn_validate_base_model_creation('mobilenet', 'keras_applications.mobilenet_v2.MobileNetV2')
 
     def test_cnn_model(self):
         #Arrange
@@ -54,4 +55,3 @@ class TestBaseModel(ut.TestCase):
         self.assertIsNotNone(model)
         self.assertTrue(model.layers[-1].name.startswith(LayerSpecification.layer_prefixes[LayerType.Dense][1]))
         self.assertTrue(model.layers[-2].name.startswith(LayerSpecification.layer_prefixes[LayerType.Dense][1]))
-        self.assertTrue(model.layers[-3].name.startswith(LayerSpecification.layer_prefixes[LayerType.GlobalAveragePooling2D][1]))

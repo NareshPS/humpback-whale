@@ -5,7 +5,7 @@ import unittest as ut
 import numpy as np
 
 #Local imports
-from generation.operations import convolve
+from operation.utils import convolve
 
 class TestOperations(ut.TestCase):
     def test_convolve(self):
