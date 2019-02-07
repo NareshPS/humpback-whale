@@ -189,8 +189,6 @@ if __name__ == '__main__':
             augmented_row = row.copy()
             augmented_row[image_col] = name
 
-            print(type(augmented_row))
-
             #Add to the dataframe
             processed_input_labels_df = processed_input_labels_df.append(augmented_row, ignore_index = True)
 
