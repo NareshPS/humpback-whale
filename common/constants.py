@@ -54,7 +54,8 @@ LOG_CONFIGS = {
                 'unittest' : 'unittest.yml',
                 'evaluate.py' : 'evaluate.yml',
                 'evaluate_inputs.py' : 'evaluate_inputs.yml',
-                'predict.py' : 'predict.yml'
+                'predict.py' : 'predict.yml',
+                'augment.py' : 'augment.yml'
             }
 
 #Dropbox connection configuration
@@ -64,3 +65,10 @@ DROPBOX_CHUNK_SIZE = 4 * 1024 * 1024 #4 megabytes
 
 #Pandas count aggregation column
 PANDAS_COUNT_AGG_COLUMN = 'Count'
+
+#Processed input labels file postfix
+PROCESSED_INPUT_LABELS_POSTFIX = 'output.csv'
+PROCESSED_IMAGE_FILE_EXTENSION = 'jpg'
+
+#PIL Image constants
+PIL_IMAGE_RGB_COLOR_MODE = 'RGB'

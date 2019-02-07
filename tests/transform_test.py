@@ -7,11 +7,11 @@ from common import ut_constants
 #Numpy
 import numpy as np
 
-#Data creation
-import itertools
-
 #Transformation
 from operation.transform import ImageDataTransformation
+
+#Itertools
+import itertools
 
 #Logging
 from common import logging
@@ -81,6 +81,18 @@ class TestImageDataTransformation(ut.TestCase):
         #Logging
         logging.initialize(ut_constants.LOGGING_CLASS)
         self._logger = logging.get_logger(__name__)
+
+    @staticmethod
+    def get_horizontal_flip_examples(flipped = False):
+        #Create image data
+        pixel_values = range(1, 6)
+        image_slice = list(itertools.chain.from_iterable(itertools.repeat(value, 3) for value in pixel_values))
+        image_slice = list(reversed(image_slice)) if flipped else image_slice
+        image_slice = np.asarray(image_slice).reshape(5, 3)
+        image = [image_slice*multiplier for multiplier in range(1, 6)]
+        images = np.asarray(image).reshape(1, 5, 5, 3)
+    
+        return images
 
     @staticmethod
     def get_mean_transformed_examples():
@@ -163,18 +175,6 @@ class TestImageDataTransformation(ut.TestCase):
         self.transform_samplewise_std_normalization(
                 False, #samplewise_std_normalization
                 images)
-
-    @staticmethod
-    def get_horizontal_flip_examples(flipped = False):
-        #Create image data
-        pixel_values = range(1, 6)
-        image_slice = list(itertools.chain.from_iterable(itertools.repeat(value, 3) for value in pixel_values))
-        image_slice = list(reversed(image_slice)) if flipped else image_slice
-        image_slice = np.asarray(image_slice).reshape(5, 3)
-        image = [image_slice*multiplier for multiplier in range(1, 6)]
-        images = np.asarray(image).reshape(1, 5, 5, 3)
-        
-        return images
 
     def transform_horizontal_flip(self, horizontal_flip, images, results):
         #Transformation object

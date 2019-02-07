@@ -69,6 +69,7 @@ if __name__ == "__main__":
                 num_positive_samples, 
                 num_negative_samples)
 
+    #Additional parameters
     logger.info(
                 'Additional parameters input_labels: %s overwrite: %s log_to_console: %s',
                 input_labels,

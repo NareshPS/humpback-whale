@@ -58,6 +58,13 @@ class ImageDataTransformation:
             self.width_shift_range = width_shift_range
             self.height_shift_range = height_shift_range
 
+            #Validation
+            if self.rotation_range is not None and (rotation_range < 0 or rotation_range > 100):
+                raise ValueError('The domain of rotation_range is: [0, 100]')
+
+            if self.shear_range is not None and (shear_range < 0 or shear_range > 100):
+                raise ValueError('The domain of shear_range is: [0, 100]')
+
         def __str__(self):
             return """Parameters::
                         samplewise_mean: {} samplewise_std_normalization: {}
@@ -213,6 +220,9 @@ class ImageDataTransformation:
         Returns:
             A 4-D numpy array containing transformed image data.
         """
+        self._logger.debug('Recieved images: {} for transformation'.format(images.shape))
+
+        #Assign the output variable
         transformed_images = images
 
         if self._parameters.samplewise_mean:

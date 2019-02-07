@@ -10,7 +10,7 @@ model_name = 'model_1'
 dropbox_auth = 'xyz'
 dropbox_path = '/root'
 epoch = 2
-model_file = "{}.{}.h5".format(model_name, epoch)
+model_file = "{}.{}.h5".format(model_name, epoch + 1)
 
 class TestModelDropboxCheckpoint(ut.TestCase):
     def test_init(self):

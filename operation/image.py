@@ -64,9 +64,12 @@ class ImageDataIterator(Sequence):
         Returns:
             {int} -- An integer indicating the number of batches.
         """
+        #Compute steps per epoch
+        steps_per_epoch = int((self._dataset_size + self._batch_size - 1)/self._batch_size)
 
-        batches_per_epoch = int((self._dataset_size + self._batch_size - 1)/self._batch_size)
-        return batches_per_epoch
+        self._logger.info('steps_per_epoch: %d', steps_per_epoch)
+
+        return steps_per_epoch
 
     def __getitem__(self, batch_id):
         """It loads the data for a given batch_id.
@@ -180,7 +183,7 @@ class ImageDataGeneration:
 
             #Split the dataframe into training and validation.
             self._main_df = self._dataframe.loc[:(boundary - 1), :]
-            self._validation_df = self._dataframe.loc[boundary:, :].reset_index(drop=True)
+            self._validation_df = self._dataframe.loc[boundary:, :].reset_index(drop = True)
         else:
             self._main_df = self._dataframe
         
@@ -276,6 +279,8 @@ class ImageDataGeneration:
         Returns:
             {An object} -- A list of image objects in prediction phase. A tuple of image objects and their labels in training phase.
         """
+        self._logger.info('Using subset: %s', subset)
+
         #Results placeholder
         results = None
 

@@ -11,6 +11,12 @@ from os import path
 from keras.preprocessing import image as keras_image
 import numpy as np
 
+#Image write
+from PIL import Image
+
+#Constants
+from common import constants
+
 img_normalizing_factor = 255.
 
 def convolve(images, kernel, mode = 'same'):
@@ -32,28 +38,53 @@ def convolve(images, kernel, mode = 'same'):
 
     return convoluted_images.astype(np.uint8)
 
-def imload(source, images, shape):
+def imload(source, images, shape = None):
     """It loads the images from the source location and returns a numpy object of images.
     
     Arguments:
         source {string} -- A string indicating the location of images.
         images {[string]} -- A list of string of image names.
-        shape {(int, int)} -- A tuple to indicate the shape of the target image.
+        shape {(int, int)} -- A (W, H) tuple to indicate the shape of the target image.
     
     Returns:
         numpy.ndarray -- A numpy array of image objects.
     """
-
     #Resolve image paths
     img_paths = [path.join(source, image) for image in images]
 
     #Load image files
-    img_objs = [keras_image.load_img(img_path, target_size = shape) for img_path in img_paths]
+    img_objs = [Image.open(img_path) for img_path in img_paths]
+
+    #Convert to RGB
+    color_mode = constants.PIL_IMAGE_RGB_COLOR_MODE
+    img_objs = list(map(lambda x : x if x.mode == color_mode else x.convert(color_mode), img_objs))
+
+    #Resize images
+    if shape is not None:
+        img_objs = [img_obj.resize(shape) for img_obj in img_objs]
 
     #Convert them to numpy arrays
     img_objs_arrays = np.asarray([keras_image.img_to_array(img_obj) for img_obj in img_objs])
 
     return img_objs_arrays
+
+def imwrite(destination, images):
+    """It write the images to the destination location.
+    
+    Arguments:
+        destination {A Path object} -- The destination location of the image.
+        images {{string, A numpy array}} -- A dictionary of image name to its value.
+    """
+    #Iterate over all the images.
+    for image_name, image in images.items():
+        #PIL image
+        pil_image = Image.fromarray(image.astype(np.uint8))
+
+        #Destination path
+        image_path = destination / image_name
+
+        #Save the image
+        pil_image.save(image_path)
 
 def normalize(img_objs):
     return img_objs/img_normalizing_factor

@@ -52,4 +52,7 @@ def _apply_console_logging(config, log_to_console):
     if log_to_console:
         config['root']['handlers'].append('console')
 
+        #Overwrite the trace level with console trace level
+        config['root']['level'] = config['handlers']['console']['level']
+
     return config

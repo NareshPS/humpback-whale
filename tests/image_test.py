@@ -141,13 +141,12 @@ class TestImageDataGeneration(ut.TestCase):
         generator = self.get_generator()
 
         #Override _get_image_objects return value
-        image_name = train_tuple_df.loc[0, 'Anchor']
         generator._load_predict_phase_slice = MagicMock()
         generator._load_train_phase_slice = MagicMock()
 
         #Act
         iterator = generator.flow(subset = subset)
-        values = iterator.__getitem__(0)
+        _ = iterator.__getitem__(0)
 
         #Assert
         if calls_prediction:

@@ -17,9 +17,6 @@ from os import path
 #Logging
 from common import logging
 
-#Progress bar
-from tqdm import tqdm
-
 class ModelDropboxCheckpoint(Callback):
     """It creates a model checkpoint and upload it to the dropbox.
     """
@@ -51,7 +48,7 @@ class ModelDropboxCheckpoint(Callback):
             
     def on_epoch_end(self, epoch, logs = None):
         #Model file name
-        model_file = "{}.{}.h5".format(self._model_name, epoch)
+        model_file = "{}.{}.h5".format(self._model_name, epoch + 1)
 
         #Save the trained model.
         self.model.save(model_file)
