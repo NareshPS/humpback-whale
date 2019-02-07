@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     #Required inputs
     label_df = read_csv(input_labels)
-    train_tuples_columns = constants.INPUT_TUPLE_HEADERS
+    input_tuples_columns = constants.INPUT_TUPLE_HEADERS
     output_file_name = Path(
                         "{}_p{}_n{}.{}".format(
                                             constants.INPUT_TUPLE_FILE_PREFIX,
@@ -87,14 +87,36 @@ if __name__ == "__main__":
                                             constants.INPUT_TUPLE_FILE_EXTENSION))
     image_col, label_col = input_cols
 
-    if not output_file_name.exists() or overwrite:
-        #Generation object
-        tuple_generation = TupleGeneration(label_df, image_col, label_col, train_tuples_columns)
-
-        #Tuple DataFrame
-        train_tuple_df = tuple_generation.get_tuples(num_positive_samples, num_negative_samples)
-
-        #Write to disk
-        train_tuple_df.to_csv(output_file_name)
-    else:
+    if output_file_name.exists() and not overwrite:
         raise ValueError("File: {} already exists. Please specify overwrite flag to regenerate.".format(output_file_name))
+        
+    #Generation object
+    tuple_generation = TupleGeneration(label_df, image_col, label_col, input_tuples_columns)
+
+    #Tuple DataFrame
+    input_tuple_df = tuple_generation.get_tuples(num_positive_samples, num_negative_samples)
+
+    #Write to disk
+    input_tuple_df.to_csv(output_file_name)
+
+    #Statistics
+    input_labels_count = len(label_df)
+    input_tuple_count = len(input_tuple_df)
+    expected_tuple_count = (num_positive_samples + num_negative_samples)*input_labels_count
+    deviation = expected_tuple_count - input_tuple_count
+
+    completion_statistics = """
+                                    Tuple Generation Summary
+                                    ====================
+                                    Input labels: {}
+                                    Input tuples: {}
+                                    Expected tuples: {}
+                                    Error: {}
+                                    """.format(
+                                            input_labels_count,
+                                            input_tuple_count,
+                                            expected_tuple_count,
+                                            deviation)
+
+    #Print the statistics
+    print(completion_statistics)

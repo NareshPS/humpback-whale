@@ -18,6 +18,9 @@ from keras.models import load_model
 #Model operation
 from model.operation import Operation
 
+#Base models
+from model.basemodel import BaseModel
+
 #Logger
 logger = None
 program_actions = ['create', 'update']
@@ -98,6 +101,7 @@ def parse_args():
         help = 'It specifies the name of the model.')
     parser.add_argument(
         '-b', '--base_model_name',
+        choices = BaseModel.base_models.keys,
         help = 'It specifies a base model to use for the models.')
     parser.add_argument(
         '-a', '--action',

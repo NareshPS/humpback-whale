@@ -68,7 +68,7 @@ def imload(source, images, shape = None):
 
     return img_objs_arrays
 
-def imwrite(destination, images):
+def imwrite(destination, images_with_name):
     """It write the images to the destination location.
     
     Arguments:
@@ -76,7 +76,7 @@ def imwrite(destination, images):
         images {{string, A numpy array}} -- A dictionary of image name to its value.
     """
     #Iterate over all the images.
-    for image_name, image in images.items():
+    for image_name, image in images_with_name.items():
         #PIL image
         pil_image = Image.fromarray(image.astype(np.uint8))
 

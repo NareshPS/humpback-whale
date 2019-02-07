@@ -37,10 +37,6 @@ INPUT_TUPLE_LABEL_COL = INPUT_TUPLE_HEADERS[2]
 #Input image shape
 INPUT_SHAPE = (224, 224, 3)
 
-#Label mapping input source headers
-IMAGE_HEADER_NAME = "Image"
-LABEL_HEADER_NAME = "Id"
-
 #Feature model options
 FEATURE_MODELS = ["resnet", "inceptionv3"]
 
@@ -67,7 +63,7 @@ DROPBOX_CHUNK_SIZE = 4 * 1024 * 1024 #4 megabytes
 PANDAS_COUNT_AGG_COLUMN = 'Count'
 
 #Processed input labels file postfix
-PROCESSED_INPUT_LABELS_POSTFIX = 'output.csv'
+PROCESSED_INPUT_LABELS_FILE_NAME = 'input_labels.csv'
 PROCESSED_IMAGE_FILE_EXTENSION = 'jpg'
 
 #PIL Image constants

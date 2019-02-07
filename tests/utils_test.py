@@ -59,8 +59,3 @@ class TestOperations(ut.TestCase):
 
         #Assert
         _ = [self.assertTrue((source_loc / image_name).exists()) for image_name in target_image_names]
-
-        
-
-
-
