@@ -99,10 +99,6 @@ def parse_args():
         '--input_tuples_start_batch_id',
         default = 0, type = int,
         help = 'It specifies the the start batch id of input tuples.')
-    parser.add_argument(
-        '--num_input_batches',
-        default = 1, type = int,
-        help = 'It specifies the the number of batches to process.')
 
     args = parser.parse_args()
 
@@ -261,7 +257,6 @@ if __name__ == "__main__":
     #Tuple batch processing parametrs
     input_tuples_batch_size = args.input_tuples_batch_size
     input_tuples_start_batch_id = args.input_tuples_start_batch_id
-    num_input_batches = args.num_input_batches
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -286,10 +281,9 @@ if __name__ == "__main__":
 
     #Tuple batching parameters
     logger.info(
-                'Tuple batch parameters:: input_tuples_batch_size: %d input_tuples_start_batch_id: %d num_input_batches: %d',
+                'Tuple batch parameters:: input_tuples_batch_size: %d input_tuples_start_batch_id: %d',
                 input_tuples_batch_size,
-                input_tuples_start_batch_id,
-                num_input_batches)
+                input_tuples_start_batch_id)
 
     #Predictable randomness
     seed = 3
@@ -338,8 +332,7 @@ if __name__ == "__main__":
     #Input tuples batching
     input_tuples_df = read_csv(input_tuples)
     input_tuples_size = len(input_tuples_df)
-    input_tuples_end_batch_id = input_tuples_start_batch_id + num_input_batches
-    total_num_input_tuples_batches = (input_tuples_size + input_tuples_batch_size - 1) / input_tuples_batch_size
+    input_tuples_end_batch_id = int((input_tuples_size + input_tuples_batch_size - 1) / input_tuples_batch_size)
 
     #Iterate over requested batches
     for input_tuples_batch_id in range(input_tuples_start_batch_id, input_tuples_end_batch_id):
