@@ -96,6 +96,9 @@ if __name__ == "__main__":
     #Tuple DataFrame
     input_tuple_df = tuple_generation.get_tuples(num_positive_samples, num_negative_samples)
 
+    #Shuffle the tuple
+    input_tuple_df = input_tuple_df.sample(frac = 1).reset_index(drop = True)
+
     #Write to disk
     input_tuple_df.to_csv(output_file_name)
 

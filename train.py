@@ -42,10 +42,9 @@ def parse_args():
         required = True,
         help = 'It specifies the name of the model to train.')
     parser.add_argument(
-        '-d', '--dataset',
-        default = 'train',
-        choices = constants.DATASET_NAMES,
-        help = 'It specifies the dataset to use for training.')
+        '-d', '--dataset_location',
+        required = True, type = Path,
+        help = 'It specifies the input dataset location.')
     parser.add_argument(
         '-i', '--input_tuples',
         required = True, type = Path,
@@ -239,7 +238,7 @@ if __name__ == "__main__":
 
     #Extract command line parameters
     model_name = args.model_name
-    dataset = args.dataset
+    dataset_location = args.dataset_location
     n_inputs = args.num_inputs
     n_epochs = args.epochs
     batch_size = args.batch_size
@@ -259,9 +258,9 @@ if __name__ == "__main__":
 
     #Log input parameters
     logger.info(
-                'Running with parameters model_name: %s dataset: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
+                'Running with parameters model_name: %s dataset_location: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
                 model_name,
-                dataset,
+                dataset_location,
                 n_inputs,
                 n_epochs,
                 batch_size,
@@ -283,7 +282,6 @@ if __name__ == "__main__":
 
     #Required parameters
     input_shape = constants.INPUT_SHAPE[:2]
-    dataset_loc = constants.DATASET_MAPPINGS[dataset]
 
     #Validation
     if not input_tuples.exists():
@@ -316,13 +314,13 @@ if __name__ == "__main__":
     logger.info("Training set size: {} image_cols: {} label_col: {}".format(len(input_tuples_df), image_cols, label_col))
 
     #Train
-    model = train(model_name, dataset_loc, input_tuples_df,
+    model = train(model_name, dataset_location, input_tuples_df,
                     input_shape, image_cols, validation_split,
                     batch_size, cache_size, n_fit_images, learning_rate,
                     dropbox_auth, dropbox_dir, n_epochs)
 
     #Verification
     verify(model,
-            dataset_loc, input_tuples_df, 
+            dataset_location, input_tuples_df, 
             input_shape, batch_size, cache_size,
             num_prediction_steps)
