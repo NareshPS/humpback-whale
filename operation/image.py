@@ -370,7 +370,7 @@ class ImageDataGeneration:
         cached_images = set(img_objs.keys())
         missing_images = [image for image in candidate_images if not image in cached_images]
 
-        self._logger.info("Cached images: {} missing images: {}".format(cached_images, missing_images))
+        self._logger.debug("Cached images: {} missing images: {}".format(cached_images, missing_images))
 
         #Load the missing image objects, and apply parameters.
         missing_img_objs = utils.imload(self._source, missing_images, self._target_shape)

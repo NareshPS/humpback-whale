@@ -7,19 +7,20 @@ from model.callback import ModelDropboxCheckpoint
 
 #Parameters
 model_name = 'model_1'
+input_tuples_batch_id = 2
 dropbox_auth = 'xyz'
 dropbox_path = '/root'
 epoch = 2
-model_file = "{}.{}.h5".format(model_name, epoch + 1)
+model_file = "{}.{}.{}.h5".format(model_name, input_tuples_batch_id + 1, epoch + 1)
 
 class TestModelDropboxCheckpoint(ut.TestCase):
     def test_init(self):
         #Act and Assert
         with self.assertRaises(ValueError):
-            ModelDropboxCheckpoint(model_name, dropbox_auth)
+            ModelDropboxCheckpoint(model_name, input_tuples_batch_id, dropbox_auth)
 
-        ModelDropboxCheckpoint(model_name)
-        ModelDropboxCheckpoint(model_name, dropbox_auth, dropbox_path)
+        ModelDropboxCheckpoint(model_name, input_tuples_batch_id)
+        ModelDropboxCheckpoint(model_name, input_tuples_batch_id, dropbox_auth, dropbox_path)
 
     def on_epoch_end(self, checkpoint, call_dropbox):
         #Arrange
@@ -39,17 +40,16 @@ class TestModelDropboxCheckpoint(ut.TestCase):
         else:
             self.assertIsNone(checkpoint._dropbox)
 
-
     def test_on_epoch_end_dropbox_called(self):
         #Arrange
-        checkpoint = ModelDropboxCheckpoint(model_name, dropbox_auth, dropbox_path)
+        checkpoint = ModelDropboxCheckpoint(model_name, input_tuples_batch_id, dropbox_auth, dropbox_path)
 
         #Act & Assert
         self.on_epoch_end(checkpoint, True)
 
     def test_on_epoch_end_dropbox_not_called(self):
         #Arrange
-        checkpoint = ModelDropboxCheckpoint(model_name)
+        checkpoint = ModelDropboxCheckpoint(model_name, input_tuples_batch_id)
 
         #Act & Assert
         self.on_epoch_end(checkpoint, False)

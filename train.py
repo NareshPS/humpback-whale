@@ -50,16 +50,12 @@ def parse_args():
         required = True, type = Path,
         help = 'It specifies the path to the input tuples file.')
     parser.add_argument(
-        '-n', '--num_inputs',
-        type = int, nargs = '?',
-        help = 'It specifies the number of inputs to use for training')
-    parser.add_argument(
         '-e', '--epochs',
         default = 50, type = int,
         help = 'It specifies the number of training epochs.')
     parser.add_argument(
-        '-b', '--batch_size',
-        default = 32, type = int,
+        '-b', '--training_batch_size',
+        default = 128, type = int,
         help = 'It specifies the training batch size.')
     parser.add_argument(
         '-c', '--cache_size',
@@ -95,20 +91,35 @@ def parse_args():
         '--num_prediction_steps',
         default = 2, type = int,
         help = 'The number of steps to use for verification by prediction')
+    parser.add_argument(
+        '--input_tuples_batch_size',
+        default = 100000, type = int,
+        help = 'It specifies the the batch size of input tuples that will be trained in one go.')
+    parser.add_argument(
+        '--input_tuples_start_batch_id',
+        default = 0, type = int,
+        help = 'It specifies the the start batch id of input tuples.')
+    parser.add_argument(
+        '--num_input_batches',
+        default = 1, type = int,
+        help = 'It specifies the the number of batches to process.')
 
     args = parser.parse_args()
 
     return args
 
-def train(model_name, dataset_loc, input_tuples_df,
+def train(model, model_name, dataset_loc,
+            input_tuples_batch_id, input_tuples_df,
             input_shape, transform_x_cols, validation_split,
             batch_size, cache_size, n_fit_images, learning_rate,
             dropbox_auth, dropbox_dir, n_epochs):
     """It executes the training.
     
     Arguments:
-        model_name {string} -- The name of the model.
+        model {A keras model object} -- The keras model object.
+        model_name {string} - The name of the model.
         dataset_loc {A Path object} -- The location of the image dataset.
+        input_tuples_batch_id {int} -- The input tuples batch id.
         input_tuples_df {A pandas DataFrame} -- The input tuples.
         input_shape {(int, int)} -- HxW dimensions of the images.
         transform_x_cols {[string]} -- The list of column names containing the image names that will be transformed.
@@ -125,18 +136,17 @@ def train(model_name, dataset_loc, input_tuples_df,
     logger = logging.get_logger(__name__)
 
     #Output files
-    model_file = model_name + ".h5"
-    history_file = model_name + ".history"
+    history_file = "{}.{}.history".format(model_name, input_tuples_batch_id)
 
     #Input tuple columns
     image_cols = constants.INPUT_TUPLE_HEADERS[0:2]
     label_col = constants.INPUT_TUPLE_LABEL_COL
 
+    #Training trace
+    logger.info('Training input_tuples_batch_id: %d', input_tuples_batch_id)
+
     #Output files
-    logger.info(
-                'Output files:: model_file: %s history_file: %s',
-                model_file,
-                history_file)
+    logger.info('Output files:: history_file: %s', history_file)
 
     #Transformer
     transformer = ImageDataTransformation(parameters = transformation_params)
@@ -160,18 +170,15 @@ def train(model_name, dataset_loc, input_tuples_df,
     #Validation flow
     validation_gen = datagen.flow(subset = 'validation') if validation_split else None
 
-    #Load the model
-    model = load_model(model_file)
-    logger.info("Loaded model from: {}".format(model_file))
-
     if learning_rate:
         #Update the learning rate
-        logger.info("Switching leraning rate from: {} to: {}".format(K.get_value(model.optimizer.lr), learning_rate))
+        logger.info("Switching learning rate from: {} to: {}".format(K.get_value(model.optimizer.lr), learning_rate))
         K.set_value(model.optimizer.lr, learning_rate)
         
     #Training callbacks
     dropbox_callback = ModelDropboxCheckpoint(
                                 model_name,
+                                input_tuples_batch_id,
                                 dropbox_auth = dropbox_auth,
                                 dropbox_dir = dropbox_dir)
 
@@ -239,9 +246,8 @@ if __name__ == "__main__":
     #Extract command line parameters
     model_name = args.model_name
     dataset_location = args.dataset_location
-    n_inputs = args.num_inputs
     n_epochs = args.epochs
-    batch_size = args.batch_size
+    training_batch_size = args.training_batch_size
     cache_size = args.cache_size
     log_to_console = args.log_to_console
     validation_split = args.validation_split
@@ -252,18 +258,22 @@ if __name__ == "__main__":
     input_tuples = args.input_tuples
     num_prediction_steps = args.num_prediction_steps
 
+    #Tuple batch processing parametrs
+    input_tuples_batch_size = args.input_tuples_batch_size
+    input_tuples_start_batch_id = args.input_tuples_start_batch_id
+    num_input_batches = args.num_input_batches
+
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
     logger = logging.get_logger(__name__)
 
     #Log input parameters
     logger.info(
-                'Running with parameters model_name: %s dataset_location: %s n_inputs: %s n_epochs: %d batch_size: %d cache_size: %d',
+                'Running with parameters model_name: %s dataset_location: %s n_epochs: %d training_batch_size: %d cache_size: %d',
                 model_name,
                 dataset_location,
-                n_inputs,
                 n_epochs,
-                batch_size,
+                training_batch_size,
                 cache_size)
 
     #Additional parameters
@@ -273,6 +283,13 @@ if __name__ == "__main__":
                 validation_split,
                 learning_rate,
                 input_tuples)
+
+    #Tuple batching parameters
+    logger.info(
+                'Tuple batch parameters:: input_tuples_batch_size: %d input_tuples_start_batch_id: %d num_input_batches: %d',
+                input_tuples_batch_size,
+                input_tuples_start_batch_id,
+                num_input_batches)
 
     #Predictable randomness
     seed = 3
@@ -287,12 +304,14 @@ if __name__ == "__main__":
     if not input_tuples.exists():
         raise ValueError('The input tuples file: {} is not found'.format(input_tuples))
 
-    input_tuples_df = read_csv(input_tuples)
-    input_tuples_df = input_tuples_df.loc[:(n_inputs - 1), :] if n_inputs else input_tuples_df
-
     #Input tuple columns
     image_cols = constants.INPUT_TUPLE_HEADERS[0:2]
     label_col = constants.INPUT_TUPLE_LABEL_COL
+
+    logger.info(
+                'Input tuple columns:: image_cols: %s label_col: %s',
+                image_cols,
+                label_col)
 
     #Transformation parameters
     logger.info('Transformation parameters: %s', transformation_params)
@@ -310,17 +329,44 @@ if __name__ == "__main__":
     
     logger.info('Dropbox parameters:: dir: %s', dropbox_dir)
 
-    #Log training metadata
-    logger.info("Training set size: {} image_cols: {} label_col: {}".format(len(input_tuples_df), image_cols, label_col))
+    #Load the model
+    model_file = "{}.h5".format(model_name)
+    model = load_model(model_file)
 
-    #Train
-    model = train(model_name, dataset_location, input_tuples_df,
-                    input_shape, image_cols, validation_split,
-                    batch_size, cache_size, n_fit_images, learning_rate,
-                    dropbox_auth, dropbox_dir, n_epochs)
+    logger.info("Loaded model from: {}".format(model_file))
 
-    #Verification
-    verify(model,
-            dataset_location, input_tuples_df, 
-            input_shape, batch_size, cache_size,
-            num_prediction_steps)
+    #Input tuples batching
+    input_tuples_df = read_csv(input_tuples)
+    input_tuples_size = len(input_tuples_df)
+    input_tuples_end_batch_id = input_tuples_start_batch_id + num_input_batches
+    total_num_input_tuples_batches = (input_tuples_size + input_tuples_batch_size - 1) / input_tuples_batch_size
+
+    #Iterate over requested batches
+    for input_tuples_batch_id in range(input_tuples_start_batch_id, input_tuples_end_batch_id):
+        #DataFrame start and end location for the iteration
+        start_dataframe_idx = input_tuples_batch_id * input_tuples_batch_size
+        end_dataframe_idx = start_dataframe_idx + input_tuples_batch_size
+
+        #DataFrame batch
+        input_tuples_df_batch = input_tuples_df.loc[start_dataframe_idx:end_dataframe_idx, :].reset_index(drop = True)
+
+        #Log training metadata
+        logger.info(
+                    'Training tuples:: input_tuples_batch_id: %d input_tuples_batch_size: %d start_dataframe_idx: %d end_dataframe_idx: %d',
+                    input_tuples_batch_id,
+                    input_tuples_batch_size,
+                    start_dataframe_idx,
+                    end_dataframe_idx)
+
+        #Train
+        model = train(model, model_name, dataset_location,
+                        input_tuples_batch_id, input_tuples_df_batch,
+                        input_shape, image_cols, validation_split,
+                        training_batch_size, cache_size, n_fit_images, learning_rate,
+                        dropbox_auth, dropbox_dir, n_epochs)
+
+        #Verification
+        verify(model, dataset_location,
+                input_tuples_df_batch, 
+                input_shape, training_batch_size, cache_size,
+                num_prediction_steps)

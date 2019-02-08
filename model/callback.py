@@ -20,11 +20,25 @@ from common import logging
 class ModelDropboxCheckpoint(Callback):
     """It creates a model checkpoint and upload it to the dropbox.
     """
-    def __init__(self, model_name, dropbox_auth = None, dropbox_dir = None):
+    def __init__(self, model_name, input_tuples_batch_id, dropbox_auth = None, dropbox_dir = None):
+        """It initializes the parameters.
+        
+        Arguments:
+            model_name {string} -- The name of the model
+            input_tuples_batch_id {int} -- The input tuples batch id.
+        
+        Keyword Arguments:
+            dropbox_auth {string} -- The authentication token to access dropbox. (default: {None})
+            dropbox_dir {Path} -- The path to destination dropbox folder. (default: {None})
+        
+        Raises:
+            ValueError -- If dropbox_auth is specified without dropbox_dir.
+        """
         super(ModelDropboxCheckpoint, self).__init__()
 
         #Required parameters
         self._model_name = model_name
+        self._input_tuples_batch_id = input_tuples_batch_id
 
         #Additional parameters
         self._dropbox_dir = dropbox_dir
@@ -48,7 +62,7 @@ class ModelDropboxCheckpoint(Callback):
             
     def on_epoch_end(self, epoch, logs = None):
         #Model file name
-        model_file = "{}.{}.h5".format(self._model_name, epoch + 1)
+        model_file = "{}.{}.{}.h5".format(self._model_name, self._input_tuples_batch_id + 1, epoch + 1)
 
         #Save the trained model.
         self.model.save(model_file)
