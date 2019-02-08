@@ -72,3 +72,7 @@ class ModelDropboxCheckpoint(Callback):
         if self._dropbox:
             self._dropbox.upload(model_file)
             self._logger.info('Uploaded the model to dropbox: %s', model_file)
+
+            #Remove the file after the upload is complete
+            Path(model_file).unlink()
+            self._logger.info('Deleted the local file: %s', model_file)

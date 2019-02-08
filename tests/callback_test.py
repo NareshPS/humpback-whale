@@ -1,9 +1,13 @@
 #Unittests
 import unittest as ut
 from unittest.mock import MagicMock
+from unittest.mock import patch as mock_patch
 
 #Callback
 from model.callback import ModelDropboxCheckpoint
+
+#Path manipulation
+from pathlib import Path
 
 #Parameters
 model_name = 'model_1'
@@ -29,8 +33,14 @@ class TestModelDropboxCheckpoint(ut.TestCase):
         if call_dropbox is True:
             checkpoint._dropbox.upload = MagicMock()
 
-        #Act
-        checkpoint.on_epoch_end(epoch)
+            #Act
+            with mock_patch.object(Path, 'unlink') as mock_unlink:
+                checkpoint.on_epoch_end(epoch)
+
+                #Assert
+                mock_unlink.assert_called_once()
+        else:
+            checkpoint.on_epoch_end(epoch)
 
         #Assert
         checkpoint.model.save.assert_called_with(model_file)
