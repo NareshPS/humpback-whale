@@ -4,6 +4,9 @@ from collections import defaultdict
 from random import sample as random_sample
 from funcy import without
 
+#Progress bar
+from tqdm import tqdm
+
 #Logging
 from common import logging
 
@@ -87,7 +90,7 @@ class TupleGeneration(object):
         labelled_images = self._get_labelled_images()
 
         samples = []
-        for _, label_images in labelled_images.items():
+        for _, label_images in tqdm(labelled_images.items(), desc = 'Generating input tuples', total = len(labelled_images)):
             #Available samples
             n_avail_positive_samples = min(num_positive_samples, len(label_images))
             n_avail_negative_samples = num_negative_samples
