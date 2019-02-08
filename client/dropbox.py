@@ -4,6 +4,7 @@
 from dropbox import Dropbox
 from dropbox.files import UploadSessionCursor as Dropbox_UploadSessionCursor
 from dropbox.files import CommitInfo as Dropbox_CommitInfo
+from dropbox.files import WriteMode as Dropbox_WriteMode
 
 #Constants
 from common import constants
@@ -88,7 +89,7 @@ class DropboxConnection:
             handle {A File handle} -- The source file handle.
             remote_file_path {string} -- The destination path of the file.
         """
-        self._client.files_upload(handle.read(), remote_file_path)
+        self._client.files_upload(handle.read(), remote_file_path, mode = Dropbox_WriteMode.overwrite)
 
     def _upload_large_file(self, handle, upload_size, remote_file_path):
         """It uploads a large source files to the dropbox.
@@ -101,7 +102,6 @@ class DropboxConnection:
         #Upload session
         session = self._client.files_upload_session_start(handle.read(constants.DROPBOX_CHUNK_SIZE))
         cursor = Dropbox_UploadSessionCursor(session_id = session.session_id, offset = handle.tell())
-        commit = Dropbox_CommitInfo(path = remote_file_path)
 
         #Upload look
         with tqdm(desc = 'Uploading: {}'.format(remote_file_path), total = upload_size) as pbar:
@@ -114,6 +114,10 @@ class DropboxConnection:
 
                 #If it is the last chunk, finalize the upload
                 if remaining_bytes <= constants.DROPBOX_CHUNK_SIZE:
+                    #Commit info              
+                    commit = Dropbox_CommitInfo(path = remote_file_path, mode = Dropbox_WriteMode.overwrite)
+
+                    #Finish upload
                     self._client.files_upload_session_finish(
                                     handle.read(remaining_bytes),
                                     cursor,
