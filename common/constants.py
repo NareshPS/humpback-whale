@@ -46,7 +46,7 @@ LOG_CONFIGS = {
                 'siamese_input_tuples.py' : 'siamese_input_tuples.yml',
                 'model_generation.py' : 'model_generation.yml',
                 'insights.py' : 'insights.yml',
-                'train.py' : 'train.yml',
+                'siamese_train.py' : 'siamese_train.yml',
                 'unittest' : 'unittest.yml',
                 'evaluate.py' : 'evaluate.yml',
                 'evaluate_inputs.py' : 'evaluate_inputs.yml',
