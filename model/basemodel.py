@@ -127,14 +127,17 @@ class BaseModel(object):
         Returns:
             [A ModelSpecification object] -- A model specification objects that defines attachments to the base model.
         """
+        #Layer args
+        kwargs = dict(kernel_initializer = 'he_normal')
 
         #Layer specifications
         layer_specifications = [
                                     #Dense units
-                                    LayerSpecification(LayerType.Dense, 128, activation = 'relu'),
+                                    LayerSpecification(LayerType.Dense, 128, activation = 'relu', **kwargs),
+                                    LayerSpecification(LayerType.Dropout, 0.5),
 
                                     #Output unit
-                                    LayerSpecification(LayerType.Dense, self._dimensions, activation = 'softmax')
+                                    LayerSpecification(LayerType.Dense, self._dimensions, activation = 'softmax', **kwargs)
                                 ]
 
         #Model specification

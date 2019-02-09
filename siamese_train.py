@@ -22,6 +22,9 @@ from imgaug import seed as imgaug_seed
 #Save checkpoints
 from model.callback import ModelDropboxCheckpoint
 
+#Dropbox store
+from client.dropbox import DropboxConnection
+
 #Constants
 from common import constants
 
@@ -103,6 +106,36 @@ def parse_args():
     args = parser.parse_args()
 
     return args
+
+def download_files(files_to_download, auth_token, remote_dir_path):
+    """It downloads the files from dropbox.
+    
+    Arguments:
+        files_to_download {[Path]} -- The list of files to download.
+        auth_token {string} -- The authentication token for the dropbox application.
+        remote_dir_path {Path} -- The name of the dropbox folder that contains the files.
+    """
+    #Validation
+    if files_to_download is None or len(files_to_download) == 0:
+        raise ValueError('Got invalid list of files to download: {}'.format(files_to_download))
+
+    if auth_token is None:
+        raise ValueError('The auth_token must be valid.')
+
+    if remote_dir_path is None:
+        raise ValueError('The remote_dir_path must be valid.')
+
+    #Logging
+    logger = logging.get_logger(__name__)
+
+    #Dropbox connection
+    client = DropboxConnection(auth_token, remote_dir_path)
+
+    for remote_file_name in files_to_download:
+        logger.info('Starting download:: %s', remote_file_name)
+        
+        client.download(remote_file_name)
+        logger.info('Finished download:: %s', remote_file_name)
 
 def train(model, model_name, dataset_loc,
             input_tuples_batch_id, input_tuples_df,
@@ -323,10 +356,36 @@ if __name__ == "__main__":
     
     logger.info('Dropbox parameters:: dir: %s', dropbox_dir)
 
-    #Load the model
-    model_file = "{}.h5".format(model_name)
-    model = load_model(model_file)
+    #Vanilla model file name
+    model_file = Path("{}.h5".format(model_name))
 
+    #Intermediate model file name
+    if input_tuples_start_batch_id != 0:
+        #Create remote model file name
+        remote_model_file = Path("{}.{}.{}.h5".format(model_name, input_tuples_start_batch_id, 1))
+
+        #Download the file if it does not exists
+        if not remote_model_file.exists():
+            #Download the model file
+            download_files([remote_model_file], dropbox_auth, dropbox_dir)
+
+            #Verify the download
+            if not remote_model_file.exists():
+                raise ValueError('Download of: {} failed'.format(remote_model_file))
+
+            logger.info('Downloaded the remote model file as: %s', remote_model_file)
+
+        if model_file.exists():
+            #Delete existing model file
+            model_file.unlink()
+
+            logger.info('Deleted the model file: %s', model_file)
+
+        #Rename the downloaded file to its vanilla name
+        remote_model_file.rename(model_file)
+        logger.info('Renamed: %s to %s', remote_model_file, model_file)
+    
+    model = load_model(str(model_file))
     logger.info("Loaded model from: {}".format(model_file))
 
     #Input tuples batching

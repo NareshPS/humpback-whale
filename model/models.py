@@ -39,21 +39,26 @@ def siamese_network(base_model_name, input_shape, feature_dims, learning_rate, n
     anchor_features = base_model.cnn()(anchor_input)
     sample_features = base_model.cnn()(sample_input)
 
+    #Layer arrgs
+    kwargs = dict(kernel_initializer = 'he_normal')
+
     #Layer specifications
     layer_specifications = [
                                 #Unit 1
                                 LayerSpecification(LayerType.Concatenate),
-                                LayerSpecification(LayerType.Dense, 16, activation = 'linear'),
+                                LayerSpecification(LayerType.Dense, 16, activation = 'linear', **kwargs),
                                 LayerSpecification(LayerType.Normalization),
                                 LayerSpecification(LayerType.Activation, 'relu'),
+                                LayerSpecification(LayerType.Dropout, 0.5),
 
                                 #Unit 2
-                                LayerSpecification(LayerType.Dense, 4, activation = 'linear'),
+                                LayerSpecification(LayerType.Dense, 4, activation = 'linear', **kwargs),
                                 LayerSpecification(LayerType.Normalization),
                                 LayerSpecification(LayerType.Activation, 'relu'),
+                                LayerSpecification(LayerType.Dropout, 0.5),
 
                                 #Output unit
-                                LayerSpecification(LayerType.Dense, 1, activation = 'sigmoid')
+                                LayerSpecification(LayerType.Dense, 1, activation = 'sigmoid', **kwargs)
                             ]
 
     #Model specification
