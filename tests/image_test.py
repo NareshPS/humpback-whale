@@ -38,6 +38,7 @@ class TestImageDataGeneration(ut.TestCase):
                         train_set_loc, train_tuple_df,
                         input_shape[:2], #Input shape
                         1, #Batch size
+                        2, #Number of classes
                         image_cols, label_col,
                         transform_x_cols = None,
                         transformer = None)
@@ -47,6 +48,7 @@ class TestImageDataGeneration(ut.TestCase):
                         train_set_loc, train_tuple_df,
                         input_shape[:2], #Input shape
                         1, #Batch size
+                        2, #Number of classes
                         image_cols, label_col,
                         transform_x_cols = transform_x_cols,
                         transformer = transformer)
@@ -88,6 +90,7 @@ class TestImageDataGeneration(ut.TestCase):
                         train_set_loc, train_tuple_df,
                         input_shape[:2], #Input shape
                         1, #Batch size
+                        2, #Number of classes
                         image_cols, label_col,
                         transformer = transformer)
 

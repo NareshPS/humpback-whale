@@ -69,7 +69,7 @@ def parse_args():
         help = 'It specifies the names of the image column in the dataframe that are to be transformed.')
     parser.add_argument(
         '--label_col',
-        required = True, nargs = 1,
+        required = True,
         help = 'It specifies the names of the label column.')
     parser.add_argument(
         '--session_id',
@@ -138,7 +138,6 @@ def parse_args():
 def train(
         model,
         set_id,
-        num_sets,
         input_data_df,
         input_data_params,
         training_params,
@@ -151,7 +150,6 @@ def train(
     Arguments:
         model {A keras model object} -- The keras model object.
         set_id {int} -- The set id of the current training data frame.
-        num_sets {int} -- The total number of sets in the training session.
         input_data_df {A pandas DataFrame} -- The input data.
         input_data_params {A InputDataParameters object} -- It contains the input parameters.
         training_params {A TrainingParameters object} -- It contains training parameters.
@@ -168,7 +166,8 @@ def train(
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGeneration(
                     input_data_params.dataset_location, input_data_df,
-                    input_data_params.input_shape[:2], training_params.batch_size,
+                    input_data_params.input_shape[:2], training_params.batch_size, 
+                    input_data_params.num_classes,
                     input_data_params.image_cols, input_data_params.label_col,
                     transform_x_cols = input_data_params.image_transform_cols,
                     validation_split = training_params.validation_split,
@@ -197,7 +196,7 @@ def train(
                                 input_data_params.model_name,
                                 input_data_params.session_id,
                                 set_id,
-                                num_sets,
+                                input_data_params.num_df_sets,
                                 dropbox_auth = dropbox_auth,
                                 dropbox_dir = dropbox_dir)
 
@@ -227,6 +226,7 @@ def verify(model, input_tuples_df, input_data_params, training_params):
                         input_tuples_df, 
                         input_data_params.input_shape[:2],
                         training_params.batch_size,
+                        input_data_params.num_classes,
                         input_data_params.image_cols,
                         input_data_params.label_col,
                         cache_size = training_params.image_cache_size,
@@ -268,9 +268,6 @@ if __name__ == "__main__":
     transformation_params = ImageDataTransformation.Parameters.parse(dict(args.transformations))
     logger.info('Transformation parameters: %s', transformation_params)
 
-    #Extract other parameters
-
-
     #Dropbox parameters
     dropbox_parameters = args.dropbox_parameters
     dropbox_auth = None
@@ -296,6 +293,13 @@ if __name__ == "__main__":
     #Input data frame
     input_data_df = read_csv(input_data_file_path)
     num_df_sets = ceil(len(input_data_df) / input_data_params.input_data_training_set_size)
+    num_classes = len(set(input_data_df[input_data_params.label_col]))
+
+    #Update input data parameters
+    input_data_params_update = dict(
+                                    num_classes = num_classes,
+                                    num_df_sets = num_df_sets)
+    input_data_params.update(**input_data_params_update)
  
     #Model input
     model_input = ModelInput(
@@ -325,17 +329,12 @@ if __name__ == "__main__":
         input_data_df_set = input_data_df.loc[start_df_idx:end_df_idx, :].reset_index(drop = True)
 
         #Log training metadata
-        logger.info(
-                    'Training tuples:: set_id: %d start_df_idx: %d end_df_idx: %d',
-                    set_id,
-                    start_df_idx,
-                    end_df_idx)
+        logger.info('Training tuples:: set_id: %d start_df_idx: %d end_df_idx: %d', set_id, start_df_idx, end_df_idx)
 
         #Train
         model = train(
                     model,
                     set_id,
-                    num_df_sets,
                     input_data_df_set,
                     input_data_params,
                     training_params,

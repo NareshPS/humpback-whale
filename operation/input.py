@@ -48,6 +48,8 @@ class InputDataParameters(object):
         self.image_cols = args.image_cols
         self.label_col = args.label_col
         self.input_shape = tuple(args.input_shape)
+        self.num_classes = None
+        self.num_df_sets = None
 
         #Optional parameters
         self.image_transform_cols = args.image_transform_cols
@@ -59,17 +61,25 @@ class InputDataParameters(object):
         if self.dataset_location is None or not self.dataset_location.exists():
             raise ValueError('The dataset location must be valid')
 
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     def __str__(self):
             return """Parameters::
                         model_name: {} dataset_location: {}
-                        input_data: {} 
+                        input_data: {} session_id: {}
                         input_data_training_set_size: {} input_data_training_set_id: {}
-                        image_cols: {} label_col: {} image_transform_cols: {}""".format(
-                                                                                    self.model_name,
-                                                                                    self.dataset_location,
-                                                                                    self.input_data,
-                                                                                    self.input_data_training_set_size,
-                                                                                    self.input_data_training_set_id,
-                                                                                    self.image_cols,
-                                                                                    self.label_col,
-                                                                                    self.image_transform_cols)
+                        image_cols: {} label_col: {} image_transform_cols: {}
+                        num_classes: {} num_df_sets: {}""".format(
+                                                                self.model_name,
+                                                                self.dataset_location,
+                                                                self.input_data,
+                                                                self.session_id,
+                                                                self.input_data_training_set_size,
+                                                                self.input_data_training_set_id,
+                                                                self.image_cols,
+                                                                self.label_col,
+                                                                self.image_transform_cols,
+                                                                self.num_classes,
+                                                                self.num_df_sets)

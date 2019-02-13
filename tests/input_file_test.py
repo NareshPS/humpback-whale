@@ -84,7 +84,7 @@ class TestInputFiles(ut.TestCase):
                 self.assertEqual(file_path_hint, file_path_verified)
 
             #Assert
-            self.assertSequenceEqual(file_paths, list(valid_file_paths.keys()))
+            self.assertCountEqual(file_paths, list(valid_file_paths.keys()))
 
     def test_get_all_just_local_files(self):
         #Arrange

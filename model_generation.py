@@ -238,11 +238,11 @@ if __name__ == "__main__":
     model_name = "{}_{}".format(name, base_model_name)
     model_input = ModelInput(model_name, 1, 1, 2)
 
-    logger.info('Output files model_file: %s', model_input.file_name())
+    logger.info('Output files model_file: %s', model_input.last_saved_file_name())
 
     #Run action
-    model = act(action, name, base_model_name, model_input.file_name(), input_shape, args)
+    model = act(action, name, base_model_name, model_input.last_saved_file_name(), input_shape, args)
 
     #Save the trained model.
-    model.save(str(model_input.file_name()))
-    logger.info("Saved model to: {}".format(model_input.file_name()))
+    model.save(str(model_input.last_saved_file_name()))
+    print("Saved model to: {}".format(model_input.last_saved_file_name()))

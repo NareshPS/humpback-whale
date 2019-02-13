@@ -17,6 +17,9 @@ from operation.input import InputDataParameters
 model_name = 'model_name'
 dataset_location = Path()
 
+num_classes = 5
+num_df_sets = 2
+
 class TestInputDataParameters(ut.TestCase):
     @classmethod
     def get_args(cls, model_name, dataset_location):
@@ -56,3 +59,18 @@ class TestInputDataParameters(ut.TestCase):
 
         args = TestInputDataParameters.get_args(model_name, dataset_location)
         _ = InputDataParameters(args)
+
+    def test_update(self):
+        #Arrange
+        args = TestInputDataParameters.get_args(model_name, dataset_location)
+        input_parameters = InputDataParameters(args)
+        additional_kwargs = dict(
+                                num_classes = num_classes,
+                                num_df_sets = num_df_sets)
+
+        #Act
+        input_parameters.update(**additional_kwargs)
+
+        #Assert
+        self.assertEqual(num_classes, input_parameters.num_classes)
+        self.assertEqual(num_df_sets, input_parameters.num_df_sets)

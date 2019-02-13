@@ -16,6 +16,9 @@ import numpy as np
 #Keras sequence
 from keras.utils import Sequence
 
+#To categorical
+from keras.utils import to_categorical
+
 #Enum
 from enum import Enum, unique
 from bidict import frozenbidict
@@ -123,7 +126,7 @@ class ImageDataGeneration:
                                 })
 
     def __init__(self,
-                    source, dataframe, target_shape, batch_size,
+                    source, dataframe, target_shape, batch_size, num_classes,
                     x_cols, y_col, transform_x_cols = [],
                     validation_split = None,
                     normalize = True,
@@ -137,6 +140,7 @@ class ImageDataGeneration:
             dataframe {Pandas DataFrame} -- A pandas dataframe object with columnar data with image names and labels.
             target_shape {(width, height)} -- A tuple that indicates the target image dimensions.
             batch_size {int} -- A number indicating the size of each batch.
+            num_classes {int} -- It indicates the number of classes of the target label.
             validation_split {float} -- A float indicating the fraction of validation split of the dataset.
             x_cols {[string]} -- A list of column names with image paths.
             y_col {[type]} -- The column name for labels.
@@ -161,6 +165,7 @@ class ImageDataGeneration:
         self._transformer = transformer
         self._randomize = randomize
         self._transform_x_cols = transform_x_cols or []
+        self._num_classes = num_classes
 
         #Caching
         self._image_cache = LRUCache(self._cache_size)
@@ -327,6 +332,7 @@ class ImageDataGeneration:
         """
         #Process labels
         df_slice_y = df_slice[self._y_col].values
+        df_slice_y_categorical = df_slice_y if self._num_classes == 2 else to_categorical(df_slice_y)
 
         #Process image columns
         df_slice_x = []  
@@ -345,7 +351,7 @@ class ImageDataGeneration:
 
             df_slice_x.append(img_objs)
 
-        return (df_slice_x, df_slice_y)
+        return (df_slice_x, df_slice_y_categorical)
 
     def _get_image_objects(self, images):
         """It loads the image objects for the list of images.
