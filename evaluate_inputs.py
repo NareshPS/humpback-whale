@@ -31,6 +31,10 @@ def parse_args():
         required = True, nargs = 2,
         help = 'It specifies the tuple of the names of image and label column in the dataframe.')
     parser.add_argument(
+        '--output_cols',
+        required = True, nargs = '+',
+        help = 'It specifies the column names of the output dataframe.')
+    parser.add_argument(
         '-p', '--num_positive_samples',
         required = True, type = int,
         help = 'It defines the number of positive samples per image.')
@@ -45,11 +49,11 @@ def parse_args():
 
     args = parser.parse_args()
     
-    return args.input_labels, args.input_cols, args.num_positive_samples, args.num_negative_samples, args.log_to_console
+    return args.input_labels, args.input_cols, args.output_cols, args.num_positive_samples, args.num_negative_samples, args.log_to_console
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    input_labels, input_cols, num_positive_samples, num_negative_samples, log_to_console = parse_args()
+    input_labels, input_cols, output_cols, num_positive_samples, num_negative_samples, log_to_console = parse_args()
     
     #Required parameters
     image_col, label_col = input_cols
@@ -66,6 +70,8 @@ if __name__ == "__main__":
                 num_positive_samples,
                 num_negative_samples)
 
+    logger.info('Parameters:: output_cols: %s', output_cols)
+
     #Additional parameters
     logger.info('Additional parameters log_to_console: %s', log_to_console)
 
@@ -77,9 +83,9 @@ if __name__ == "__main__":
     label_df = read_csv(input_labels)
 
     #Tuple generation
-    generation = TupleGeneration(label_df, image_col, label_col, constants.INPUT_TUPLE_HEADERS)
+    generation = TupleGeneration(label_df, image_col, label_col, output_cols)
     input_tuples = generation.get_tuples(num_positive_samples, num_negative_samples)
 
     #Label evaluation
     label_evaluation = LabelEvaluation(input_tuples)
-    print(tuple_evaluation.evaluate(constants.INPUT_TUPLE_LABEL_COL))
+    print(label_evaluation.evaluate(output_cols[-1]))
