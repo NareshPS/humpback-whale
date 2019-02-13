@@ -24,6 +24,9 @@ from keras.models import load_model
 #Logging
 from common import logging
 
+#Common parameters
+label_col = 'Label'
+
 def get_tuples():
     #Tuples file name
     input_tuples_file_name = 'input_tuples_p5_n5.tuples'
@@ -58,7 +61,7 @@ class TestTupleEvaluation(ut.TestCase):
 
         #Tuple evaluation object
         label_evaluation = LabelEvaluation(input_tuples_df)
-        label_pcts = label_evaluation.evaluate(constants.INPUT_TUPLE_LABEL_COL)
+        label_pcts = label_evaluation.evaluate(label_col)
 
         #Assert
         self.assertAlmostEqual(label_pcts[0], 66.84491, places = 2)
@@ -85,4 +88,4 @@ class TestModelEvaluation(ut.TestCase):
         model_evaluation = ModelEvaluation(TestModelEvaluation.input_tuples, TestModelEvaluation.model)
 
         #Act
-        model_evaluation.evaluate(constants.INPUT_TUPLE_LABEL_COL)
+        model_evaluation.evaluate(label_col)

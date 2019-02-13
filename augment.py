@@ -42,9 +42,13 @@ def parse_args():
         required = True, type = Path,
         help = 'It specifies the location to write the output files.')
     parser.add_argument(
-        '-i', '--input_labels',
+        '-i', '--input_file',
         required = True, type = Path,
-        help = 'It specifies the location of the input labels in csv format.')
+        help = 'It specifies the location of the input data in csv format.')
+    parser.add_argument(
+        '--output_file',
+        required = True, type = Path,
+        help = 'It specifies the location of the output data in csv format.')
     parser.add_argument(
         '-n', '--num_inputs',
         type = int, nargs = '?',
@@ -105,7 +109,8 @@ if __name__ == '__main__':
 
     dataset_location = args.dataset_location
     output_dataset_location = args.output_dataset_location
-    input_labels = args.input_labels
+    input_file = args.input_file
+    output_file = args.output_file
     num_inputs = args.num_inputs
     image_col = args.image_col
     target_shape = tuple(args.target_shape)
@@ -116,50 +121,38 @@ if __name__ == '__main__':
     logger = logging.get_logger(__name__)
 
     #Log input parameters
-    logger.info(
-                'Running with parameters dataset_location: %s output_dataset_location: %s input_labels: %s',
-                dataset_location,
-                output_dataset_location,
-                input_labels)
-
-    #Additional parameters
-    logger.info(
-                'Additional parameters image_col: %s target_shape: %s num_inputs: %s log_to_console: %s',
-                image_col,
-                target_shape,
-                num_inputs,
-                log_to_console)
+    logger.info('Parameters:: dataset_location: %s output_dataset_location: %s', dataset_location, output_dataset_location)
+    logger.info('Parameters:: input_file: %s output_file: %s', input_file, output_file)
+    logger.info('Parameters:: image_col: %s target_shape: %s', image_col, target_shape)
+    logger.info('Parameters:: num_inputs: %s log_to_console: %s', num_inputs, log_to_console)
 
     ### Validation Start ###
     #Source location
     if not dataset_location.exists():
         raise ValueError('Dataset location: {} is not found.'.format(dataset_location))
 
-    #Input labels
-    if not input_labels.exists():
-        raise ValueError('Input labels: {} is not found.'.format(input_labels))
-
     #Destination location
     if not output_dataset_location.exists():
         output_dataset_location.mkdir(parents = True, exist_ok = True)
+
+    #Input labels
+    if not input_file.exists():
+        raise ValueError('Input file: {} is not found.'.format(input_file))
     ### Validation End ###
 
     #Required inputs
-    input_label_df = read_csv(input_labels)
-    input_label_df = input_label_df.loc[:(num_inputs - 1), :] if num_inputs else input_label_df
+    input_df = read_csv(input_file)
+    input_df = input_df.loc[:(num_inputs - 1), :] if num_inputs else input_df
 
     ####################################### Augment the dataset [Start]############################################
     #Image augmentation
     augmentation_executor = get_augmentation_executor()
 
-    #Processed input labels file name
-    processed_input_labels_file = constants.PROCESSED_INPUT_LABELS_FILE_NAME
-
-    #Processed input labels dataframe
-    processed_input_labels_df = DataFrame(columns = list(input_label_df))
+    #Output dataframe
+    output_df = DataFrame(columns = list(input_df))
 
     #Augment images
-    for _, row in tqdm(input_label_df.iterrows(), total = len(input_label_df), desc = 'Augmenting images'):
+    for _, row in tqdm(input_df.iterrows(), total = len(input_df), desc = 'Augmenting images'):
         #Extract the image name
         image_name = row[image_col]
 
@@ -171,8 +164,11 @@ if __name__ == '__main__':
 
         logger.debug('Augmented image objects: {}'.format(augmented_objs.shape))
 
+        #Image path
+        image_path = Path(image_name)
+
         #Create target image names
-        target_image_names = ["{}-{}.{}".format(Path(image_name).stem, index, constants.PROCESSED_IMAGE_FILE_EXTENSION) for index in range(len(augmented_objs) + 1)]
+        target_image_names = ["{}-{}{}".format(image_path.stem, index, image_path.suffix) for index in range(len(augmented_objs) + 1)]
         target_image_objs = np.concatenate([image_objs, augmented_objs], axis = 0)
 
         logger.debug('Reshaped image objects: {}'.format(target_image_objs.shape))
@@ -183,44 +179,44 @@ if __name__ == '__main__':
         #Write images to the disk
         imwrite(output_dataset_location, augmented_image_name_and_objects)
 
-        #Add to input tuples dataframe
+        #Add to output dataframe
         for name, _ in augmented_image_name_and_objects.items():
             #Augmented row
             augmented_row = row.copy()
             augmented_row[image_col] = name
 
             #Add to the dataframe
-            processed_input_labels_df = processed_input_labels_df.append(augmented_row, ignore_index = True)
+            output_df = output_df.append(augmented_row, ignore_index = True)
 
     ####################################### Augment the dataset [End]############################################
 
-    #Shuffle the processed input labels dataframe
-    processed_input_labels_df = processed_input_labels_df.sample(frac = 1).reset_index(drop = True)
+    #Shuffle the output dataframe
+    output_df = output_df.sample(frac = 1).reset_index(drop = True)
 
-    #Write the new input label dataframe
-    processed_input_labels_df.to_csv(processed_input_labels_file)
+    #Write the output dataframe
+    output_df.to_csv(output_file)
 
     #Statistics
-    input_dataset_size = len(input_label_df)
-    augmented_dataset_size = sum(1 for _ in output_dataset_location.iterdir())
-    expected_dataset_size = input_dataset_size * (len(augmentation_executor) + 1)
-    deviation = expected_dataset_size - augmented_dataset_size
-    output_dataframe_size = len(processed_input_labels_df)
+    input_size = len(input_df)
+    generated_output_size = sum(1 for _ in output_dataset_location.iterdir())
+    expected_output_size = input_size * (len(augmentation_executor) + 1)
+    deviation = expected_output_size - generated_output_size
+    output_size = len(output_df)
 
     completion_statistics = """
                                     Augmentation Summary
                                     ====================
-                                    Initial dataset size: {}
-                                    Augmented dataset size: {}
-                                    Expected augmented dataset size: {}
+                                    Input size: {}
+                                    Generated output size: {}
+                                    Expected output size: {}
                                     Error: {}
-                                    Output DataFrame Size: {}
+                                    Output Size: {}
                                     """.format(
-                                            input_dataset_size,
-                                            augmented_dataset_size,
-                                            expected_dataset_size,
+                                            input_size,
+                                            generated_output_size,
+                                            expected_output_size,
                                             deviation,
-                                            output_dataframe_size)
+                                            output_size)
 
     #Output the statistics
     print(completion_statistics)

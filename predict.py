@@ -33,14 +33,26 @@ def parse_args():
         required = True,
         help = 'It specifies the name of the model to evaluate.')
     parser.add_argument(
-        '-d', '--dataset',
-        default = 'test',
-        choices = constants.DATASET_NAMES,
-        help = 'It specifies the dataset to use for training.')
-    parser.add_argument(
-        '-i', '--input_tuples',
+        '-d', '--dataset_location',
         required = True, type = Path,
-        help = 'It specifies the path to the input tuples file.')
+        help = 'It specifies the input dataset location.')
+    parser.add_argument(
+        '-i', '--input_data',
+        required = True, type = Path,
+        help = 'It specifies the path to the input data file.')
+    parser.add_argument(
+        '--image_cols',
+        required = True, nargs = '+',
+        help = 'It specifies the names of the image column in the dataframe.')
+    parser.add_argument(
+        '--label_col',
+        required = True, nargs = 1,
+        help = 'It specifies the names of the label column.')
+    parser.add_argument(
+        '--input_shape',
+        default = [224, 224, 3],
+        type = int, nargs = 3,
+        help = 'It specifies the shape of the image input.')
     parser.add_argument(
         '-p', '--dropbox_parameters',
         nargs = 2,
@@ -71,8 +83,11 @@ if __name__ == "__main__":
     args = parse_args()
 
     model_name = args.model_name
-    dataset = args.dataset
-    input_tuples = args.input_tuples
+    dataset_location = args.dataset_location
+    input_data = args.input_data
+    image_cols = args.image_cols
+    label_col = args.label_col
+    input_shape = args.input_shape
     dropbox_parameters = args.dropbox_parameters
     num_steps = args.num_steps
     batch_size = args.batch_size
@@ -85,11 +100,17 @@ if __name__ == "__main__":
 
     #Log input parameters
     logger.info(
-                'Running with parameters model_name: %s dataset: %s input_tuples: %s num_steps: %s',
+                'Running with parameters model_name: %s dataset_location: %s input_data: %s num_steps: %s',
                 model_name,
-                dataset,
-                input_tuples,
+                dataset_location,
+                input_data,
                 num_steps)
+
+    logger.info(
+                'Parameters:: image_cols: %s label_col: %s input_shape: %s',
+                image_cols,
+                label_col,
+                input_shape)
 
     #Log additional parameters
     logger.info(
@@ -102,12 +123,6 @@ if __name__ == "__main__":
     seed = 3
     np_seed(seed)
     tf_seed(seed)
-
-    #Required parameters
-    input_shape = constants.INPUT_SHAPE
-    dataset_loc = constants.DATASET_MAPPINGS[dataset]
-    image_cols = constants.INPUT_TUPLE_HEADERS[:2]
-    label_col = constants.INPUT_TUPLE_LABEL_COL
 
     #Dropbox
     dropbox = None
@@ -139,11 +154,11 @@ if __name__ == "__main__":
     model = load_model(str(model_file))
     logger.info("Loaded model from: {}".format(model_file))
 
-    input_tuples_df = read_csv(input_tuples)
+    input_data_df = read_csv(input_data)
 
     #Create a data generator to be used for fitting the model.
     datagen = ImageDataGeneration(
-                    dataset_loc, input_tuples_df, 
+                    dataset_location, input_data_df, 
                     input_shape[:2], batch_size,
                     image_cols, label_col,
                     cache_size = cache_size,
@@ -157,5 +172,5 @@ if __name__ == "__main__":
                             generator = predict_gen,
                             steps = num_steps)
 
-    print(input_tuples_df.loc[0:10, :])
+    print(input_data_df.loc[0:10, :])
     print(predictions)

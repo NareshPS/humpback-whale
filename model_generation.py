@@ -21,6 +21,9 @@ from model.operation import Operation
 #Base models
 from model.basemodel import BaseModel
 
+#Inputs
+from operation.input_file import ModelInput
+
 #Logger
 logger = None
 program_actions = ['create', 'update']
@@ -100,6 +103,11 @@ def parse_args():
         required = True,
         help = 'It specifies the name of the model.')
     parser.add_argument(
+        '--input_shape',
+        default = [224, 224, 3],
+        type = int, nargs = 3,
+        help = 'It specifies the shape of the image input.')
+    parser.add_argument(
         '-b', '--base_model_name',
         choices = list(BaseModel.base_models.keys()),
         help = 'It specifies a base model to use for the models.')
@@ -117,14 +125,15 @@ def parse_args():
 
     args = parser.parse_args()
 
-    return args.name, args.base_model_name, args.action, args.action_parameters, args.log_to_console
+    return args.name, args.input_shape, args.base_model_name, args.action, args.action_parameters, args.log_to_console
 
-def create(name, base_model_name, args):
+def create(name, base_model_name, input_shape, args):
     """It creates a model based on the input parameters.
     
     Arguments:
         name {string} -- A string to represent the name of the model.
         base_model_name {string} -- A string to represent the base model to use.
+        input_shape {(W, H, C)} -- It specifies the shape of the image input.
         args {An ArgParse object} -- It provides access to the input parameters
     """
     #Input parameters
@@ -139,9 +148,6 @@ def create(name, base_model_name, args):
     
     #Model function
     model_func = getattr(models, name)
-
-    #Required parameters
-    input_shape = constants.INPUT_SHAPE
 
     #Create the model
     model = model_func(base_model_name, input_shape, dimensions, learning_rate, num_unfrozen_base_layers)
@@ -185,7 +191,7 @@ def update(model_file_name, args):
 
     return model
 
-def act(action, name, base_model_name, model_file, args):
+def act(action, name, base_model_name, model_file, input_shape, args):
     """It runs the input action with the input arguments.
     
     Arguments:
@@ -193,12 +199,13 @@ def act(action, name, base_model_name, model_file, args):
         name {string} -- A string to represent the name of the model.
         base_model_name {string} -- A string to represent the base model to use.
         model_file {string} -- The name of the model file.
+        input_shape {(W, H, C)} -- It specifies the shape of the image input.
         args {An object} -- An argument object.
     """
     model = None
 
     if action == program_actions[0]:
-        model = create(name, base_model_name, args)
+        model = create(name, base_model_name, input_shape, args)
     elif action == program_actions[1]:
         model = update(model_file, args)
 
@@ -206,7 +213,7 @@ def act(action, name, base_model_name, model_file, args):
 
 if __name__ == "__main__":
     #Extract command line parameters
-    name, model_file_name, action, action_parameters, log_to_console = parse_args()
+    name, input_shape, base_model_name, action, action_parameters, log_to_console = parse_args()
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
@@ -214,9 +221,10 @@ if __name__ == "__main__":
 
     #Log input parameters
     logger.info(
-                'Running with parameters name: %s model_file_name: %s action: %s action_parameters: %s',
+                'Running with parameters name: %s input_shape: %s base_model_name: %s action: %s action_parameters: %s',
                 name,
-                model_file_name,
+                input_shape,
+                base_model_name,
                 action,
                 action_parameters)
 
@@ -227,13 +235,14 @@ if __name__ == "__main__":
     args = parse_action_parameters(action, action_parameters)
 
     #Output files
-    model_file = "{}_{}.h5".format(name, model_file_name)
+    model_name = "{}_{}".format(name, base_model_name)
+    model_input = ModelInput(model_name, 1, 1, 2)
 
-    logger.info('Output files model_file: %s', model_file)
+    logger.info('Output files model_file: %s', model_input.file_name())
 
     #Run action
-    model = act(action, name, model_file_name, model_file, args)
+    model = act(action, name, base_model_name, model_input.file_name(), input_shape, args)
 
     #Save the trained model.
-    model.save(model_file)
-    logger.info("Saved model to: {}".format(model_file))
+    model.save(str(model_input.file_name()))
+    logger.info("Saved model to: {}".format(model_input.file_name()))

@@ -46,7 +46,7 @@ class TestBaseModel(ut.TestCase):
 
     def test_cnn_model(self):
         #Arrange
-        base_model = BaseModel(constants.FEATURE_MODELS[1], test_utils.input_shape, test_utils.dimensions)
+        base_model = BaseModel('inceptionv3', test_utils.input_shape, test_utils.dimensions)
 
         #Act
         model = base_model.cnn()
@@ -54,4 +54,4 @@ class TestBaseModel(ut.TestCase):
         #Assert
         self.assertIsNotNone(model)
         self.assertTrue(model.layers[-1].name.startswith(LayerSpecification.layer_prefixes[LayerType.Dense][1]))
-        self.assertTrue(model.layers[-2].name.startswith(LayerSpecification.layer_prefixes[LayerType.Dense][1]))
+        self.assertTrue(model.layers[-2].name.startswith(LayerSpecification.layer_prefixes[LayerType.Dropout][1]))

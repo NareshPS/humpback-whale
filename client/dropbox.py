@@ -5,6 +5,7 @@ from dropbox import Dropbox
 from dropbox.files import UploadSessionCursor as Dropbox_UploadSessionCursor
 from dropbox.files import CommitInfo as Dropbox_CommitInfo
 from dropbox.files import WriteMode as Dropbox_WriteMode
+from dropbox.exceptions import ApiError
 
 #Constants
 from common import constants
@@ -20,7 +21,7 @@ from common import logging
 #Progress bar
 from tqdm import tqdm
 
-class DropboxConnection:
+class DropboxConnection(object):
     def __init__(self, auth_token, remote_dir_path):
         #Required parameters
         self._remote_dir_path = remote_dir_path
@@ -153,8 +154,13 @@ class DropboxConnection:
         #Remote file path
         remote_file_path = constants.DROPBOX_APP_PATH_PREFIX / self._remote_dir_path / remote_file_name
 
-        #Get file size
-        download_size = self._client.files_get_metadata(remote_file_path.as_posix()).size
+        #Download file size placeholder
+        download_size = 0
+        
+        try:
+            download_size = self._client.files_get_metadata(remote_file_path.as_posix()).size
+        except ApiError as e:
+            raise FileNotFoundError('File: {} is not found'.format(remote_file_path.as_posix()), e)
 
         #Destination file name
         dest_file_name = remote_file_path.name

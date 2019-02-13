@@ -153,7 +153,6 @@ class ImageDataGeneration:
         self._target_shape = target_shape
         self._x_cols = x_cols
         self._y_col = y_col
-        self._transform_x_cols = transform_x_cols
 
         #Optional parameters
         self._validation_split = validation_split
@@ -161,6 +160,7 @@ class ImageDataGeneration:
         self._cache_size = cache_size
         self._transformer = transformer
         self._randomize = randomize
+        self._transform_x_cols = transform_x_cols or []
 
         #Caching
         self._image_cache = LRUCache(self._cache_size)
@@ -326,8 +326,7 @@ class ImageDataGeneration:
             (Numpy object, Numpy object) -- A tuple of input data and labels.
         """
         #Process labels
-        df_slice_y = np.asarray(df_slice[self._y_col].tolist())
-        df_slice_y = np.expand_dims(df_slice_y, axis = -1)
+        df_slice_y = df_slice[self._y_col].values
 
         #Process image columns
         df_slice_x = []  

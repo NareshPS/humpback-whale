@@ -17,20 +17,30 @@ from operation.image import ImageDataGeneration, ImageDataIterator
 from pandas import DataFrame
 from pandas import read_csv
 
-columns = constants.INPUT_TUPLE_HEADERS
+columns = ['Anchor', 'Sample', 'Label']
 train_tuple_df = DataFrame(
                     [['0000e88ab.jpg', '0000e88ab.jpg', 1]],
                     columns = columns)
 train_set_loc = ut_constants.TRAIN_STORE
 input_tuples_file_name = 'input_tuples_p5_n5.tuples'
 
-input_shape = constants.INPUT_SHAPE
-image_cols = constants.INPUT_TUPLE_HEADERS[0:2]
-label_col = constants.INPUT_TUPLE_LABEL_COL
+input_shape = (224, 224, 3)
+image_cols = columns[:2]
+label_col = columns[-1]
 
 class TestImageDataGeneration(ut.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestImageDataGeneration, self).__init__(*args, **kwargs)
+
+    def test_init(self):
+        #With None transform columns
+        _ = ImageDataGeneration(
+                        train_set_loc, train_tuple_df,
+                        input_shape[:2], #Input shape
+                        1, #Batch size
+                        image_cols, label_col,
+                        transform_x_cols = None,
+                        transformer = None)
 
     def flow_transformer(self, transformer, transform_x_cols):
         generator = ImageDataGeneration(

@@ -7,6 +7,9 @@ from keras.callbacks import Callback
 #Dropbox
 from client.dropbox import DropboxConnection
 
+#Inputs
+from operation.input_file import ModelInput
+
 #Constants
 from common import constants
 
@@ -20,12 +23,14 @@ from common import logging
 class ModelDropboxCheckpoint(Callback):
     """It creates a model checkpoint and upload it to the dropbox.
     """
-    def __init__(self, model_name, input_tuples_batch_id, dropbox_auth = None, dropbox_dir = None):
+    def __init__(self, model_name, session_id, set_id, num_sets, dropbox_auth = None, dropbox_dir = None):
         """It initializes the parameters.
         
         Arguments:
             model_name {string} -- The name of the model
-            input_tuples_batch_id {int} -- The input tuples batch id.
+            session_id {int} -- The identifier of the training session.
+            set_id {int} -- The input data set id.
+            num_sets {int} -- The total number of input sets
         
         Keyword Arguments:
             dropbox_auth {string} -- The authentication token to access dropbox. (default: {None})
@@ -38,7 +43,9 @@ class ModelDropboxCheckpoint(Callback):
 
         #Required parameters
         self._model_name = model_name
-        self._input_tuples_batch_id = input_tuples_batch_id
+        self._session_id = session_id
+        self._set_id = set_id
+        self._num_sets = num_sets
 
         #Additional parameters
         self._dropbox_dir = dropbox_dir
@@ -61,18 +68,18 @@ class ModelDropboxCheckpoint(Callback):
         self._tf_session = K.get_session()
             
     def on_epoch_end(self, epoch, logs = None):
-        #Model file name
-        model_file = "{}.{}.{}.h5".format(self._model_name, self._input_tuples_batch_id + 1, epoch + 1)
+        #Model input
+        model_input = ModelInput(self._model_name, self._session_id, self._set_id, self._num_sets)
 
         #Save the trained model.
-        self.model.save(model_file)
-        self._logger.info('Wrote the model object: %s', model_file)
+        self.model.save(str(model_input.file_name()))
+        self._logger.info('Wrote the model object: %s', model_input.file_name())
 
         #Upload the model
         if self._dropbox:
-            self._dropbox.upload(model_file)
-            self._logger.info('Uploaded the model to dropbox: %s', model_file)
+            self._dropbox.upload(model_input.file_name())
+            self._logger.info('Uploaded the model to dropbox: %s', model_input.file_name())
 
             #Remove the file after the upload is complete
-            Path(model_file).unlink()
-            self._logger.info('Deleted the local file: %s', model_file)
+            model_input.file_name().unlink()
+            self._logger.info('Deleted the local file: %s', model_input.file_name())

@@ -27,7 +27,6 @@ def siamese_network(base_model_name, input_shape, feature_dims, learning_rate, n
     Returns:
         {A Model object} -- A keras model.
     """
-
     #Base model
     base_model = BaseModel(base_model_name, input_shape, feature_dims, num_unfrozen_base_layers)
 
@@ -75,3 +74,31 @@ def siamese_network(base_model_name, input_shape, feature_dims, learning_rate, n
     network.summary()
 
     return network
+
+def cnn(base_model_name, input_shape, feature_dims, learning_rate, num_unfrozen_base_layers = 0):
+    """It creates a convolutional network model using the input as a base model.
+    
+    Arguments:
+        base_model_name {string} -- A string containing the name of a base model.
+        input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
+        feature_dims {int} -- An integer indicating the dimensions of the feature vector.
+        learning_rate {float} -- A float value to control speed of learning.
+        num_unfrozen_base_layers {int} -- The number of bottom layers of base model to train.
+    
+    Returns:
+        {A Model object} -- A keras model.
+    """
+    #Base model
+    base_model = BaseModel(base_model_name, input_shape, feature_dims, num_unfrozen_base_layers)
+    
+    #Model
+    model = base_model.cnn()
+
+    #Create an optimizer object
+    adam_optimizer = Adam(lr = learning_rate)
+
+    #Compile the model
+    model.compile(loss = 'categorical_crossentropy', optimizer = adam_optimizer, metrics = ['accuracy'])
+    model.summary()
+
+    return model
