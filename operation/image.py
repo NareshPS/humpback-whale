@@ -332,7 +332,7 @@ class ImageDataGeneration:
         """
         #Process labels
         df_slice_y = df_slice[self._y_col].values
-        df_slice_y_categorical = df_slice_y if self._num_classes == 2 else to_categorical(df_slice_y)
+        df_slice_y_categorical = df_slice_y if self._num_classes == 2 else to_categorical(df_slice_y, num_classes = self._num_classes)
 
         #Process image columns
         df_slice_x = []  

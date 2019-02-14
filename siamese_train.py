@@ -300,6 +300,8 @@ if __name__ == "__main__":
                                     num_classes = num_classes,
                                     num_df_sets = num_df_sets)
     input_data_params.update(**input_data_params_update)
+
+    logger.info('Input data parameters: %s', input_data_params)
  
     #Model input
     model_input = ModelInput(
