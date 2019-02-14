@@ -98,7 +98,7 @@ def cnn(base_model_name, input_shape, feature_dims, learning_rate, num_unfrozen_
     adam_optimizer = Adam(lr = learning_rate)
 
     #Compile the model
-    model.compile(loss = 'categorical_crossentropy', optimizer = adam_optimizer, metrics = ['accuracy'])
+    model.compile(loss = 'categorical_crossentropy', optimizer = adam_optimizer, metrics = ['categorical_accuracy'])
     model.summary()
 
     return model
