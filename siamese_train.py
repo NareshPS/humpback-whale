@@ -295,6 +295,10 @@ if __name__ == "__main__":
     num_df_sets = ceil(len(input_data_df) / input_data_params.input_data_training_set_size)
     num_classes = len(set(input_data_df[input_data_params.label_col]))
 
+    #Shuffle input dataframe for sed_id == 1
+    if input_data_params.input_data_training_set_id == 1:
+        input_data_df = input_data_df.sample(frac = 1).reset_index(drop = True)
+
     #Update input data parameters
     input_data_params_update = dict(
                                     num_classes = num_classes,
