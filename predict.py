@@ -13,6 +13,13 @@ from keras.models import load_model
 
 #Image data generation
 from operation.image import ImageDataGeneration
+from operation.input import InputParameters, TrainingParameters, ImageGenerationParameters, update_params
+
+#Predictions
+from operation.prediction import Prediction
+
+#Numpy operations
+from numpy import nonzero
 
 #Useful constants
 from common import constants
@@ -45,8 +52,12 @@ def parse_args():
         required = True, nargs = '+',
         help = 'It specifies the names of the image column in the dataframe.')
     parser.add_argument(
+        '--image_transform_cols',
+        nargs = '+',
+        help = 'It specifies the names of the image column in the dataframe that are to be transformed.')
+    parser.add_argument(
         '--label_col',
-        required = True, nargs = 1,
+        required = True,
         help = 'It specifies the names of the label column.')
     parser.add_argument(
         '--input_shape',
@@ -58,15 +69,15 @@ def parse_args():
         nargs = 2,
         help = 'It specifies dropbox parameters required to download the checkpoints.')
     parser.add_argument(
-        '-n', '--num_steps',
-        type = int,
-        help = 'It specifies the number of predict steps.')
+        '--num_prediction_steps',
+        default = 2, type = int,
+        help = 'The number of steps to use for verification by prediction')
     parser.add_argument(
         '-b', '--batch_size',
         default = 32, type = int,
         help = 'It specifies the prediction batch size.')
     parser.add_argument(
-        '-c', '--cache_size',
+        '-c', '--image_cache_size',
         default = 32, type = int,
         help = 'It specifies the image cache size.')
     parser.add_argument(
@@ -82,16 +93,12 @@ if __name__ == "__main__":
     #Parse commandline arguments
     args = parse_args()
 
-    model_name = args.model_name
-    dataset_location = args.dataset_location
-    input_data = args.input_data
-    image_cols = args.image_cols
-    label_col = args.label_col
-    input_shape = args.input_shape
+    #Required params
+    input_params = InputParameters(args)
+    image_generation_params = ImageGenerationParameters(args)
+    num_prediction_steps = args.num_prediction_steps
+
     dropbox_parameters = args.dropbox_parameters
-    num_steps = args.num_steps
-    batch_size = args.batch_size
-    cache_size = args.cache_size
     log_to_console = args.log_to_console
 
     #Initialize logging
@@ -99,25 +106,8 @@ if __name__ == "__main__":
     logger = logging.get_logger(__name__)
 
     #Log input parameters
-    logger.info(
-                'Running with parameters model_name: %s dataset_location: %s input_data: %s num_steps: %s',
-                model_name,
-                dataset_location,
-                input_data,
-                num_steps)
-
-    logger.info(
-                'Parameters:: image_cols: %s label_col: %s input_shape: %s',
-                image_cols,
-                label_col,
-                input_shape)
-
-    #Log additional parameters
-    logger.info(
-                'Additional parameters: batch_size: %d cache_size: %d log_to_console: %s',
-                batch_size,
-                cache_size,
-                log_to_console)
+    logger.info('Running with parameters input_params: %s num_prediction_steps: %s', input_params, num_prediction_steps)
+    logger.info('Additional parameters: image_generation_params: %s log_to_console: %s', image_generation_params, log_to_console)
 
     #Predictable randomness
     seed = 3
@@ -136,7 +126,7 @@ if __name__ == "__main__":
         logger.info('Dropbox parameters:: dropbox_remote_dir: %s', dropbox_remote_dir)
 
     #Model file
-    model_file = Path("{}.h5".format(model_name))
+    model_file = Path("{}.h5".format(input_params.model_name))
 
     #Local file does not exist. Verify if dropbox parameters are provided to enable download.
     if not model_file.exists() and not dropbox:
@@ -150,27 +140,39 @@ if __name__ == "__main__":
     if not model_file.exists():
         raise ValueError("Model file: {} is not found.".format(model_file))
 
-    #Load the model
+    #Load model
     model = load_model(str(model_file))
-    logger.info("Loaded model from: {}".format(model_file))
 
-    input_data_df = read_csv(input_data)
+    #Input dataframe
+    input_data_df = read_csv(input_params.input_data, index_col = 0)
 
-    #Create a data generator to be used for fitting the model.
-    datagen = ImageDataGeneration(
-                    dataset_location, input_data_df, 
-                    input_shape[:2], batch_size,
-                    image_cols, label_col,
-                    cache_size = cache_size,
-                    randomize = False)
+    #Update input data parameters
+    num_classes = len(getattr(input_data_df, image_generation_params.label_col).unique())
+    image_generation_params_update = dict(num_classes = num_classes)
+    update_params(image_generation_params, **image_generation_params_update)
+    logger.info('Updated image generation parameters: %s', image_generation_params)
 
-    #Training flow
-    predict_gen = datagen.flow(subset = 'prediction')
+    #Compute predictions
+    predictor = Prediction(model, input_params, image_generation_params)
+    predicted_data = predictor.predict(input_data_df, num_prediction_steps)
 
-    #Fit the model the input.
-    predictions = model.predict_generator(
-                            generator = predict_gen,
-                            steps = num_steps)
+    #Compute accuracy
+    num_matches = nonzero(predicted_data[constants.PANDAS_MATCH_COLUMN])[0].shape[0]
+    num_mismatches = len(predicted_data[constants.PANDAS_MATCH_COLUMN]) - num_matches
+    accuracy = (num_matches/len(predicted_data[constants.PANDAS_MATCH_COLUMN])) * 100.
 
-    print(input_data_df.loc[0:10, :])
-    print(predictions)
+    print_summary = """
+                        Result Dataframe: {}
+                        Total predictions: {}
+                        Correct predictions: {}
+                        Wrong predictions: {}
+                        Accuracy: {}
+                    """.format(
+                            predicted_data,
+                            len(predicted_data),
+                            num_matches,
+                            num_mismatches,
+                            accuracy)
+
+    #Print summary
+    print(print_summary)

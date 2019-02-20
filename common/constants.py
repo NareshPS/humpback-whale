@@ -26,8 +26,13 @@ DROPBOX_ENDPOINT = "https://content.dropboxapi.com/2/files/upload"
 DROPBOX_APP_PATH_PREFIX = Path('/run_data/')
 DROPBOX_CHUNK_SIZE = 4 * 1024 * 1024 #4 megabytes
 
-#Pandas count aggregation column
+#Pandas aggregation column
 PANDAS_COUNT_AGG_COLUMN = 'Count'
+PANDAS_PCT_AGG_COLUMN = 'Percentage'
+PANDAS_COUNT_HIST_COLUMN = 'Histogram Count'
+PANDAS_COUNT_BIN_COLUMN = 'Bin Count'
+PANDAS_PREDICTION_COLUMN = 'Prediction'
+PANDAS_MATCH_COLUMN = 'Match'
 
 #PIL Image constants
 PIL_IMAGE_RGB_COLOR_MODE = 'RGB'

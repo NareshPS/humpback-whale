@@ -67,9 +67,6 @@ class TestInputFiles(ut.TestCase):
 
         #Invalid inputs
         with self.assertRaises(ValueError):
-            _ = InputFiles(None, remote_dir_path)
-
-        with self.assertRaises(ValueError):
             _ = InputFiles(remote_auth_token, None)
 
     def get_all(self, inputs, func):
@@ -106,3 +103,10 @@ class TestInputFiles(ut.TestCase):
         inputs._dropbox.download = MagicMock()
 
         self.get_all(inputs, lambda: bool(randint(0, 1)))
+
+    def test_get_all_remote_files_dropbox_not_initialized(self):
+        #Arrange
+        inputs = InputFiles()
+
+        with self.assertRaises(ValueError):
+            self.get_all(inputs, lambda: False)

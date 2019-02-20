@@ -16,6 +16,8 @@ logs
 *.tmp
 *.tuples
 *.csv
+*.map
+*.metric
 
 #Ignore VSCode project files
 .vscode/

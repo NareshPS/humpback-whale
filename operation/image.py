@@ -26,6 +26,12 @@ from bidict import frozenbidict
 #Logging
 from common import logging
 
+#Metric
+from common.metric import Metric
+
+#Math functions
+from math import ceil
+
 class ImageDataIterator(Sequence):
     """It iterates over the dataframe to return a batch of input per next() call.
     """
@@ -125,81 +131,51 @@ class ImageDataGeneration:
                                     'prediction' : ImageDataSubset.Prediction
                                 })
 
-    def __init__(self,
-                    source, dataframe, target_shape, batch_size, num_classes,
-                    x_cols, y_col, transform_x_cols = [],
-                    validation_split = None,
-                    normalize = True,
-                    cache_size = 512,
-                    transformer = None,
-                    randomize = True):
+    def __init__(self, dataframe, input_params, image_generation_params, transformer = None, randomize = True):
         """It initializes the dataframe object.
         
         Arguments:
-            source {string} -- A string to indicate the location of source images.
             dataframe {Pandas DataFrame} -- A pandas dataframe object with columnar data with image names and labels.
-            target_shape {(width, height)} -- A tuple that indicates the target image dimensions.
-            batch_size {int} -- A number indicating the size of each batch.
-            num_classes {int} -- It indicates the number of classes of the target label.
-            validation_split {float} -- A float indicating the fraction of validation split of the dataset.
-            x_cols {[string]} -- A list of column names with image paths.
-            y_col {[type]} -- The column name for labels.
-            transform_x_cols {[string]} -- A list of column names to apply transformations.
-            normalize {bool} -- A boolean flag to enable img_obs normalization.
-            cache_size {int} -- A integer value to determine the size of the cache.
-            transformer {ImageDataTransformation object} -- An ImageDataTransformation object that applies transformation over the images.
-            randomize {boolean} -- It indicates to randomize the dataframe.
+            input_params {A InputDataParameter object} -- An input parameter object.
+            image_generation_params {A ImageGenerationParameters object} -- A training data parameter object.
+            transformer {A ImageDataTransformation object} -- It is used to transform the image objects.
+            randomize {boolean} -- It indicates randomization of the input dataframe.
         """
         #Required parameters
-        self._source = source
         self._dataframe = dataframe
-        self._batch_size = batch_size
-        self._target_shape = target_shape
-        self._x_cols = x_cols
-        self._y_col = y_col
+        self._input_params = input_params
+        self._image_generation_params = image_generation_params
 
         #Optional parameters
-        self._validation_split = validation_split
-        self._normalize = normalize
-        self._cache_size = cache_size
         self._transformer = transformer
         self._randomize = randomize
-        self._transform_x_cols = transform_x_cols or []
-        self._num_classes = num_classes
 
         #Caching
-        self._image_cache = LRUCache(self._cache_size)
+        self._image_cache = LRUCache(self._image_generation_params.image_cache_size)
 
         #Logging
         self._logger = logging.get_logger(__name__)
 
-        #Validate parameters
-        invalid_transform_x_cols = [col for col in self._transform_x_cols if col not in self._x_cols]
+        #Metrics
+        self._load_slice_metric = 'get_image_objects'
 
-        if invalid_transform_x_cols:
-            raise ValueError("Transform cols: {} not found in x_cols".format(invalid_transform_x_cols))
+        #Create metrics
+        Metric.create(self._load_slice_metric)
 
-        #Training and validation set boundaries
-        if self._validation_split is not None:
-            #Compute the training and validation boundary using the validation split.
-            boundary = int(len(self._dataframe)*(1. - self._validation_split))
+        #Compute the training and validation boundary using the validation split.
+        boundary = int(ceil(len(self._dataframe)*(1. - self._image_generation_params.validation_split)))
+        self._logger.info("Validation split: {} Identified boundary: {}".format(self._image_generation_params.validation_split, boundary))
 
-            self._logger.info("Validation split: {} Identified boundary: {}".format(self._validation_split, boundary))
-
-            #Split the dataframe into training and validation.
-            self._main_df = self._dataframe.loc[:(boundary - 1), :]
-            self._validation_df = self._dataframe.loc[boundary:, :].reset_index(drop = True)
-        else:
-            self._main_df = self._dataframe
+        #Split the dataframe into training and validation.
+        self._main_df = self._dataframe.loc[:(boundary - 1), :]
+        self._validation_df = self._dataframe.loc[boundary:, :].reset_index(drop = True)
         
         n_dataframe = len(self._dataframe)
         n_main_df = len(self._main_df)
-        n_validation_df = len(self._validation_df) if validation_split is not None else 0
+        n_validation_df = len(self._validation_df)
 
         self._logger.info(
                 "Dataframe size: {} main set size: {} validation size: {}".format(n_dataframe, n_main_df, n_validation_df))
-
-        self._logger.info("Column parameters:: xcols: {} y_col: {}".format(self._x_cols, self._y_col))
 
     def _get_images(self, n_images):
         """It extracts the image names from the dataframe.
@@ -214,7 +190,7 @@ class ImageDataGeneration:
         while len(images) <= n_images and loop_count < df_size:
             random_index = randrange(df_size)
 
-            for image_col in self._x_cols:
+            for image_col in self._image_generation_params.image_cols:
                 images.add(self._main_df.loc[random_index, image_col])
 
             loop_count += 1
@@ -271,7 +247,7 @@ class ImageDataGeneration:
         return ImageDataIterator(
                     self,
                     dataframe,
-                    self._batch_size,
+                    self._image_generation_params.batch_size,
                     q_subset,
                     randomize = self._randomize)
 
@@ -331,12 +307,12 @@ class ImageDataGeneration:
             (Numpy object, Numpy object) -- A tuple of input data and labels.
         """
         #Process labels
-        df_slice_y = df_slice[self._y_col].values
-        df_slice_y_categorical = df_slice_y if self._num_classes == 2 else to_categorical(df_slice_y, num_classes = self._num_classes)
+        df_slice_y = df_slice[self._image_generation_params.label_col].values
+        df_slice_y_categorical = to_categorical(df_slice_y, num_classes = self._image_generation_params.num_classes)
 
         #Process image columns
         df_slice_x = []  
-        for x_col in self._x_cols:
+        for x_col in self._image_generation_params.image_cols:
             images = df_slice[x_col].tolist()
 
             #Load images
@@ -346,7 +322,7 @@ class ImageDataGeneration:
             img_objs = [img_objs_map[image] for image in images]
             img_objs = np.asarray(img_objs)
 
-            if x_col in self._transform_x_cols:
+            if x_col in self._image_generation_params.image_transform_cols:
                 img_objs = self._apply_transformation(img_objs)
 
             df_slice_x.append(img_objs)
@@ -361,6 +337,9 @@ class ImageDataGeneration:
         Arguments:
             images {[string]} -- A list of image names.
         """
+        #Start recording time
+        record_handle = Metric.start(self._load_slice_metric)
+
         img_objs = {}
         candidate_images = set(images)
         for image in candidate_images:
@@ -378,7 +357,10 @@ class ImageDataGeneration:
         self._logger.debug("Cached images: {} missing images: {}".format(cached_images, missing_images))
 
         #Load the missing image objects, and apply parameters.
-        missing_img_objs = utils.imload(self._source, missing_images, self._target_shape)
+        missing_img_objs = utils.imload(
+                                    self._image_generation_params.dataset_location,
+                                    missing_images,
+                                    self._image_generation_params.input_shape[:2])
         missing_img_objs = self._apply_parameters(missing_img_objs)
 
         #Update the cache
@@ -387,6 +369,9 @@ class ImageDataGeneration:
         #Update the image object dictionary with the missing image objects.
         for image, img_obj in zip(missing_images, missing_img_objs):
             img_objs[image] = img_obj
+
+        #End recording time
+        Metric.stop(record_handle, self._load_slice_metric)
 
         return img_objs
 
@@ -397,7 +382,7 @@ class ImageDataGeneration:
         Arguments:
             img_objs {numpy.ndarray} -- A numpy array of image objects.
         """
-        if self._normalize:
+        if self._image_generation_params.normalize:
             img_objs = utils.normalize(img_objs)
 
         return img_objs
@@ -405,6 +390,7 @@ class ImageDataGeneration:
     def _apply_transformation(self, img_objs):
         transformed_objects = img_objs
 
+        print('apply_transformation')
         if self._transformer:
             transformed_objects = self._transformer.transform(img_objs)
 

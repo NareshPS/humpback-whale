@@ -77,7 +77,7 @@ class ModelInput(object):
         return model_file_name
 
 class InputFiles(object):
-    def __init__(self, remote_auth_token, remote_dir_path):
+    def __init__(self, remote_auth_token = None, remote_dir_path = None):
         """It initializes and validates the input parameters.
         
         Arguments:
@@ -94,14 +94,14 @@ class InputFiles(object):
         self._remote_dir_path = remote_dir_path
 
         #Validation
-        if self._remote_auth_token is None:
-            raise ValueError('remote_auth_token must be valid.')
-
-        if self._remote_dir_path is None:
+        if self._remote_auth_token and self._remote_dir_path is None:
             raise ValueError('remote_dir_path must be valid.')
 
         #Derived parameters
-        self._dropbox = DropboxConnection(self._remote_auth_token, self._remote_dir_path)
+        self._dropbox = None
+        
+        if self._remote_auth_token:
+            self._dropbox = DropboxConnection(self._remote_auth_token, self._remote_dir_path)
 
         #Logging
         self._logger = logging.get_logger(__name__)
@@ -120,10 +120,10 @@ class InputFiles(object):
         #Add the locally available files
         valid_file_paths.update({local_file : local_file for local_file in local_files})
 
-        if self._dropbox is None:
-            raise ValueError('Files to download: {}. Remote client is not initialized.'.format(remote_files_to_download))
-
         if remote_files_to_download:
+            if self._dropbox is None:
+                raise ValueError('Files to download: {}. Remote client is not initialized.'.format(remote_files_to_download))
+
             #Download remote files
             valid_remote_file_paths = self._download(remote_files_to_download)
 

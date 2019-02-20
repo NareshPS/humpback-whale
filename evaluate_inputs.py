@@ -31,24 +31,28 @@ def parse_args():
         required = True,
         help = 'It specifies the column names of the output dataframe.')
     parser.add_argument(
+        '--number_of_bins',
+        default = 5,
+        help = 'It specifies the number of bins of the label counts.')
+    parser.add_argument(
         '-l', '--log_to_console',
         action = 'store_true', default = False,
         help = 'It enables logging to console')
 
     args = parser.parse_args()
     
-    return args.input_data, args.label_col, args.log_to_console
+    return args.input_data, args.label_col, args.number_of_bins, args.log_to_console
 
 if __name__ == "__main__":
     #Parse commandline arguments
-    input_data, label_col, log_to_console = parse_args()
+    input_data, label_col, number_of_bins, log_to_console = parse_args()
 
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
     logger = logging.get_logger(__name__)
 
     #Log input parameters
-    logger.info('Running with parameters input_data: %s label_col: %s', input_data, label_col)
+    logger.info('Running with parameters input_data: %s label_col: %s number_of_bins: %d', input_data, label_col, number_of_bins)
 
     #Additional parameters
     logger.info('Additional parameters log_to_console: %s', log_to_console)
@@ -58,18 +62,18 @@ if __name__ == "__main__":
 
     #Label evaluation
     label_evaluation = LabelEvaluation(input_df)
-    label_counts = label_evaluation.evaluate(label_col)
-    total_points = sum(label_counts.values())
-    label_distribution = dict(map(lambda pair: (pair[0], pair[1] / total_points), label_counts.items()))
+    label_statistics = label_evaluation.distribution(label_col)
+    label_count_bins = label_evaluation.bin(label_col, number_of_bins)
+    label_count_histogram = label_evaluation.histogram(label_col)
 
     #Print summary
     print_summary = """
-                        Label counts: {}
-                        Label distribution: {}
-                        Total: {}
+                        Label statistics: {}
+                        Binned counts: {}
+                        Histogram: {}
                     """.format(
-                            label_counts,
-                            label_distribution,
-                            total_points)
+                            label_statistics,
+                            label_count_bins,
+                            label_count_histogram)
 
     print(print_summary)

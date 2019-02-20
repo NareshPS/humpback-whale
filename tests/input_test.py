@@ -1,76 +1,63 @@
 #Unittest
 import unittest as ut
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 
 #Constants
 from common import ut_constants
 
-#Argument parsing
-from argparse import ArgumentParser
+#Test utils
+from tests.utils import get_args
 
 #Path parsing
 from pathlib import Path
 
 #Input parameters
-from operation.input import InputDataParameters
+from operation.input import InputParameters, TrainingParameters, ImageGenerationParameters, update_params
 
 model_name = 'model_name'
 dataset_location = Path()
 
 num_classes = 5
-num_df_sets = 2
 
-class TestInputDataParameters(ut.TestCase):
-    @classmethod
-    def get_args(cls, model_name, dataset_location):
-        args = ArgumentParser()
-
-        type(args).model_name = PropertyMock(return_value = model_name)
-        type(args).dataset_location = PropertyMock(return_value = dataset_location)
-
-        type(args).input_data = PropertyMock(return_value = 'input_data')
-        type(args).image_cols = PropertyMock(return_value = ['Anchor', 'Sample'])
-        type(args).image_transform_cols = PropertyMock(return_value = ['Anchor', 'Sample'])
-        type(args).label_col = PropertyMock(return_value = 'label_col')
-
-        type(args).session_id = PropertyMock(return_value = 0)
-        type(args).batch_size = PropertyMock(return_value = 32)
-        type(args).cache_size = PropertyMock(return_value = 1024)
-
-        type(args).validation_split = PropertyMock(return_value = 0.02)
-        type(args).learning_rate = PropertyMock(return_value = 0.001)
-        type(args).num_fit_images = PropertyMock(return_value = 20)
-
-        type(args).num_prediction_steps = PropertyMock(return_value = 2)
-        type(args).input_data_training_set_size = PropertyMock(return_value = 100)
-        type(args).input_data_training_set_id = PropertyMock(return_value = 0)
-        type(args).input_shape = PropertyMock(return_value = [224, 224, 3])
-
-        return args
-
-    def test_init(self):
-        with self.assertRaises(ValueError):
-            args = TestInputDataParameters.get_args(None, dataset_location)
-            _ = InputDataParameters(args)
-
-        with self.assertRaises(ValueError):
-            args = TestInputDataParameters.get_args(model_name, None)
-            _ = InputDataParameters(args)
-
-        args = TestInputDataParameters.get_args(model_name, dataset_location)
-        _ = InputDataParameters(args)
-
-    def test_update(self):
+class TestUpdateParams(ut.TestCase):
+    def test_update_params(self):
         #Arrange
-        args = TestInputDataParameters.get_args(model_name, dataset_location)
-        input_parameters = InputDataParameters(args)
-        additional_kwargs = dict(
-                                num_classes = num_classes,
-                                num_df_sets = num_df_sets)
+        args = get_args(model_name, dataset_location)
+        image_generation_params = ImageGenerationParameters(args)
+        additional_kwargs = dict(num_classes = num_classes)
 
         #Act
-        input_parameters.update(**additional_kwargs)
+        update_params(image_generation_params, **additional_kwargs)
 
         #Assert
-        self.assertEqual(num_classes, input_parameters.num_classes)
-        self.assertEqual(num_df_sets, input_parameters.num_df_sets)
+        self.assertEqual(num_classes, image_generation_params.num_classes)
+
+class TestImageGenerationParameters(ut.TestCase):
+    def test_init(self):
+        with self.assertRaises(ValueError):
+            #Arrange
+            bad_dataset_location = dataset_location / 'non_existent_location'
+            args = get_args(None, bad_dataset_location)
+
+            #Act
+            _ = ImageGenerationParameters(args)
+
+        args = get_args(model_name, dataset_location)
+        _ = ImageGenerationParameters(args)
+
+class TestInputDataParameters(ut.TestCase):
+    def test_init(self):
+        with self.assertRaises(ValueError):
+            args = get_args(None, None)
+            _ = InputParameters(args)
+
+        args = get_args(model_name, dataset_location)
+        _ = InputParameters(args)
+
+class TestTrainingParameters(ut.TestCase):
+    def test_init(self):
+        #Arrange
+        args = get_args(None, None)
+        
+        #Act
+        _ = TrainingParameters(args)

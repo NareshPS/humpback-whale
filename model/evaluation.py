@@ -1,5 +1,11 @@
 """It computes statistics on input tuples.
 """
+#pandas DataFrame
+from pandas import DataFrame
+from pandas import cut
+
+#Numpy imports
+from numpy import linspace
 
 #Constants
 from common import constants
@@ -19,17 +25,17 @@ class LabelEvaluation(object):
         if self._dataframe is None:
             raise ValueError("The dataframe must be valid.")
 
-    def evaluate(self, label_col):
+    def distribution(self, label_col):
         """It creates a dictionary of labels with their percentages in the dataframe.
 
         Arguments:
             label_col {string} -- The name of the label column
         
         Returns:
-            {A dictionary} -- A dictionary of labels to their percentages.
+            {A DataFrame} -- A DataFrame object with the label counts and percentages.
         """
-        #Placeholder for the dictionary
-        label_percentages = {}
+        #Placeholder for the data frame
+        label_statistics = DataFrame(columns = [label_col, constants.PANDAS_COUNT_AGG_COLUMN, constants.PANDAS_PCT_AGG_COLUMN])
 
         #Total number of items
         total = len(self._dataframe)
@@ -40,15 +46,53 @@ class LabelEvaluation(object):
         #Percentages
         for _, row in label_counts.iterrows():
             label = row[label_col]
-            count = row[LabelEvaluation.count]
+            count = row[constants.PANDAS_COUNT_AGG_COLUMN]
             
             #Percentage calculation
             label_pct = (count / total) * 100.
 
-            #Add to dictionary
-            label_percentages[label] = label_pct
+            #Append the statistics to output data frame
+            label_statistics = label_statistics.append({
+                                                            label_col : label,
+                                                            constants.PANDAS_COUNT_AGG_COLUMN : count,
+                                                            constants.PANDAS_PCT_AGG_COLUMN : label_pct
+                                                        },
+                                                        ignore_index = True)
 
-        return label_percentages
+        #Sort by the percentage column
+        label_statistics = label_statistics.sort_values(constants.PANDAS_PCT_AGG_COLUMN)
+
+        return label_statistics
+
+    def bin(self, label_col, number_of_bins):
+        """It bins the inputs based on counts
+        
+        Arguments:
+            label_col {string} -- The name of the label column.
+            number_of_bins {int} -- The number of bins
+        """
+        #Compute the statistics first
+        label_counts = self._dataframe.groupby(label_col).size().reset_index(name = constants.PANDAS_COUNT_AGG_COLUMN)
+        label_counts_series = getattr(label_counts, constants.PANDAS_COUNT_AGG_COLUMN)
+
+        count_bins = linspace(label_counts_series.min(), label_counts_series.max(), number_of_bins + 1)
+        binned_counts = label_counts.groupby(cut(label_counts_series, count_bins))[constants.PANDAS_COUNT_AGG_COLUMN].sum().reset_index(name = constants.PANDAS_COUNT_BIN_COLUMN)
+
+        return binned_counts
+
+    def histogram(self, label_col):
+        """It computes the histogram of the counts
+
+        Arguments:
+            label_col {string} -- The name of the label column.
+        """
+        #Count of respective labels
+        label_counts = self._dataframe.groupby(label_col).size().reset_index(name = constants.PANDAS_COUNT_AGG_COLUMN)
+
+        #Count the label counts
+        label_histogram = label_counts.groupby(constants.PANDAS_COUNT_AGG_COLUMN).size().to_frame(constants.PANDAS_COUNT_HIST_COLUMN).reset_index()
+
+        return label_histogram
 
 class ModelEvaluation(object):
     def __init__(self, dataframe, label_col):
