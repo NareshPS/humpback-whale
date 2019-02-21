@@ -18,7 +18,8 @@ LOG_CONFIGS = {
                 'evaluate_inputs.py' : 'evaluate_inputs.yml',
                 'predict.py' : 'predict.yml',
                 'augment.py' : 'augment.yml',
-                'classify_labels.py' : 'classify_labels.yml'
+                'classify_labels.py' : 'classify_labels.yml',
+                'rebalance.py' : 'rebalance.yml'
             }
 
 #Dropbox connection configuration

@@ -4,8 +4,8 @@ import unittest as ut
 #Operation
 from model.operation import Operation
 
-#Test utils
-from utils import load_test_model
+#Test support
+from tests.support.utils import load_test_model
 
 #Basic parameters
 num_unfrozen_layers = 2

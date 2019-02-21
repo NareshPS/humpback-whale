@@ -11,6 +11,7 @@ from argparse import ArgumentParser
 
 #Dataframe operations
 from pandas import read_csv
+from pandas import DataFrame
 
 #Keras
 from keras.models import load_model
@@ -24,6 +25,11 @@ input_shape = (200, 200, 3)
 dimensions = 12
 input_data_file = Path('input_data.csv')
 input_data_path = ut_constants.DATA_STORE / input_data_file
+
+#Dataframe parameters
+image_col = 'Image'
+label_col = 'Id'
+columns = [image_col, label_col]
 
 def load_test_model():
     #Model file path
@@ -63,3 +69,28 @@ def get_args(model_name, dataset_location):
 
 def get_input_df():
     return read_csv(str(input_data_path), index_col = 0)
+
+def create_dataframe_from_dict(data_dict):
+    columns = list(data_dict.keys())
+
+    #Prepare the first column values of the data frame
+    results = data_dict[columns[0]]
+
+    for column_name in columns[1:]:
+        results = list(zip(results, data_dict[column_name]))
+
+    dataframe = DataFrame(results, columns = columns)
+
+    return dataframe
+
+def create_dataframe():
+    image_values = map(lambda x : 'image{}.jpg'.format(x), range(10))
+    label_meta_values = [[0]*2, [1]*3, [2]*4]
+    label_values = [item for sublist in label_meta_values for item in sublist]
+
+    data = create_dataframe_from_dict({
+                                            image_col : image_values,
+                                            label_col : label_values
+                                        })
+
+    return data

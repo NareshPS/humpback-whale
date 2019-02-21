@@ -4,7 +4,7 @@ from unittest.mock import patch as mock_patch
 from unittest.mock import MagicMock
 
 #Test utils
-from tests.utils import load_test_model, get_args, get_input_df
+from tests.support.utils import load_test_model, get_args, get_input_df
 
 #Input imports
 from operation.input import InputParameters, ImageGenerationParameters, update_params

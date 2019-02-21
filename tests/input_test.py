@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from common import ut_constants
 
 #Test utils
-from tests.utils import get_args
+from tests.support.utils import get_args
 
 #Path parsing
 from pathlib import Path

@@ -12,8 +12,8 @@ from model.definition import LayerSpecification, LayerType
 #Keras
 from keras.models import load_model
 
-#Test utils
-import utils as test_utils
+#Test support
+from tests.support.utils import input_shape, dimensions
 
 #Constants
 from common import constants
@@ -25,12 +25,12 @@ class TestBaseModel(ut.TestCase):
     def test_cnn_invalid_base_model_name(self):
         #Arrange Act & Assert
         with self.assertRaises(ValueError):
-            base_model = BaseModel('nanana', test_utils.input_shape, test_utils.dimensions)
+            base_model = BaseModel('nanana', input_shape, dimensions)
             base_model.cnn()
 
     def cnn_validate_base_model_creation(self, feature_model_name, module_path):
         #Arrange
-        base_model = BaseModel(feature_model_name, test_utils.input_shape, test_utils.dimensions)
+        base_model = BaseModel(feature_model_name, input_shape, dimensions)
 
         #Act & Assert
         with mock_patch(module_path) as base_mock:
@@ -46,7 +46,7 @@ class TestBaseModel(ut.TestCase):
 
     def test_cnn_model(self):
         #Arrange
-        base_model = BaseModel('inceptionv3', test_utils.input_shape, test_utils.dimensions)
+        base_model = BaseModel('inceptionv3', input_shape, dimensions)
 
         #Act
         model = base_model.cnn()
