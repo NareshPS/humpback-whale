@@ -252,7 +252,7 @@ if __name__ == "__main__":
     #Output files
     model_name = "{}_{}".format(name, base_model_name)
     session_params = SessionParameters(args)
-    model_input = ModelInput(model_name, session_params)
+    model_input = ModelInput(model_name, session_params, 1)
 
     logger.info('Output files model_file: %s', model_input.last_saved_file_name())
 

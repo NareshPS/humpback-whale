@@ -259,7 +259,7 @@ if __name__ == "__main__":
     logger.info('Updated session parameters: %s', session_params)
  
     #Model input
-    model_input = ModelInput(input_params.model_name, session_params)
+    model_input = ModelInput(input_params.model_name, session_params, 1)
 
     #Add to the list of input files
     input_files = input_files_client.get_all([

@@ -11,16 +11,18 @@ from tqdm import tqdm
 from pathlib import Path
 
 class ModelInput(object):
-    def __init__(self, model_name, session_params):
+    def __init__(self, model_name, session_params, epoch):
         """It initializes the parameters.
         
         Arguments:
             model_name {string} -- The name of the model
             session_params {operation.input.SessionParameters} -- It contains the parameters to identify the current session.
+            epoch {int} -- The current epoch number.
         """
         #Required parameters
         self._model_name = model_name
         self._session_params = session_params
+        self._epoch = epoch
 
         #Validation
         if model_name is None:
@@ -68,7 +70,7 @@ class ModelInput(object):
                                                                             self._model_name,
                                                                             last_saved_session_id,
                                                                             last_saved_set_id,
-                                                                            1))
+                                                                            self._epoch))
 
         return model_file_name
 
@@ -83,7 +85,7 @@ class ModelInput(object):
                                                                             self._model_name,
                                                                             self._session_params.session_id,
                                                                             self._session_params.input_data_training_set_id,
-                                                                            1))
+                                                                            self._epoch))
 
         return model_file_name
 

@@ -28,39 +28,39 @@ model_name = 'model_name'
 class TestModelInput(ut.TestCase):
     def test_init(self):
         #Valid inputs
-        _ = ModelInput(model_name, get_session_params(1, 1, 20))
-        _ = ModelInput(model_name, get_session_params(1, 20, 20))
-        _ = ModelInput(model_name, get_session_params(3, 1, 5))
-        _ = ModelInput(model_name, get_session_params(2, 5, 9))
+        _ = ModelInput(model_name, get_session_params(1, 1, 20), 1)
+        _ = ModelInput(model_name, get_session_params(1, 20, 20), 1)
+        _ = ModelInput(model_name, get_session_params(3, 1, 5), 1)
+        _ = ModelInput(model_name, get_session_params(2, 5, 9), 1)
 
         #Invalid inputs
         with self.assertRaises(ValueError):
-            _ = ModelInput(model_name,  get_session_params(0, 1, 20))
+            _ = ModelInput(model_name,  get_session_params(0, 1, 20), 1)
 
         with self.assertRaises(ValueError):
-            _ = ModelInput(model_name, get_session_params(1, 0, 20))
+            _ = ModelInput(model_name, get_session_params(1, 0, 20), 1)
 
         with self.assertRaises(ValueError):
-            _ = ModelInput(model_name, get_session_params(1, 1, 0))
+            _ = ModelInput(model_name, get_session_params(1, 1, 0), 1)
 
         with self.assertRaises(ValueError):
-            _ = ModelInput(model_name,  get_session_params(1, 6, 5))
+            _ = ModelInput(model_name,  get_session_params(1, 6, 5), 1)
 
     def test_last_saved_file_name(self):
         #First input file
-        model_input = ModelInput(model_name, get_session_params(1, 1, 10))
+        model_input = ModelInput(model_name, get_session_params(1, 1, 10), 1)
         self.assertEqual('{}.session_id.0.set_id.0.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
 
         #Non-first iteration and first set input file
-        model_input = ModelInput(model_name, get_session_params(2, 1, 10))
+        model_input = ModelInput(model_name, get_session_params(2, 1, 10), 1)
         self.assertEqual('{}.session_id.1.set_id.10.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
 
         #Non-first iteration and non-first set input file
-        model_input = ModelInput(model_name, get_session_params(2, 2, 10))
+        model_input = ModelInput(model_name, get_session_params(2, 2, 10), 1)
         self.assertEqual('{}.session_id.2.set_id.1.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
 
     def test_file_name(self):
-        model_input = ModelInput(model_name, get_session_params(1, 1, 10))
+        model_input = ModelInput(model_name, get_session_params(1, 1, 10), 1)
         self.assertEqual('{}.session_id.1.set_id.1.epoch.1.h5'.format(model_name), str(model_input.file_name()))
 
 class TestInputFiles(ut.TestCase):

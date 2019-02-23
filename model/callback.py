@@ -65,7 +65,7 @@ class ModelDropboxCheckpoint(Callback):
             
     def on_epoch_end(self, epoch, logs = None):
         #Model input
-        model_input = ModelInput(self._model_name, self._session_params)
+        model_input = ModelInput(self._model_name, self._session_params, epoch + 1)
 
         #Save the trained model.
         self.model.save(str(model_input.file_name()))
