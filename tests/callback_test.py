@@ -36,7 +36,7 @@ class TestModelDropboxCheckpoint(ut.TestCase):
     def on_epoch_end(self, checkpoint, call_dropbox):
         #Arrange
         checkpoint.model = MagicMock()
-        model_file = Path('model_1.session_id.2.set_id.2.epoch.1.h5')
+        model_file = Path('model_1.session_id.2.set_id.2.epoch.3.h5')
         
         if call_dropbox is True:
             checkpoint._dropbox.upload = MagicMock()
