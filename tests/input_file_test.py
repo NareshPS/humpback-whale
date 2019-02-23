@@ -10,7 +10,7 @@ from common import ut_constants
 from pathlib import Path
 
 #Input file
-from operation.input_file import InputFiles, ModelInput
+from iofiles.input_file import InputFiles, ModelInput
 
 #Test support
 from tests.support.utils import get_session_params
