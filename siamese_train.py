@@ -40,7 +40,7 @@ from argparse import ArgumentParser
 from common.parse import kv_str_to_tuple
 
 #Input files
-from operation.input_file import InputFiles, ModelInput
+from iofiles.input_file import InputFiles, ModelInput
 
 #Path manipulations
 from pathlib import Path

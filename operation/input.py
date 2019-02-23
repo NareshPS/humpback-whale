@@ -101,7 +101,7 @@ class SessionParameters(object):
         self.session_id = args.session_id
         self.input_data_training_set_size = args.input_data_training_set_size
         self.input_data_training_set_id = args.input_data_training_set_id
-        self.num_df_sets = None
+        self.num_df_sets = 1
 
     def __str__(self):
             return """Parameters::

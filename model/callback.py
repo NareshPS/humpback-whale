@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 from client.dropbox import DropboxConnection
 
 #Inputs
-from operation.input_file import ModelInput
+from iofiles.input_file import ModelInput
 
 #Constants
 from common import constants

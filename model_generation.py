@@ -22,13 +22,28 @@ from model.operation import Operation
 from model.basemodel import BaseModel
 
 #Inputs
-from operation.input_file import ModelInput
+from iofiles.input_file import ModelInput
+
+#Input parameters
+from operation.input import SessionParameters
 
 #Logger
 logger = None
 program_actions = ['create', 'update']
 
 def define_common_parameters(parser):
+    parser.add_argument(
+        '--session_id',
+        default = 1, type = int,
+        help = 'It specifies an identifier of the run.')
+    parser.add_argument(
+        '--input_data_training_set_size',
+        default = 300000, type = int,
+        help = 'It specifies the the size of input data set that will be trained in one go.')
+    parser.add_argument(
+        '--input_data_training_set_id',
+        default = 1, type = int,
+        help = 'It specifies the set if of the input data set to start training.')
     parser.add_argument(
         '-u', '--num_unfrozen_base_layers',
         type = int, default = 0,
@@ -236,7 +251,8 @@ if __name__ == "__main__":
 
     #Output files
     model_name = "{}_{}".format(name, base_model_name)
-    model_input = ModelInput(model_name, 1, 1, 2)
+    session_params = SessionParameters(args)
+    model_input = ModelInput(model_name, session_params)
 
     logger.info('Output files model_file: %s', model_input.last_saved_file_name())
 
