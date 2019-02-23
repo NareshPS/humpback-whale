@@ -7,12 +7,9 @@ from scipy.signal import convolve as scipy_convolve
 #Path manipulations
 from os import path
 
-#Data processing
-from keras.preprocessing import image as keras_image
-import numpy as np
-
-#Image write
+#Image operations
 from PIL import Image
+import numpy as np
 
 #Constants
 from common import constants
@@ -64,7 +61,7 @@ def imload(source, images, shape = None):
         img_objs = [img_obj.resize(shape) for img_obj in img_objs]
 
     #Convert them to numpy arrays
-    img_objs_arrays = np.asarray([keras_image.img_to_array(img_obj) for img_obj in img_objs])
+    img_objs_arrays = np.asarray([np.asarray(img_obj, dtype = 'uint8') for img_obj in img_objs])
 
     return img_objs_arrays
 

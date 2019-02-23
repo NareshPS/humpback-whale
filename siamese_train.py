@@ -241,12 +241,12 @@ if __name__ == "__main__":
     #Input data frame
     input_data_df = read_csv(input_data_file_path, index_col = 0)
 
-    #Shuffle input dataframe for sed_id == 1
+    #Shuffle input dataframe for input_data_training_set_id == 1
     if input_data_training_set_id == 1:
         input_data_df = input_data_df.sample(frac = 1).reset_index(drop = True)
 
     #Update input data parameters
-    num_classes = len(getattr(input_data_df, image_generation_params.label_col).unique())
+    num_classes = max(getattr(input_data_df, image_generation_params.label_col)) + 1
     image_generation_params_update = dict(num_classes = num_classes)
     update_params(image_generation_params, **image_generation_params_update)
 

@@ -36,3 +36,6 @@ dropbox
 
 #Bidirectional dictionary
 bidict
+
+#Calculate object sizes
+pympler
