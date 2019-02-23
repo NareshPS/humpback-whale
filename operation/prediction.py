@@ -9,6 +9,9 @@ from pandas import Series
 #Numpy operations
 from numpy import argmax, where
 
+#Math operations
+from math import ceil
+
 #Logging
 from common import logging
 
@@ -36,16 +39,16 @@ class Prediction:
         #Logging
         self._logger = logging.get_logger(__file__)
 
-    def predict(self, input_data_df, num_prediction_steps):
+    def predict(self, input_data, num_prediction_steps):
         """[summary]
     
         Arguments:
-            input_data_df {A pandas DataFrame} -- The input dataframe.
+            input_data {A pandas DataFrame} -- The input dataframe.
             num_prediction_steps {int} -- The number of prediction steps.
         """
         #Create a data generator to be used for fitting the model.
         datagen = ImageDataGeneration(
-                                input_data_df,
+                                input_data,
                                 self._input_params,
                                 self._image_generation_params,
                                 transformer = None,
@@ -54,6 +57,10 @@ class Prediction:
         #Training flow
         predict_gen = datagen.flow(subset = 'prediction')
 
+        #Cap the prediction steps for small input datasets
+        num_inputs = len(input_data)
+        num_prediction_steps = min(num_prediction_steps, ceil(num_inputs / self._image_generation_params.batch_size))
+
         #Fit the model the input.
         predictions = self._model.predict_generator(
                                         generator = predict_gen,
@@ -61,7 +68,7 @@ class Prediction:
 
         #Result dataframe
         num_predictions = predictions.shape[0]
-        input_data_predicted_slice = input_data_df[:num_predictions].reset_index(drop = True)
+        input_data_predicted_slice = input_data[:num_predictions].reset_index(drop = True)
         input_data_predicted_slice[constants.PANDAS_PREDICTION_COLUMN] = Series(argmax(predictions, axis = 1), index = input_data_predicted_slice.index)
         match_series = where(
                             input_data_predicted_slice[self._image_generation_params.label_col] == input_data_predicted_slice[constants.PANDAS_PREDICTION_COLUMN],

@@ -8,7 +8,7 @@ from common import ut_constants
 
 #Test support
 from tests.support.utils import image_col, label_col, columns
-from tests.support.utils import get_input_df, create_dataframe
+from tests.support.utils import get_input_data, create_dataframe
 
 #Local Pandas operations
 from common.pandas import min_freq, unique_items
@@ -19,7 +19,7 @@ from operation.rebalancing import Rebalancing
 class TestRebalancing(ut.TestCase):
     def test_init(self):
         #Arrange
-        data = get_input_df()
+        data = get_input_data()
 
         #Act
         _ = Rebalancing(data, label_col)

@@ -10,6 +10,9 @@ from operation.transform import ImageDataTransformation
 from operation.prediction import Prediction
 from operation.input import TrainingParameters, InputParameters, SessionParameters, ImageGenerationParameters, update_params
 
+#Training
+from operation.training import ImageTraining
+
 #Data operations
 import numpy as np
 import pandas as pd
@@ -141,76 +144,6 @@ def parse_args():
 
     return args
 
-def train(
-        model,
-        set_id,
-        input_data_df,
-        input_params,
-        image_generation_params,
-        training_params,
-        session_params,
-        transformation_params,
-        dropbox_auth,
-        dropbox_dir):
-    """It executes the training.
-    
-    Arguments:
-        model {A keras model object} -- The keras model object.
-        set_id {int} -- The set id of the current training dataframe.
-        input_data_df {A pandas DataFrame} -- The input dataframe.
-        input_params {A InputParameters object} -- It contains the input parameters.
-        image_generation_params {A ImageGenerationParameters object} -- It contains parameters for the image data generator.
-        training_params {A TrainingParameters object} -- It contains training parameters.
-        session_params {A SessionParameters object} -- It contains session parameters.
-        dropbox_auth {string} -- The authentication token to access dropbox store.
-        dropbox_dir {string} -- The dropbox directory to store the generated data.
-    """
-    #Logging
-    logger = logging.get_logger(__name__)
-
-    #Transformer
-    transformer = ImageDataTransformation(parameters = transformation_params)
-    
-    #Create a data generator to be used for fitting the model.
-    datagen = ImageDataGeneration(input_data_df, input_params, image_generation_params, transformer)
-
-    #Fit the data generator
-    datagen.fit(n_images = training_params.num_fit_images)
-
-    #Training flow
-    train_gen = datagen.flow(subset = 'training')
-
-    #Validation flow
-    validation_gen = datagen.flow(subset = 'validation') if image_generation_params.validation_split else None
-
-    if training_params.learning_rate:
-        #Update the learning rate
-        logger.info("Switching learning rate from: {} to: {}".format(
-                                                                K.get_value(model.optimizer.lr),
-                                                                training_params.learning_rate))
-
-        K.set_value(model.optimizer.lr, training_params.learning_rate)
-        
-    #Training callbacks
-    dropbox_callback = ModelDropboxCheckpoint(
-                                input_params.model_name,
-                                session_params.session_id,
-                                set_id,
-                                session_params.num_df_sets,
-                                dropbox_auth = dropbox_auth,
-                                dropbox_dir = dropbox_dir)
-
-    #Fit the model the input.
-    model.fit_generator(
-                    generator = train_gen,
-                    validation_data = validation_gen,
-                    epochs = training_params.number_of_epochs,
-                    callbacks = [dropbox_callback])
-
-    logger.info('Training finished. Trained: %d epochs', training_params.number_of_epochs)
-
-    return model
-
 def verify(model, input_data_df, input_params, image_generation_params, num_prediction_steps):
     """[summary]
     
@@ -252,6 +185,7 @@ if __name__ == "__main__":
 
     #Extract required parameters
     num_prediction_steps = args.num_prediction_steps
+    input_data_training_set_id = args.input_data_training_set_id
     log_to_console = args.log_to_console
 
     #Initialize logging
@@ -288,7 +222,11 @@ if __name__ == "__main__":
         dropbox_dir = constants.DROPBOX_APP_PATH_PREFIX / dropbox_parameters[1]
 
     #Log input parameters 
-    logger.info('Additional parameters log_to_console: %s dropbox_dir: %s', log_to_console, dropbox_dir)
+    logger.info(
+            'Additional parameters input_data_training_set_id: %d log_to_console: %s dropbox_dir: %s',
+            input_data_training_set_id,
+            log_to_console,
+            dropbox_dir)
 
     #Predictable randomness
     seed = 3
@@ -304,7 +242,7 @@ if __name__ == "__main__":
     input_data_df = read_csv(input_data_file_path, index_col = 0)
 
     #Shuffle input dataframe for sed_id == 1
-    if session_params.input_data_training_set_id == 1:
+    if input_data_training_set_id == 1:
         input_data_df = input_data_df.sample(frac = 1).reset_index(drop = True)
 
     #Update input data parameters
@@ -321,11 +259,7 @@ if __name__ == "__main__":
     logger.info('Updated session parameters: %s', session_params)
  
     #Model input
-    model_input = ModelInput(
-                        input_params.model_name,
-                        session_params.session_id,
-                        session_params.input_data_training_set_id,
-                        num_df_sets)
+    model_input = ModelInput(input_params.model_name, session_params)
 
     #Add to the list of input files
     input_files = input_files_client.get_all([
@@ -338,32 +272,34 @@ if __name__ == "__main__":
 
     logger.info("Loaded model from: {}".format(model_file))
 
+    #Training setup
+    trainer = ImageTraining(
+                    input_params,
+                    image_generation_params,
+                    training_params,
+                    transformation_params,
+                    dropbox_auth,
+                    dropbox_dir)
+
     #Iterate over requested batches
-    for set_id in range(session_params.input_data_training_set_id, num_df_sets + 1):
+    for set_id in range(input_data_training_set_id, num_df_sets + 1):
+        #Update the set id
+        session_params.input_data_training_set_id = set_id
+
         #DataFrame start and end location for the iteration
         start_df_idx = (set_id - 1) * session_params.input_data_training_set_size
         end_df_idx = set_id * session_params.input_data_training_set_size
 
         #DataFrame set
-        input_data_df_set = input_data_df.loc[start_df_idx:end_df_idx, :].reset_index(drop = True)
+        input_data_set = input_data_df.loc[start_df_idx:end_df_idx, :].reset_index(drop = True)
 
         #Log training metadata
-        logger.info('Training tuples:: set_id: %d start_df_idx: %d end_df_idx: %d', set_id, start_df_idx, end_df_idx)
+        logger.info('Training set:: set_id: %d start_df_idx: %d end_df_idx: %d', set_id, start_df_idx, end_df_idx)
 
         #Train
-        model = train(
-                    model,
-                    set_id,
-                    input_data_df_set,
-                    input_params,
-                    image_generation_params,
-                    training_params,
-                    session_params,
-                    transformation_params,
-                    dropbox_auth,
-                    dropbox_dir)
+        model = trainer.train(model, input_data_set, session_params)
 
         #Verification
-        verify(model, input_data_df_set, input_params, image_generation_params, num_prediction_steps)
+        verify(model, input_data_set, input_params, image_generation_params, num_prediction_steps)
 
     Metric.save(Path('metric_data.metric'))

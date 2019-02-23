@@ -9,6 +9,9 @@ from model.callback import ModelDropboxCheckpoint
 #Path manipulation
 from pathlib import Path
 
+#Test support
+from tests.support.utils import get_session_params
+
 #Parameters
 model_name = 'model_1'
 session_id = 2
@@ -20,12 +23,15 @@ epoch = 2
 
 class TestModelDropboxCheckpoint(ut.TestCase):
     def test_init(self):
+        #Arrange
+        session_params = get_session_params(session_id, set_id, num_sets)
+
         #Act and Assert
         with self.assertRaises(ValueError):
-            ModelDropboxCheckpoint(model_name, session_id, set_id, num_sets, dropbox_auth)
+            ModelDropboxCheckpoint(model_name, session_params, dropbox_auth)
 
-        ModelDropboxCheckpoint(model_name, session_id, set_id, num_sets)
-        ModelDropboxCheckpoint(model_name, session_id, set_id, num_sets, dropbox_auth, dropbox_path)
+        ModelDropboxCheckpoint(model_name, session_params)
+        ModelDropboxCheckpoint(model_name, session_params, dropbox_auth, dropbox_path)
 
     def on_epoch_end(self, checkpoint, call_dropbox):
         #Arrange
@@ -54,14 +60,16 @@ class TestModelDropboxCheckpoint(ut.TestCase):
 
     def test_on_epoch_end_dropbox_called(self):
         #Arrange
-        checkpoint = ModelDropboxCheckpoint(model_name, session_id, set_id, num_sets, dropbox_auth, dropbox_path)
+        session_params = get_session_params(session_id, set_id, num_sets)
+        checkpoint = ModelDropboxCheckpoint(model_name, session_params, dropbox_auth, dropbox_path)
 
         #Act & Assert
         self.on_epoch_end(checkpoint, True)
 
     def test_on_epoch_end_dropbox_not_called(self):
         #Arrange
-        checkpoint = ModelDropboxCheckpoint(model_name, session_id, set_id, num_sets)
+        session_params = get_session_params(session_id, set_id, num_sets)
+        checkpoint = ModelDropboxCheckpoint(model_name, session_params)
 
         #Act & Assert
         self.on_epoch_end(checkpoint, False)

@@ -11,28 +11,35 @@ from tqdm import tqdm
 from pathlib import Path
 
 class ModelInput(object):
-    def __init__(self, model_name, session_id, set_id, total_number_of_sets):
+    def __init__(self, model_name, session_params):
+        """It initializes the parameters.
+        
+        Arguments:
+            model_name {string} -- The name of the model
+            session_params {operation.input.SessionParameters} -- It contains the parameters to identify the current session.
+        """
         #Required parameters
         self._model_name = model_name
-        self._session_id = session_id
-        self._set_id = set_id
-        self._total_number_of_sets = total_number_of_sets
+        self._session_params = session_params
 
         #Validation
         if model_name is None:
             raise ValueError('model_name must be valid')
     
-        if self._session_id < 1:
+        if self._session_params.session_id < 1:
             raise ValueError('session_id must be > 1')
 
-        if self._set_id < 1:
-            raise ValueError('set_id must be > 1')
+        if self._session_params.input_data_training_set_id < 1:
+            raise ValueError('input_data_training_set_id must be > 1')
 
-        if self._total_number_of_sets < 1:
-            raise ValueError('total_number_of_sets must be >= 1')
+        if self._session_params.num_df_sets < 1:
+            raise ValueError('num_df_sets must be >= 1')
 
-        if self._set_id > self._total_number_of_sets:
-            raise ValueError('set_id: {} must be <= total_number_of_sets: {}'.format(self._set_id, self._total_number_of_sets))
+        if self._session_params.input_data_training_set_id > self._session_params.num_df_sets:
+            raise ValueError(
+                    'input_data_training_set_id: {} must be <= num_df_sets: {}'.format(
+                                                                                    self._session_params.input_data_training_set_id,
+                                                                                    self._session_params.num_df_sets))
 
     def last_saved_file_name(self):
         """It creates the last saved model file name.
@@ -45,23 +52,23 @@ class ModelInput(object):
         last_saved_session_id = 0
         last_saved_set_id = 0
 
-        if self._set_id == 1:
+        if self._session_params.input_data_training_set_id == 1:
             #For the first set, the last saved state is the last set of previous iteration
-            if self._session_id != 1:
-                last_saved_set_id = self._total_number_of_sets
+            if self._session_params.session_id != 1:
+                last_saved_set_id = self._session_params.num_df_sets
 
             #For the first set, the last saved iteration is the last iteration.
-            last_saved_session_id = self._session_id - 1
+            last_saved_session_id = self._session_params.session_id - 1
         #Normal case
         else:
-            last_saved_session_id = self._session_id
-            last_saved_set_id = self._set_id - 1
+            last_saved_session_id = self._session_params.session_id
+            last_saved_set_id = self._session_params.input_data_training_set_id - 1
 
         model_file_name = Path("{}.session_id.{}.set_id.{}.epoch.{}.h5".format(
-                                                                        self._model_name,
-                                                                        last_saved_session_id,
-                                                                        last_saved_set_id,
-                                                                        1))
+                                                                            self._model_name,
+                                                                            last_saved_session_id,
+                                                                            last_saved_set_id,
+                                                                            1))
 
         return model_file_name
 
@@ -72,7 +79,11 @@ class ModelInput(object):
             {string} -- The name of the model file for the current iteration.
         """
 
-        model_file_name = Path("{}.session_id.{}.set_id.{}.epoch.{}.h5".format(self._model_name, self._session_id, self._set_id, 1))
+        model_file_name = Path("{}.session_id.{}.set_id.{}.epoch.{}.h5".format(
+                                                                            self._model_name,
+                                                                            self._session_params.session_id,
+                                                                            self._session_params.input_data_training_set_id,
+                                                                            1))
 
         return model_file_name
 

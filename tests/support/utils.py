@@ -12,6 +12,10 @@ from argparse import ArgumentParser
 #Dataframe operations
 from pandas import read_csv
 from pandas import DataFrame
+import numpy as np
+
+#Input parameters
+from operation.input import SessionParameters
 
 #Keras
 from keras.models import load_model
@@ -25,6 +29,10 @@ input_shape = (200, 200, 3)
 dimensions = 12
 input_data_file = Path('input_data.csv')
 input_data_path = ut_constants.DATA_STORE / input_data_file
+dataset_location = ut_constants.TRAIN_STORE
+input_tuples_file_name = 'input_tuples_p5_n5.tuples'
+model_name = 'cnn_model2d_1'
+image_cols = ['Anchor', 'Sample']
 
 #Dataframe parameters
 image_col = 'Image'
@@ -40,15 +48,15 @@ def load_test_model():
 
     return model
 
-def get_args(model_name, dataset_location):
+def get_args(model_name = model_name, dataset_location = dataset_location, image_cols = image_cols):
     args = ArgumentParser()
 
     type(args).model_name = PropertyMock(return_value = model_name)
     type(args).dataset_location = PropertyMock(return_value = dataset_location)
 
     type(args).input_data = PropertyMock(return_value = 'input_data')
-    type(args).image_cols = PropertyMock(return_value = ['Anchor', 'Sample'])
-    type(args).image_transform_cols = PropertyMock(return_value = ['Anchor', 'Sample'])
+    type(args).image_cols = PropertyMock(return_value = image_cols)
+    type(args).image_transform_cols = PropertyMock(return_value = image_cols)
     type(args).label_col = PropertyMock(return_value = 'Id')
 
     type(args).session_id = PropertyMock(return_value = 0)
@@ -65,9 +73,28 @@ def get_args(model_name, dataset_location):
     type(args).input_data_training_set_id = PropertyMock(return_value = 0)
     type(args).input_shape = PropertyMock(return_value = [224, 224, 3])
 
+    type(args).dropbox_parameters = PropertyMock(return_value = ['auth_token', 'dropbox_dir'])
+
     return args
 
-def get_input_df():
+def get_session_args(session_id, input_data_training_set_id, input_data_training_set_size):
+    args = ArgumentParser()
+
+    type(args).session_id = PropertyMock(return_value = session_id)
+    type(args).input_data_training_set_id = PropertyMock(return_value = input_data_training_set_id)
+    type(args).input_data_training_set_size = PropertyMock(return_value = input_data_training_set_size)
+
+    return args
+
+def get_session_params(session_id, input_data_training_set_id, num_df_set):
+    args = get_session_args(session_id, input_data_training_set_id, 5)
+
+    session_params = SessionParameters(args)
+    session_params.num_df_sets = num_df_set
+
+    return session_params
+
+def get_input_data():
     return read_csv(str(input_data_path), index_col = 0)
 
 def create_dataframe_from_dict(data_dict):
@@ -94,3 +121,6 @@ def create_dataframe():
                                         })
 
     return data
+
+def patch_imload(source, images, shape = None):
+    return np.random.random((len(images), 400, 700, 1))
