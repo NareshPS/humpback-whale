@@ -25,7 +25,7 @@ from model.basemodel import BaseModel
 from iofiles.input_file import ModelInput
 
 #Input parameters
-from operation.input import SessionParameters
+from operation.input import RunParameters
 
 #Logger
 logger = None
@@ -251,7 +251,6 @@ if __name__ == "__main__":
 
     #Output files
     model_name = "{}_{}".format(name, base_model_name)
-    session_params = SessionParameters(args)
     model_input = ModelInput(model_name, session_params, 1)
 
     logger.info('Output files model_file: %s', model_input.last_saved_file_name())

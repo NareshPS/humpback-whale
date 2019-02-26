@@ -3,11 +3,8 @@
 #Image data generator
 from operation.image import ImageDataGeneration
 
-#Pandas operations
-from pandas import Series
-
-#Numpy operations
-from numpy import argmax, where
+#Evaluations
+from model.evaluation import PredictionEvaluation
 
 #Math operations
 from math import ceil
@@ -68,12 +65,10 @@ class Prediction:
 
         #Result dataframe
         num_predictions = predictions.shape[0]
-        input_data_predicted_slice = input_data[:num_predictions].reset_index(drop = True)
-        input_data_predicted_slice[constants.PANDAS_PREDICTION_COLUMN] = Series(argmax(predictions, axis = 1), index = input_data_predicted_slice.index)
-        match_series = where(
-                            input_data_predicted_slice[self._image_generation_params.label_col] == input_data_predicted_slice[constants.PANDAS_PREDICTION_COLUMN],
-                            1, #True Value
-                            0)
-        input_data_predicted_slice[constants.PANDAS_MATCH_COLUMN] = match_series
+        input_data_slice = input_data[:num_predictions].reset_index(drop = True)
 
-        return input_data_predicted_slice
+        #Evaluate predictions
+        prediction_eval = PredictionEvaluation(input_data_slice, predictions, self._image_generation_params.label_col)
+        result = prediction_eval.evaluate()
+
+        return result

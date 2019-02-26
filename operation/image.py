@@ -74,7 +74,7 @@ class ImageDataIterator(Sequence):
             {int} -- An integer indicating the number of batches.
         """
         #Compute steps per epoch
-        steps_per_epoch = int((self._dataset_size + self._batch_size - 1)/self._batch_size)
+        steps_per_epoch = ceil(self._dataset_size / self._batch_size)
 
         self._logger.info('steps_per_epoch: %d', steps_per_epoch)
 

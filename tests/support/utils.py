@@ -15,7 +15,7 @@ from pandas import DataFrame
 import numpy as np
 
 #Input parameters
-from operation.input import SessionParameters
+from operation.input import RunParameters
 
 #Keras
 from keras.models import load_model
@@ -89,7 +89,7 @@ def get_session_args(session_id, input_data_training_set_id, input_data_training
 def get_session_params(session_id, input_data_training_set_id, num_df_set):
     args = get_session_args(session_id, input_data_training_set_id, 5)
 
-    session_params = SessionParameters(args)
+    session_params = RunParameters(args)
     session_params.num_df_sets = num_df_set
 
     return session_params

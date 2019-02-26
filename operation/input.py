@@ -13,17 +13,24 @@ class TrainingParameters(object):
             args {An argparse Argument} -- The argparse arguments
         """
         #Required parameters
+        self.batch_id = args.batch_id
+        self.epoch_id = args.epoch_id
         self.num_fit_images = args.num_fit_images
         self.number_of_epochs = args.number_of_epochs
         self.learning_rate = args.learning_rate
+        self.number_prediction_steps = args.number_prediction_steps
 
     def __str__(self):
             return """Parameters::
-                        num_fit_images: {}
+                        batch_id: {} epoch_id: {}
+                        num_fit_images: {} number_prediction_steps: {}
                         number_of_epochs: {} learning_rate: {}""".format(
-                                                                                    self.num_fit_images,
-                                                                                    self.number_of_epochs,
-                                                                                    self.learning_rate)
+                                                                        self.batch_id,
+                                                                        self.epoch_id,
+                                                                        self.num_fit_images,
+                                                                        self.number_prediction_steps,
+                                                                        self.number_of_epochs,
+                                                                        self.learning_rate)
 
 class InputParameters(object):
     def __init__(self, args):
@@ -89,26 +96,3 @@ class ImageGenerationParameters(object):
                                                                 self.validation_split,
                                                                 self.num_classes,
                                                                 self.normalize)
-
-class SessionParameters(object):
-    def __init__(self, args):
-        """It initializes the training parameters.
-        
-        Arguments:
-            args {An argparse Argument} -- The argparse arguments
-        """
-        #Required parameters 
-        self.session_id = args.session_id
-        self.input_data_training_set_size = args.input_data_training_set_size
-        self.input_data_training_set_id = args.input_data_training_set_id
-        self.num_df_sets = 1
-
-    def __str__(self):
-            return """Parameters::
-                        session_id: {}
-                        input_data_training_set_size: {} input_data_training_set_id: {}
-                        num_df_sets: {}""".format(
-                                                self.session_id,
-                                                self.input_data_training_set_size,
-                                                self.input_data_training_set_id,
-                                                self.num_df_sets)

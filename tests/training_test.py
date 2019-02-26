@@ -14,7 +14,7 @@ from operation.image import ImageDataIterator
 from model.callback import ModelDropboxCheckpoint
 
 #Input parameters
-from operation.input import InputParameters, ImageGenerationParameters, TrainingParameters, SessionParameters
+from operation.input import InputParameters, ImageGenerationParameters, TrainingParameters, RunParameters
 
 #Test support
 from tests.support.utils import get_args, get_input_data, load_test_model, patch_imload
@@ -28,7 +28,7 @@ def get_params():
     input_params = InputParameters(args)
     image_generation_params = ImageGenerationParameters(args)
     training_params = TrainingParameters(args)
-    session_params = SessionParameters(args)
+    session_params = RunParameters(args)
     dropbox_auth, dropbox_dir = args.dropbox_parameters[0], Path(args.dropbox_parameters[1])
 
     return input_params, image_generation_params, training_params, session_params, dropbox_auth, dropbox_dir

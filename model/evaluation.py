@@ -1,18 +1,16 @@
 """It computes statistics on input tuples.
 """
 #pandas DataFrame
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from pandas import cut
 
 #Numpy imports
-from numpy import linspace
+from numpy import linspace, argmax, where
 
 #Constants
 from common import constants
 
 class LabelEvaluation(object):
-    count = 'Count'
-
     def __init__(self, dataframe):
         """It sets the input parameters
         
@@ -131,4 +129,25 @@ class ModelEvaluation(object):
 
         return labels
 
+class PredictionEvaluation(object):
+    def __init__(self, input_data, predictions, label_col):
+        """It sets the input parameters.
+        
+        Arguments:
+            input_data {pandas.DataFrame} -- The input data frame.
+            predictions {np.array} -- The predictions for the input data.
+            label_col {string} -- The name of the label column in the input data frame
+        """
+        self._input_data = input_data
+        self._predictions = predictions
+        self._label_col = label_col
 
+    def evaluate(self):
+        self._input_data[constants.PANDAS_PREDICTION_COLUMN] = Series(argmax(self._predictions, axis = 1), index = self._input_data.index)
+        match_series = where(
+                            self._input_data[self._label_col] == self._input_data[constants.PANDAS_PREDICTION_COLUMN],
+                            1, #True Value
+                            0)
+        self._input_data[constants.PANDAS_MATCH_COLUMN] = match_series
+
+        return self._input_data

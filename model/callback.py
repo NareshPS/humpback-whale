@@ -23,12 +23,11 @@ from common import logging
 class ModelDropboxCheckpoint(Callback):
     """It creates a model checkpoint and upload it to the dropbox.
     """
-    def __init__(self, model_name, session_params, dropbox_auth = None, dropbox_dir = None):
+    def __init__(self, model_name, dropbox_auth = None, dropbox_dir = None):
         """It initializes the parameters.
         
         Arguments:
             model_name {string} -- The name of the model
-            session_params {operation.input.SessionParameters} -- It contains the parameters to identify the current session.
         
         Keyword Arguments:
             dropbox_auth {string} -- The authentication token to access dropbox. (default: {None})
@@ -41,7 +40,6 @@ class ModelDropboxCheckpoint(Callback):
 
         #Required parameters
         self._model_name = model_name
-        self._session_params = session_params
 
         #Additional parameters
         self._dropbox_dir = dropbox_dir
@@ -65,7 +63,7 @@ class ModelDropboxCheckpoint(Callback):
             
     def on_epoch_end(self, epoch, logs = None):
         #Model input
-        model_input = ModelInput(self._model_name, self._session_params, epoch + 1)
+        model_input = ModelInput(self._model_name, self._session_params, epoch)
 
         #Save the trained model.
         self.model.save(str(model_input.file_name()))

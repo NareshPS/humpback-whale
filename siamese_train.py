@@ -8,7 +8,7 @@ from keras.models import load_model
 from operation.image import ImageDataGeneration
 from operation.transform import ImageDataTransformation
 from operation.prediction import Prediction
-from operation.input import TrainingParameters, InputParameters, SessionParameters, ImageGenerationParameters, update_params
+from operation.input import TrainingParameters, InputParameters, ImageGenerationParameters, update_params
 
 #Training
 from operation.training import ImageTraining
@@ -81,10 +81,6 @@ def parse_args():
         required = True,
         help = 'It specifies the names of the label column.')
     parser.add_argument(
-        '--session_id',
-        default = 1, type = int,
-        help = 'It specifies an identifier of the run.')
-    parser.add_argument(
         '-b', '--batch_size',
         default = 128, type = int,
         help = 'It specifies the training batch size.')
@@ -101,10 +97,6 @@ def parse_args():
         type = float,
         help = 'It specifies the learning rate of the optimization algorithm. It must be a float between 0 and 1')
     parser.add_argument(
-        '-e', '--number_of_epochs',
-        type = int, default = 1,
-        help = 'It specifies the number of epochs to train per input set.')
-    parser.add_argument(
         '-t', '--transformations',
         nargs = '+', default = [],
         type = kv_str_to_tuple,
@@ -115,6 +107,27 @@ def parse_args():
         default = 1000, type = int,
         help = 'It specifies the number of images to send to fit()')
     parser.add_argument(
+        '--epoch_id',
+        default = 0, type = int,
+        help = 'It specifies the start epoch id.')
+    parser.add_argument(
+        '--batch_id',
+        default = 0, type = int,
+        help = 'It specifies the start batch id.')
+    parser.add_argument(
+        '-e', '--number_of_epochs',
+        type = int, default = 1,
+        help = 'It specifies the number of epochs to train per input set.')
+    parser.add_argument(
+        '--input_shape',
+        default = [224, 224, 3],
+        type = int, nargs = 3,
+        help = 'It specifies the shape of the image input.')
+    parser.add_argument(
+        '--number_prediction_steps', default = 2,
+        type = int,
+        help = 'It specifies the number of prediction steps to evaluate trained model.')
+    parser.add_argument(
         '-p', '--dropbox_parameters',
         nargs = 2,
         help = 'It specifies dropbox parameters required to upload the checkpoints.')
@@ -122,70 +135,16 @@ def parse_args():
         '-l', '--log_to_console',
         action = 'store_true', default = False,
         help = 'It enables logging to console')
-    parser.add_argument(
-        '--num_prediction_steps',
-        default = 2, type = int,
-        help = 'The number of steps to use for verification by prediction')
-    parser.add_argument(
-        '--input_data_training_set_size',
-        default = 300000, type = int,
-        help = 'It specifies the the size of input data set that will be trained in one go.')
-    parser.add_argument(
-        '--input_data_training_set_id',
-        default = 1, type = int,
-        help = 'It specifies the set if of the input data set to start training.')
-    parser.add_argument(
-        '--input_shape',
-        default = [224, 224, 3],
-        type = int, nargs = 3,
-        help = 'It specifies the shape of the image input.')
 
     args = parser.parse_args()
 
     return args
-
-def verify(model, input_data_df, input_params, image_generation_params, num_prediction_steps):
-    """[summary]
-    
-    Arguments:
-        model {A Keras Model object} -- The model to use for verification
-        input_data_df {A pandas DataFrame} -- The input dataframe.
-        input_params {A InputDataParameters object} -- It contains the input parameters.
-        image_generation_params {A ImageGenerationParameters object} -- It contains parameters for the image data generator.
-        num_prediction_steps {int} -- The number of batches to predict.
-    """
-    #Compute predictions
-    predictor = Prediction(model, input_params, image_generation_params)
-    predicted_data = predictor.predict(input_data_df, num_prediction_steps)
-
-    #Compute accuracy
-    num_matches = np.nonzero(predicted_data[constants.PANDAS_MATCH_COLUMN])[0].shape[0]
-    num_mismatches = len(predicted_data[constants.PANDAS_MATCH_COLUMN]) - num_matches
-    accuracy = (num_matches/len(predicted_data[constants.PANDAS_MATCH_COLUMN])) * 100.
-
-    print_summary = """
-                        Result Dataframe: {}
-                        Total predictions: {}
-                        Correct predictions: {}
-                        Wrong predictions: {}
-                        Accuracy: {}
-                    """.format(
-                            predicted_data,
-                            len(predicted_data),
-                            num_matches,
-                            num_mismatches,
-                            accuracy)
-
-    #Print summary
-    print(print_summary)
 
 if __name__ == "__main__":
     #Parse commandline arguments
     args = parse_args()
 
     #Extract required parameters
-    num_prediction_steps = args.num_prediction_steps
-    input_data_training_set_id = args.input_data_training_set_id
     log_to_console = args.log_to_console
 
     #Initialize logging
@@ -204,10 +163,6 @@ if __name__ == "__main__":
     training_params = TrainingParameters(args)
     logger.info('Training parameters: %s', training_params)
 
-    #Session parameters
-    session_params = SessionParameters(args)
-    logger.info('Session parameters: %s', session_params)
-
     #Transformation parameters
     transformation_params = ImageDataTransformation.Parameters.parse(dict(args.transformations))
     logger.info('Transformation parameters: %s', transformation_params)
@@ -222,11 +177,7 @@ if __name__ == "__main__":
         dropbox_dir = constants.DROPBOX_APP_PATH_PREFIX / dropbox_parameters[1]
 
     #Log input parameters 
-    logger.info(
-            'Additional parameters input_data_training_set_id: %d log_to_console: %s dropbox_dir: %s',
-            input_data_training_set_id,
-            log_to_console,
-            dropbox_dir)
+    logger.info('Additional parameters log_to_console: %s dropbox_dir: %s', log_to_console, dropbox_dir)
 
     #Predictable randomness
     seed = 3
@@ -239,35 +190,25 @@ if __name__ == "__main__":
     input_data_file_path = input_files_client.get_all([input_params.input_data])[input_params.input_data]
 
     #Input data frame
-    input_data_df = read_csv(input_data_file_path, index_col = 0)
-
-    #Shuffle input dataframe for input_data_training_set_id == 1
-    if input_data_training_set_id == 1:
-        input_data_df = input_data_df.sample(frac = 1).reset_index(drop = True)
+    input_data = read_csv(input_data_file_path, index_col = 0)
 
     #Update input data parameters
-    num_classes = max(getattr(input_data_df, image_generation_params.label_col)) + 1
+    num_classes = max(getattr(input_data, image_generation_params.label_col)) + 1
     image_generation_params_update = dict(num_classes = num_classes)
     update_params(image_generation_params, **image_generation_params_update)
 
-    #Update session_parameters
-    num_df_sets = ceil(len(input_data_df) / session_params.input_data_training_set_size)
-    session_params_update = dict(num_df_sets = num_df_sets)
-    update_params(session_params, **session_params_update)
-
     logger.info('Updated input data parameters: %s', input_params)
-    logger.info('Updated session parameters: %s', session_params)
  
     #Model input
-    model_input = ModelInput(input_params.model_name, session_params, 1)
+    model_input = ModelInput(input_params.model_name, training_params)
 
     #Add to the list of input files
     input_files = input_files_client.get_all([
-                                                model_input.last_saved_file_name()
+                                                model_input.file_name()
                                             ])
     
     #Model file
-    model_file = input_files[model_input.last_saved_file_name()]
+    model_file = input_files[model_input.file_name()]
     model = load_model(str(model_file))
 
     logger.info("Loaded model from: {}".format(model_file))
@@ -275,31 +216,33 @@ if __name__ == "__main__":
     #Training setup
     trainer = ImageTraining(
                     input_params,
-                    image_generation_params,
                     training_params,
+                    image_generation_params,
                     transformation_params,
                     dropbox_auth,
                     dropbox_dir)
 
-    #Iterate over requested batches
-    for set_id in range(input_data_training_set_id, num_df_sets + 1):
-        #Update the set id
-        session_params.input_data_training_set_id = set_id
+    #Train
+    model, result = trainer.batch_train(model, input_data)
 
-        #DataFrame start and end location for the iteration
-        start_df_idx = (set_id - 1) * session_params.input_data_training_set_size
-        end_df_idx = set_id * session_params.input_data_training_set_size
+    #Compute accuracy
+    num_matches = np.nonzero(result[constants.PANDAS_MATCH_COLUMN])[0].shape[0]
+    num_mismatches = len(result[constants.PANDAS_MATCH_COLUMN]) - num_matches
+    accuracy = (num_matches/len(result[constants.PANDAS_MATCH_COLUMN])) * 100.
 
-        #DataFrame set
-        input_data_set = input_data_df.loc[start_df_idx:end_df_idx, :].reset_index(drop = True)
+    summary = """
+                Result Dataframe: {}
+                Total predictions: {}
+                Correct predictions: {}
+                Wrong predictions: {}
+                Accuracy: {}
+            """.format(
+                    result,
+                    len(result),
+                    num_matches,
+                    num_mismatches,
+                    accuracy)
 
-        #Log training metadata
-        logger.info('Training set:: set_id: %d start_df_idx: %d end_df_idx: %d', set_id, start_df_idx, end_df_idx)
-
-        #Train
-        model = trainer.train(model, input_data_set, session_params)
-
-        #Verification
-        verify(model, input_data_set, input_params, image_generation_params, num_prediction_steps)
+    print(summary)
 
     Metric.save(Path('metric_data.metric'))
