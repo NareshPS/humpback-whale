@@ -1,0 +1,15 @@
+{
+    "update.showReleaseNotes": false,
+    "workbench.editor.highlightModifiedTabs": true,
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+        "-p",
+        "*_test.py"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true,
+    "python.unitTest.autoTestDiscoverOnSaveEnabled": false,
+}
