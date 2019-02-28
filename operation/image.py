@@ -390,7 +390,6 @@ class ImageDataGeneration:
     def _apply_transformation(self, img_objs):
         transformed_objects = img_objs
 
-        print('apply_transformation')
         if self._transformer:
             transformed_objects = self._transformer.transform(img_objs)
 

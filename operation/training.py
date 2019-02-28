@@ -31,7 +31,8 @@ class ImageTraining(object):
             image_generation_params,
             transformation_params,
             dropbox_auth,
-            dropbox_dir):
+            dropbox_dir,
+            summary = True):
         """It initializes the training parameters.
         
         Arguments:
@@ -46,10 +47,11 @@ class ImageTraining(object):
         self._training_params = training_params
         self._image_generation_params = image_generation_params
         self._transformation_params = transformation_params
-
-        #Optional parameters
         self._dropbox_dir = dropbox_dir
         self._dropbox_auth = dropbox_auth
+
+        #Optional parameters
+        self._summary = summary
 
         #Derived parameters
         self._transformer = ImageDataTransformation(parameters = self._transformation_params)
@@ -193,7 +195,8 @@ class ImageTraining(object):
             result = predictor.predict(validation_gen._dataframe, len(validation_gen._dataframe))
 
             #Print summary
-            self._print_summary(result)
+            if self._summary:
+                self._print_summary(result)
 
         return model
 

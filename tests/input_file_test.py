@@ -9,11 +9,12 @@ from common import ut_constants
 #Path parsing
 from pathlib import Path
 
-#Input file
+#Input file and parameters
+from operation.input import TrainingParameters
 from iofiles.input_file import InputFiles, ModelInput
 
 #Test support
-from tests.support.utils import get_session_params
+from tests.support.utils import get_train_params
 
 #Random numbers
 from random import randint
@@ -26,42 +27,22 @@ remote_dir_path = Path('.')
 model_name = 'model_name'
 
 class TestModelInput(ut.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        #Arrange
+        cls.train_params = get_train_params()
+
     def test_init(self):
         #Valid inputs
-        _ = ModelInput(model_name, get_session_params(1, 1, 20), 1)
-        _ = ModelInput(model_name, get_session_params(1, 20, 20), 1)
-        _ = ModelInput(model_name, get_session_params(3, 1, 5), 1)
-        _ = ModelInput(model_name, get_session_params(2, 5, 9), 1)
+        _ = ModelInput(model_name, self.train_params)
 
         #Invalid inputs
         with self.assertRaises(ValueError):
-            _ = ModelInput(model_name,  get_session_params(0, 1, 20), 1)
-
-        with self.assertRaises(ValueError):
-            _ = ModelInput(model_name, get_session_params(1, 0, 20), 1)
-
-        with self.assertRaises(ValueError):
-            _ = ModelInput(model_name, get_session_params(1, 1, 0), 1)
-
-        with self.assertRaises(ValueError):
-            _ = ModelInput(model_name,  get_session_params(1, 6, 5), 1)
-
-    def test_last_saved_file_name(self):
-        #First input file
-        model_input = ModelInput(model_name, get_session_params(1, 1, 10), 1)
-        self.assertEqual('{}.session_id.0.set_id.0.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
-
-        #Non-first iteration and first set input file
-        model_input = ModelInput(model_name, get_session_params(2, 1, 10), 1)
-        self.assertEqual('{}.session_id.1.set_id.10.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
-
-        #Non-first iteration and non-first set input file
-        model_input = ModelInput(model_name, get_session_params(2, 2, 10), 1)
-        self.assertEqual('{}.session_id.2.set_id.1.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
+            _ = ModelInput(None, self.train_params)
 
     def test_file_name(self):
-        model_input = ModelInput(model_name, get_session_params(1, 1, 10), 1)
-        self.assertEqual('{}.session_id.1.set_id.1.epoch.1.h5'.format(model_name), str(model_input.file_name()))
+        model_input = ModelInput(model_name, self.train_params)
+        self.assertEqual('{}.batch.0.epoch.0.h5'.format(model_name), str(model_input.file_name()))
 
 class TestInputFiles(ut.TestCase):
     def test_init(self):

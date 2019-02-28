@@ -15,7 +15,7 @@ from pandas import DataFrame
 import numpy as np
 
 #Input parameters
-from operation.input import RunParameters
+from operation.input import TrainingParameters
 
 #Keras
 from keras.models import load_model
@@ -59,7 +59,6 @@ def get_args(model_name = model_name, dataset_location = dataset_location, image
     type(args).image_transform_cols = PropertyMock(return_value = image_cols)
     type(args).label_col = PropertyMock(return_value = 'Id')
 
-    type(args).session_id = PropertyMock(return_value = 0)
     type(args).batch_size = PropertyMock(return_value = 32)
     type(args).image_cache_size = PropertyMock(return_value = 1024)
 
@@ -68,31 +67,20 @@ def get_args(model_name = model_name, dataset_location = dataset_location, image
     type(args).num_fit_images = PropertyMock(return_value = 20)
     type(args).number_of_epochs = PropertyMock(return_value = 1)
 
-    type(args).num_prediction_steps = PropertyMock(return_value = 2)
-    type(args).input_data_training_set_size = PropertyMock(return_value = 100)
-    type(args).input_data_training_set_id = PropertyMock(return_value = 0)
+    type(args).epoch_id = PropertyMock(return_value = 0)
+    type(args).batch_id = PropertyMock(return_value = 0)
+    type(args).number_prediction_steps = PropertyMock(return_value = 2)
     type(args).input_shape = PropertyMock(return_value = [224, 224, 3])
 
     type(args).dropbox_parameters = PropertyMock(return_value = ['auth_token', 'dropbox_dir'])
 
     return args
 
-def get_session_args(session_id, input_data_training_set_id, input_data_training_set_size):
-    args = ArgumentParser()
+def get_train_params():
+    args = get_args()
+    train_params = TrainingParameters(args)
 
-    type(args).session_id = PropertyMock(return_value = session_id)
-    type(args).input_data_training_set_id = PropertyMock(return_value = input_data_training_set_id)
-    type(args).input_data_training_set_size = PropertyMock(return_value = input_data_training_set_size)
-
-    return args
-
-def get_session_params(session_id, input_data_training_set_id, num_df_set):
-    args = get_session_args(session_id, input_data_training_set_id, 5)
-
-    session_params = RunParameters(args)
-    session_params.num_df_sets = num_df_set
-
-    return session_params
+    return train_params
 
 def get_input_data():
     return read_csv(str(input_data_path), index_col = 0)

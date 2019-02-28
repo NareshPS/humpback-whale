@@ -60,4 +60,12 @@ class TestTrainingParameters(ut.TestCase):
         args = get_args(None, None)
         
         #Act
-        _ = TrainingParameters(args)
+        train_params = TrainingParameters(args)
+
+        #Assert
+        self.assertEqual(train_params.batch_id, args.batch_id)
+        self.assertEqual(train_params.epoch_id, args.epoch_id)
+        self.assertEqual(train_params.num_fit_images, args.num_fit_images)
+        self.assertEqual(train_params.number_of_epochs, args.number_of_epochs)
+        self.assertEqual(train_params.learning_rate, args.learning_rate)
+        self.assertEqual(train_params.number_prediction_steps, args.number_prediction_steps)

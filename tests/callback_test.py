@@ -10,7 +10,7 @@ from model.callback import ModelDropboxCheckpoint
 from pathlib import Path
 
 #Test support
-from tests.support.utils import get_session_params
+from tests.support.utils import get_train_params
 
 #Parameters
 model_name = 'model_1'
@@ -24,14 +24,14 @@ epoch = 2
 class TestModelDropboxCheckpoint(ut.TestCase):
     def test_init(self):
         #Arrange
-        session_params = get_session_params(session_id, set_id, num_sets)
+        train_params = get_train_params()
 
         #Act and Assert
         with self.assertRaises(ValueError):
-            ModelDropboxCheckpoint(model_name, session_params, dropbox_auth)
+            ModelDropboxCheckpoint(model_name, train_params, dropbox_auth)
 
-        ModelDropboxCheckpoint(model_name, session_params)
-        ModelDropboxCheckpoint(model_name, session_params, dropbox_auth, dropbox_path)
+        ModelDropboxCheckpoint(model_name, train_params)
+        ModelDropboxCheckpoint(model_name, train_params, dropbox_auth, dropbox_path)
 
     def on_epoch_end(self, checkpoint, call_dropbox):
         #Arrange
