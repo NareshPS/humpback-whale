@@ -18,9 +18,6 @@ from operation.input import InputParameters, TrainingParameters, ImageGeneration
 #Predictions
 from operation.prediction import Prediction
 
-#Numpy operations
-from numpy import nonzero
-
 #Useful constants
 from common import constants
 
@@ -157,7 +154,7 @@ if __name__ == "__main__":
     predicted_data = predictor.predict(input_data_df, num_prediction_steps)
 
     #Compute accuracy
-    num_matches = nonzero(predicted_data[constants.PANDAS_MATCH_COLUMN])[0].shape[0]
+    num_matches = (predicted_data[constants.PANDAS_MATCH_COLUMN].to_numpy().nonzero())[0].shape[0]
     num_mismatches = len(predicted_data[constants.PANDAS_MATCH_COLUMN]) - num_matches
     accuracy = (num_matches/len(predicted_data[constants.PANDAS_MATCH_COLUMN])) * 100.
 

@@ -17,9 +17,6 @@ from model.callback import ModelDropboxCheckpoint
 #Constants
 from common import constants
 
-#Numpy imports
-from numpy import nonzero
-
 #Math operations
 from math import ceil
 
@@ -207,7 +204,7 @@ class ImageTraining(object):
             result {pandas.DataFrame} -- The results data frame containing the predictions and the matches.
         """
         #Compute accuracy
-        num_matches = nonzero(result[constants.PANDAS_MATCH_COLUMN])[0].shape[0]
+        num_matches = (result[constants.PANDAS_MATCH_COLUMN].to_numpy().nonzero())[0].shape[0]
         num_mismatches = len(result[constants.PANDAS_MATCH_COLUMN]) - num_matches
         accuracy = (num_matches/len(result[constants.PANDAS_MATCH_COLUMN])) * 100.
 

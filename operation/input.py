@@ -13,12 +13,12 @@ class TrainingParameters(object):
             args {An argparse Argument} -- The argparse arguments
         """
         #Required parameters
-        self.batch_id = args.batch_id
-        self.epoch_id = args.epoch_id
-        self.num_fit_images = args.num_fit_images
-        self.number_of_epochs = args.number_of_epochs
+        self.batch_id = args.batch_id if hasattr(args, 'batch_id') else 0
+        self.epoch_id = args.epoch_id if hasattr(args, 'epoch_id') else 0
+        self.num_fit_images = args.num_fit_images if hasattr(args, 'num_fit_images') else 0
+        self.number_of_epochs = args.number_of_epochs if hasattr(args, 'number_of_epochs') else 0
         self.learning_rate = args.learning_rate
-        self.number_prediction_steps = args.number_prediction_steps
+        self.number_prediction_steps = args.number_prediction_steps if hasattr(args, 'number_prediction_steps') else 0
 
     def __str__(self):
             return """Parameters::

@@ -3,9 +3,8 @@
 #Kaggle
 kaggle
 
-#Deep learning
-tensorflow
-keras
+#Caching
+cachetools
 
 #Image processing
 opencv-python
@@ -37,5 +36,5 @@ dropbox
 #Bidirectional dictionary
 bidict
 
-#Calculate object sizes
-pympler
+#Math computations
+pandas

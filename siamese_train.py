@@ -226,7 +226,7 @@ if __name__ == "__main__":
     model, result = trainer.batch_train(model, input_data)
 
     #Compute accuracy
-    num_matches = np.nonzero(result[constants.PANDAS_MATCH_COLUMN])[0].shape[0]
+    num_matches = (result[constants.PANDAS_MATCH_COLUMN].to_numpy().nonzero())[0].shape[0]
     num_mismatches = len(result[constants.PANDAS_MATCH_COLUMN]) - num_matches
     accuracy = (num_matches/len(result[constants.PANDAS_MATCH_COLUMN])) * 100.
 
