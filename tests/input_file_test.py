@@ -11,10 +11,10 @@ from pathlib import Path
 
 #Input file and parameters
 from operation.input import TrainingParameters
-from iofiles.input_file import InputFiles, ModelInput
+from iofiles.input_file import InputFiles, ModelInput, InputDataFile
 
 #Test support
-from tests.support.utils import get_train_params
+from tests.support.utils import get_input_data, load_test_model
 
 #Random numbers
 from random import randint
@@ -25,15 +25,59 @@ remote_auth_token = 'remote_auth_token'
 remote_dir_path = Path('.')
 
 model_name = 'model_name'
+batch_id = 2
+epoch_id = 4
 
 class TestModelInput(ut.TestCase):
     def test_init(self):
         #Valid inputs
         _ = ModelInput(model_name)
 
-    def test_file_name(self):
+    def test_save(self):
+        #Arrange
+        model = load_test_model()
         model_input = ModelInput(model_name)
-        self.assertEqual('{}.batch.2.epoch.4.h5'.format(model_name), str(model_input.file_name(2, 4)))
+        
+        #Mocks
+        model.save = MagicMock()
+
+        #Act
+        model_input.save(model, batch_id, epoch_id)
+
+        #Assert
+        model.save.assert_called_with(str(model_input.file_name(batch_id, epoch_id)))
+
+    def test_file_name(self):
+        #Arrange
+        model_input = ModelInput(model_name)
+        self.assertEqual('{}.batch.2.epoch.4.h5'.format(model_name), str(model_input.file_name(batch_id, epoch_id)))
+
+class TestInputDataFile(ut.TestCase):
+    def test_init(self):
+        #Valid inputs
+        _ = InputDataFile()
+
+    def test_save(self):
+        #Arrange
+        input_data = get_input_data()
+        input_data_file = InputDataFile()
+
+        #Mocks
+        input_data.to_csv = MagicMock()
+
+        #Act
+        input_data_file.save(input_data, batch_id, epoch_id)
+
+        #Assert
+        input_data.to_csv.assert_called_with(input_data_file.file_name(batch_id, epoch_id))
+
+    def test_file_name(self):
+        #Arrange
+        input_data_file = InputDataFile()
+        file_name = Path('input_data.batch.0.epoch.{}.csv'.format(epoch_id))
+
+        #Act & Assert
+        self.assertEqual(input_data_file.file_name(batch_id, epoch_id), file_name)
 
 class TestInputFiles(ut.TestCase):
     def test_init(self):

@@ -42,7 +42,6 @@ class InputParameters(object):
         """
         #Required parameters
         self.model_name = args.model_name
-        self.input_data = args.input_data
         self.input_shape = tuple(args.input_shape)
 
         #Validation
@@ -51,10 +50,9 @@ class InputParameters(object):
 
     def __str__(self):
             return """Parameters::
-                        model_name: {} input_data: {} 
+                        model_name: {}
                         input_shape: {}""".format(
                                                 self.model_name,
-                                                self.input_data,
                                                 self.input_shape)
 
 class ImageGenerationParameters(object):

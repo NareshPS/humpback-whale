@@ -48,6 +48,28 @@ class ModelInput(object):
 
         return model_file_name
 
+class InputDataFile(object):
+    def __init__(self, name = 'input_data'):
+        #Required parameters
+        self._name = name
+
+    def save(self, input_data, batch_id, epoch_id):
+        input_data.to_csv(self.file_name(0, epoch_id))
+
+    def file_name(self, batch_id, epoch_id):
+        """It creates the file name for the current iteration.
+
+        Arguments:
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
+        
+        Returns:
+            {Path} -- The name of the model file
+        """
+        input_file_name = Path("{}.batch.{}.epoch.{}.csv".format(self._name, 0, epoch_id))
+
+        return input_file_name
+
 class InputFiles(object):
     def __init__(self, remote_auth_token = None, remote_dir_path = None):
         """It initializes and validates the input parameters.

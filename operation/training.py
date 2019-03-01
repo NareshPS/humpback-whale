@@ -171,10 +171,15 @@ class ImageTraining(object):
             batch_id {int} -- The batch to start the training for the epoch id.
             epoch_id {int} -- The epoch id to train.
         """
+        #Shuffle input
+        if start_batch_id == 0:
+            input_data = input_data.sample(frac = 1).reset_index(drop = True)
+
         #Iterate over all the remaining training batches
         train_gen, validation_gen = self._generators(input_data)
 
-        #Notify epoch start
+        #Epoch start operations
+        self._checkpoint_callback.set_input_data(input_data)
         self._checkpoint_callback.on_epoch_begin(epoch_id)
 
         for batch_id in range(start_batch_id, len(train_gen)):

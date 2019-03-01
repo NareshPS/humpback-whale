@@ -110,7 +110,6 @@ class TestImageTraining(ut.TestCase):
             self.assertTrue(isinstance(args['generator'], ImageDataIterator))
             self.assertTrue(isinstance(args['validation_data'], ImageDataIterator))
             self.assertTrue(args['epochs'], trainer._training_params.number_of_epochs)
-            #self.assertTrue(isinstance(args['callbacks'][0], ModelDropboxCheckpoint))
 
             #Assert model and learning rate
             self.assert_response_and_learning_rate(model, response)
@@ -126,6 +125,9 @@ class TestImageTraining(ut.TestCase):
         self.assertEqual(len(call_args_list), total_training_epochs)
 
         call_args_list = checkpoint.on_epoch_end.call_args_list
+        self.assertEqual(len(call_args_list), total_training_epochs)
+
+        call_args_list = checkpoint.set_input_data.call_args_list
         self.assertEqual(len(call_args_list), total_training_epochs)
 
     def batch_train(self, batch_id = 0, epoch_id = 0, number_of_epochs = 1):
@@ -148,6 +150,7 @@ class TestImageTraining(ut.TestCase):
         #Mock the relevant calls
         model.fit_generator = MagicMock()
         model.train_on_batch = MagicMock()
+        trainer._transformer.fit = MagicMock()
         K.set_value = MagicMock()
 
         with mock_patch('operation.utils.imload', side_effect = patch_imload):
@@ -172,24 +175,25 @@ class TestImageTraining(ut.TestCase):
         self.batch_train()
 
         #Multiple epoch, all batches
-        self.batch_train(number_of_epochs = 5)
+        self.batch_train(number_of_epochs = 2)
 
         #Single epoch, partial batches
-        self.batch_train(batch_id = 3)
+        self.batch_train(batch_id = 1)
 
         #Multiple epoch, partial batches
-        self.batch_train(batch_id = 2, number_of_epochs = 4)
+        self.batch_train(batch_id = 1, number_of_epochs = 2)
 
         #Partial epochs, all batches
-        self.batch_train(epoch_id = 2, number_of_epochs = 5)
+        self.batch_train(epoch_id = 1, number_of_epochs = 2)
 
         #Partial epochs, partial batches
-        self.batch_train(batch_id = 2, epoch_id = 1, number_of_epochs = 4)
+        self.batch_train(batch_id = 1, epoch_id = 1, number_of_epochs = 2)
 
     def test_batch_train_no_lr(self):
         #Arrange
         model, input_data, trainer = get_train_args()
         trainer._training_params.learning_rate = None
+        trainer._training_params.number_of_epochs = 1
         trainer._image_generation_params.batch_size = 40
         trainer._dropbox_auth = None
         trainer._dropbox_dir = None
@@ -204,3 +208,32 @@ class TestImageTraining(ut.TestCase):
 
             #Assert
             K.set_value.assert_not_called()
+
+    def batch_train_input_data_randomized(self, start_batch_id, is_randomized = True):
+        #Arrange
+        model, input_data, trainer = get_train_args()
+        trainer._training_params.batch_id = start_batch_id
+        trainer._training_params.epoch_id = 0
+        trainer._training_params.number_of_epochs = 1
+        trainer._image_generation_params.batch_size = 40
+        trainer._dropbox_auth = None
+        trainer._dropbox_dir = None
+
+        #Mock the relevant calls
+        model.train_on_batch = MagicMock()
+        trainer._transformer.fit = MagicMock()
+        input_data.sample = MagicMock()
+
+        with mock_patch('operation.utils.imload', side_effect = patch_imload):
+            #Act
+            _ = trainer.batch_train(model, input_data)
+
+            #Assert
+            if is_randomized:
+                input_data.sample.assert_called_once()
+            else:
+                input_data.sample.assert_not_called()
+
+    def test_batch_train_input_data_randomized(self):
+        self.batch_train_input_data_randomized(0, is_randomized = True)
+        self.batch_train_input_data_randomized(1, is_randomized = False)

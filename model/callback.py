@@ -8,7 +8,7 @@ from keras.callbacks import Callback
 from client.dropbox import DropboxConnection
 
 #Inputs
-from iofiles.input_file import ModelInput
+from iofiles.input_file import ModelInput, InputDataFile
 
 #Constants
 from common import constants
@@ -53,6 +53,7 @@ class BatchTrainStateCheckpoint(Callback):
         #Derived parameters
         self._dropbox = None
         self._model = None
+        self._input_data = None
         self._batch_id = 0
         self._epoch_id = 0
 
@@ -78,6 +79,14 @@ class BatchTrainStateCheckpoint(Callback):
         """
         self._model = model
 
+    def set_input_data(self, input_data):
+        """It updates the current input data.
+
+        Arguments:
+            input_data {pandas.DataFrame} -- It is the input training data.
+        """
+        self._input_data = input_data
+
     def _upload(self, input_files, batch_id, epoch_id):
         """It generates the checkpoint files locally, then uploads them to dropbox.
         
@@ -91,7 +100,10 @@ class BatchTrainStateCheckpoint(Callback):
         #Iterate over to generate input files.
         for input_file in input_files:
             #Save file locally
-            input_file.save(self._model, batch_id, epoch_id)
+            if isinstance(input_file, ModelInput):
+                input_file.save(self._model, batch_id, epoch_id)
+            elif isinstance(input_file, InputDataFile):
+                input_file.save(self._input_data, batch_id, epoch_id)
 
         if self._dropbox:
             #Upload the input files
