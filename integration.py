@@ -19,7 +19,7 @@ if __name__ == '__main__':
                     'python model_generation.py -n cnn -b mobilenet -a create -p "-u 155 -d 7"',
 
                     #Training
-                    'python siamese_train.py -m cnn_mobilenet -d "dataset/train_preprocessed" -i input_data.csv  -c 128 -b 32 -r 0.0003 --batch_id 0 --epoch_id 0 -t samplewise_std_normalization=true --image_cols Image --label_col Id',
+                    'python train.py -m cnn_mobilenet -d "dataset/train_preprocessed" -i input_data.csv  -c 128 -b 32 -r 0.0003 --batch_id 0 --epoch_id 0 -t samplewise_std_normalization=true --image_cols Image --label_col Id',
                     
                     #Prediction
                     'python predict.py -m cnn_mobilenet.batch.0.epoch.0  -d "dataset/train_preprocessed" -i input_data.csv --image_cols Image --label_col Id',

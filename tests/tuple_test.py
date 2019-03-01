@@ -28,8 +28,8 @@ class TestTupleGeneration(ut.TestCase):
         #Arrange
         label_df = self.get_label_df()
         tup_gen = TupleGeneration(
-                        label_df, 
-                        ut_constants.LABEL_DATAFRAME_IMAGE_COL, 
+                        label_df,
+                        ut_constants.LABEL_DATAFRAME_IMAGE_COL,
                         ut_constants.LABEL_DATAFRAME_LABEL_COL,
                         ut_constants.TUPLE_DATAFRAME_COLS)
         
