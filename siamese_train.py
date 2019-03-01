@@ -9,6 +9,7 @@ from operation.image import ImageDataGeneration
 from operation.transform import ImageDataTransformation
 from operation.prediction import Prediction
 from operation.input import TrainingParameters, InputParameters, ImageGenerationParameters, update_params
+from model.callback import BatchTrainStateCheckpoint
 
 #Training
 from operation.training import ImageTraining
@@ -25,9 +26,6 @@ from pickle import dump as pickle_dump
 from numpy.random import seed as np_seed
 from tensorflow import set_random_seed as tf_seed
 from imgaug import seed as imgaug_seed
-
-#Save checkpoints
-from model.callback import ModelDropboxCheckpoint
 
 #Dropbox store
 from client.dropbox import DropboxConnection
@@ -128,6 +126,10 @@ def parse_args():
         type = int,
         help = 'It specifies the number of prediction steps to evaluate trained model.')
     parser.add_argument(
+        '--checkpoint_batch_interval', default = 1,
+        type = int,
+        help = 'It specifies the number of batches after which to take a checkpoint.')
+    parser.add_argument(
         '-p', '--dropbox_parameters',
         nargs = 2,
         help = 'It specifies dropbox parameters required to upload the checkpoints.')
@@ -139,6 +141,27 @@ def parse_args():
     args = parser.parse_args()
 
     return args
+
+def batch_train_state_callback(model_name, checkpoint_batch_interval, dropbox_auth, dropbox_dir):
+    """It creates the state checkpoint callback that provides callbacks to training events.
+
+    Arguments:
+        model_name {string} -- The name of the model.
+        checkpoint_batch_interval {int} -- It specifies the number of batches after which to take a checkpoint
+        dropbox_auth {string} -- It specifies the dropbox authentication token to use to upload the checkpoints.
+        dropbox_dir {string} -- The destination dropbox directory.
+    """ 
+    #Initialize model input file
+    model_input = ModelInput(model_name)
+
+    state_checkpoint_callback = BatchTrainStateCheckpoint(
+                                        batch_input_files = [model_input],
+                                        checkpoint_batch_interval = checkpoint_batch_interval,
+                                        epoch_input_files = [],
+                                        dropbox_auth = dropbox_auth,
+                                        dropbox_dir = dropbox_dir)
+
+    return state_checkpoint_callback
 
 if __name__ == "__main__":
     #Parse commandline arguments
@@ -200,18 +223,24 @@ if __name__ == "__main__":
     logger.info('Updated input data parameters: %s', input_params)
  
     #Model input
-    model_input = ModelInput(input_params.model_name, training_params)
+    model_input = ModelInput(input_params.model_name)
+    model_file = model_input.file_name(training_params.batch_id, training_params.epoch_id)
 
     #Add to the list of input files
-    input_files = input_files_client.get_all([
-                                                model_input.file_name()
-                                            ])
+    input_files = input_files_client.get_all([model_file])
     
     #Model file
-    model_file = input_files[model_input.file_name()]
+    model_file = input_files[model_file]
     model = load_model(str(model_file))
 
     logger.info("Loaded model from: {}".format(model_file))
+
+    #Checkpoint callback
+    checkpoint_callback = batch_train_state_callback(
+                                    input_params.model_name,
+                                    training_params.checkpoint_batch_interval,
+                                    dropbox_auth,
+                                    dropbox_dir)
 
     #Training setup
     trainer = ImageTraining(
@@ -219,8 +248,7 @@ if __name__ == "__main__":
                     training_params,
                     image_generation_params,
                     transformation_params,
-                    dropbox_auth,
-                    dropbox_dir)
+                    checkpoint_callback)
 
     #Train
     model, result = trainer.batch_train(model, input_data)

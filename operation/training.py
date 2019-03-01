@@ -11,9 +11,6 @@ from operation.image import ImageDataGeneration
 from operation.transform import ImageDataTransformation
 from operation.prediction import Prediction
 
-#Save checkpoints
-from model.callback import ModelDropboxCheckpoint
-
 #Constants
 from common import constants
 
@@ -30,8 +27,7 @@ class ImageTraining(object):
             training_params,
             image_generation_params,
             transformation_params,
-            dropbox_auth,
-            dropbox_dir,
+            checkpoint_callback,
             summary = True):
         """It initializes the training parameters.
         
@@ -39,16 +35,14 @@ class ImageTraining(object):
             input_params {operation.input.InputParameters} -- The input parameters for the training.    
             training_params {operation.input.TrainingParameters} -- The parameter to start training.
             image_generation_params {operation.input.ImageGenerationParameters} -- The parameters required for image data generation.
-            dropbox_auth {string} -- The authentication token to access dropbox store.
-            dropbox_dir {string} -- The dropbox directory to store the generated data.
+            checkpoint_callback {model.callback.BatchTrainStateCheckpoint} -- The state checkpoint callback.
         """
         #Required parameters
         self._input_params = input_params
         self._training_params = training_params
         self._image_generation_params = image_generation_params
         self._transformation_params = transformation_params
-        self._dropbox_dir = dropbox_dir
-        self._dropbox_auth = dropbox_auth
+        self._checkpoint_callback = checkpoint_callback
 
         #Optional parameters
         self._summary = summary
@@ -117,16 +111,12 @@ class ImageTraining(object):
 
         #The generators to vend training and validation batches
         train_gen, validation_gen = self._generators(input_data)
-            
-        #Training callbacks
-        dropbox_callback = None
 
         #Fit the model the input.
         model.fit_generator(
                         generator = train_gen,
                         validation_data = validation_gen,
-                        epochs = self._training_params.number_of_epochs,
-                        callbacks = [dropbox_callback])
+                        epochs = self._training_params.number_of_epochs)
 
         self._logger.info('Training finished. Trained: %d epochs', self._training_params.number_of_epochs)
 
@@ -155,10 +145,15 @@ class ImageTraining(object):
         self._prepare(model)
 
         #Complete training the current epoch
-        model = self._run_epoch(model, input_data, self._training_params.batch_id, self._training_params.epoch_id)
+        model = self._run_epoch(
+                        model,
+                        input_data,
+                        self._training_params.batch_id,
+                        self._training_params.epoch_id)
 
         #Training over the remaining epochs
         for epoch_id in range(self._training_params.epoch_id + 1, self._training_params.number_of_epochs):
+            #Complete training the current epoch
             model = self._run_epoch(model, input_data, 0, epoch_id)
 
         #Compute predictions
@@ -179,14 +174,29 @@ class ImageTraining(object):
         #Iterate over all the remaining training batches
         train_gen, validation_gen = self._generators(input_data)
 
+        #Notify epoch start
+        self._checkpoint_callback.on_epoch_begin(epoch_id)
+
         for batch_id in range(start_batch_id, len(train_gen)):
             self._logger.info('Training the batch_id: %d', batch_id)
 
             #Batch training data from the generator
             X, Y = train_gen.__getitem__(batch_id)
 
+            #Notify batch start
+            self._checkpoint_callback.on_batch_begin(batch_id)
+
             #Feed the batch data for training
             model.train_on_batch(X, Y)
+
+            #Update the model object on the checkpoint
+            self._checkpoint_callback.set_model(model)
+
+            #Notify batch completion
+            self._checkpoint_callback.on_batch_end(batch_id)
+
+        #Notify epoch completion
+        self._checkpoint_callback.on_epoch_end(epoch_id)
 
         #Validation phase
         if validation_gen:

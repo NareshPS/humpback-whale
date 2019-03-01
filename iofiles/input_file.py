@@ -11,32 +11,40 @@ from tqdm import tqdm
 from pathlib import Path
 
 class ModelInput(object):
-    def __init__(self, model_name, training_params):
+    def __init__(self, model_name):
         """It initializes the parameters.
         
         Arguments:
             model_name {string} -- The name of the model
-            training_params {operation.input.TrainingParameters} -- It contains the parameters to identify the training session.
-            epoch {int} -- The current epoch number.
         """
         #Required parameters
         self._model_name = model_name
-        self._training_params = training_params
 
         #Validation
         if model_name is None:
             raise ValueError('model_name must be valid')
 
-    def file_name(self):
+    def save(self, model, batch_id, epoch_id):
+        """It saves the model object to the disk.
+
+        Arguments:
+            model {keras.Model} -- The model object to be set.
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
+        """
+        model.save(str(self.file_name(batch_id, epoch_id)))
+
+    def file_name(self, batch_id, epoch_id):
         """It creates the file name for the current iteration.
+
+        Arguments:
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
         
         Returns:
-            {string} -- The name of the model file for the current iteration.
+            {Path} -- The name of the model file
         """
-        model_file_name = Path("{}.batch.{}.epoch.{}.h5".format(
-                                                            self._model_name,
-                                                            self._training_params.batch_id,
-                                                            self._training_params.epoch_id))
+        model_file_name = Path("{}.batch.{}.epoch.{}.h5".format(self._model_name, batch_id, epoch_id))
 
         return model_file_name
 

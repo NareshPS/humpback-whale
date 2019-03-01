@@ -38,3 +38,6 @@ bidict
 
 #Math computations
 pandas
+
+#Refactoring library
+rope

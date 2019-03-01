@@ -245,18 +245,16 @@ if __name__ == "__main__":
     #Action parameters
     args = parse_action_parameters(action, action_parameters)
 
-    #Training parameters
-    training_params = TrainingParameters(args)
-
     #Output files
     model_name = "{}_{}".format(name, base_model_name)
-    model_input = ModelInput(model_name, training_params)
+    model_input = ModelInput(model_name)
+    model_file_name = model_input.file_name(0, 0)
 
-    logger.info('Output files model_file: %s', model_input.file_name())
+    logger.info('Output files model_file: %s', model_file_name)
 
     #Run action
-    model = act(action, name, base_model_name, model_input.file_name(), input_shape, args)
+    model = act(action, name, base_model_name, model_file_name, input_shape, args)
 
     #Save the trained model.
-    model.save(str(model_input.file_name()))
-    print("Saved model to: {}".format(model_input.file_name()))
+    model.save(str(model_file_name))
+    print("Saved model to: {}".format(model_file_name))

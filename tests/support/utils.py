@@ -66,6 +66,7 @@ def get_args(model_name = model_name, dataset_location = dataset_location, image
     type(args).learning_rate = PropertyMock(return_value = 0.001)
     type(args).num_fit_images = PropertyMock(return_value = 20)
     type(args).number_of_epochs = PropertyMock(return_value = 1)
+    type(args).checkpoint_batch_interval = PropertyMock(return_value = 1)
 
     type(args).epoch_id = PropertyMock(return_value = 0)
     type(args).batch_id = PropertyMock(return_value = 0)

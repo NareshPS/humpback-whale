@@ -18,7 +18,6 @@ from pandas import DataFrame
 from operation.transform import ImageDataTransformation
 from operation.training import ImageTraining
 from operation.image import ImageDataIterator
-from model.callback import ModelDropboxCheckpoint
 
 #Input parameters
 from operation.input import InputParameters, ImageGenerationParameters, TrainingParameters
@@ -39,22 +38,21 @@ def get_params():
     training_params = TrainingParameters(args)
     image_generation_params = ImageGenerationParameters(args)
     transformation_params = ImageDataTransformation.Parameters(samplewise_mean = True)
-    dropbox_auth, dropbox_dir = args.dropbox_parameters[0], Path(args.dropbox_parameters[1])
 
-    return input_params, training_params, image_generation_params, transformation_params, dropbox_auth, dropbox_dir
+    return input_params, training_params, image_generation_params, transformation_params
 
 def get_train_args():
     input_data = get_input_data()
     model = load_test_model()
-    input_params, training_params, image_generation_params, transformation_params, dropbox_auth, dropbox_dir = get_params()
+    input_params, training_params, image_generation_params, transformation_params = get_params()
     image_generation_params.num_classes = 64
+
     trainer = ImageTraining(
                     input_params,
                     training_params,
                     image_generation_params,
                     transformation_params,
-                    dropbox_auth,
-                    dropbox_dir,
+                    MagicMock(),
                     summary = False)
 
     return model, input_data, trainer
@@ -62,24 +60,22 @@ def get_train_args():
 class TestImageTraining(ut.TestCase):
     def test_init(self):
         #Arrange
-        input_params, training_params, image_generation_params, transformation_params, dropbox_auth, dropbox_dir = get_params()
-        
+        input_params, training_params, image_generation_params, transformation_params = get_params()
+    
         #Act
         trainer = ImageTraining(
                         input_params,
                         training_params,
                         image_generation_params,
                         transformation_params,
-                        dropbox_auth,
-                        dropbox_dir)
+                        MagicMock())
 
         #Assert input arguments
         self.assertEqual(input_params, trainer._input_params)
         self.assertEqual(training_params, trainer._training_params)
         self.assertEqual(image_generation_params, trainer._image_generation_params)
         self.assertEqual(transformation_params, trainer._transformer._parameters)
-        self.assertEqual(dropbox_auth, trainer._dropbox_auth)
-        self.assertEqual(dropbox_dir, trainer._dropbox_dir)
+        self.assertIsNotNone(trainer._checkpoint_callback)
 
     def assert_response_and_learning_rate(self, model, response):
         #Assert learning rate
@@ -114,11 +110,23 @@ class TestImageTraining(ut.TestCase):
             self.assertTrue(isinstance(args['generator'], ImageDataIterator))
             self.assertTrue(isinstance(args['validation_data'], ImageDataIterator))
             self.assertTrue(args['epochs'], trainer._training_params.number_of_epochs)
-            self.assertEqual(len(args['callbacks']), 1)
             #self.assertTrue(isinstance(args['callbacks'][0], ModelDropboxCheckpoint))
 
             #Assert model and learning rate
             self.assert_response_and_learning_rate(model, response)
+
+    def assert_checkpoint(self, checkpoint, total_training_batches, total_training_epochs):
+        call_args_list = checkpoint.on_batch_begin.call_args_list
+        self.assertEqual(len(call_args_list), total_training_batches)
+
+        call_args_list = checkpoint.on_batch_end.call_args_list
+        self.assertEqual(len(call_args_list), total_training_batches)
+
+        call_args_list = checkpoint.on_epoch_begin.call_args_list
+        self.assertEqual(len(call_args_list), total_training_epochs)
+
+        call_args_list = checkpoint.on_epoch_end.call_args_list
+        self.assertEqual(len(call_args_list), total_training_epochs)
 
     def batch_train(self, batch_id = 0, epoch_id = 0, number_of_epochs = 1):
         #Arrange
@@ -156,6 +164,9 @@ class TestImageTraining(ut.TestCase):
             #Assert model and learning rate
             self.assert_response_and_learning_rate(model, response)
 
+            #Assert checkpoint calls
+            self.assert_checkpoint(trainer._checkpoint_callback, total_training_batches, total_training_epochs)
+
     def test_batch_train(self):
         #Single epoch, all batches
         self.batch_train()
@@ -174,3 +185,22 @@ class TestImageTraining(ut.TestCase):
 
         #Partial epochs, partial batches
         self.batch_train(batch_id = 2, epoch_id = 1, number_of_epochs = 4)
+
+    def test_batch_train_no_lr(self):
+        #Arrange
+        model, input_data, trainer = get_train_args()
+        trainer._training_params.learning_rate = None
+        trainer._image_generation_params.batch_size = 40
+        trainer._dropbox_auth = None
+        trainer._dropbox_dir = None
+
+        #Mock the relevant calls
+        model.train_on_batch = MagicMock()
+        K.set_value = MagicMock()
+
+        with mock_patch('operation.utils.imload', side_effect = patch_imload):
+            #Act
+            _ = trainer.batch_train(model, input_data)
+
+            #Assert
+            K.set_value.assert_not_called()

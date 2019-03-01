@@ -27,22 +27,13 @@ remote_dir_path = Path('.')
 model_name = 'model_name'
 
 class TestModelInput(ut.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        #Arrange
-        cls.train_params = get_train_params()
-
     def test_init(self):
         #Valid inputs
-        _ = ModelInput(model_name, self.train_params)
-
-        #Invalid inputs
-        with self.assertRaises(ValueError):
-            _ = ModelInput(None, self.train_params)
+        _ = ModelInput(model_name)
 
     def test_file_name(self):
-        model_input = ModelInput(model_name, self.train_params)
-        self.assertEqual('{}.batch.0.epoch.0.h5'.format(model_name), str(model_input.file_name()))
+        model_input = ModelInput(model_name)
+        self.assertEqual('{}.batch.2.epoch.4.h5'.format(model_name), str(model_input.file_name(2, 4)))
 
 class TestInputFiles(ut.TestCase):
     def test_init(self):

@@ -69,3 +69,4 @@ class TestTrainingParameters(ut.TestCase):
         self.assertEqual(train_params.number_of_epochs, args.number_of_epochs)
         self.assertEqual(train_params.learning_rate, args.learning_rate)
         self.assertEqual(train_params.number_prediction_steps, args.number_prediction_steps)
+        self.assertEqual(train_params.checkpoint_batch_interval, args.checkpoint_batch_interval)

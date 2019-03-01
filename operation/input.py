@@ -18,6 +18,7 @@ class TrainingParameters(object):
         self.num_fit_images = args.num_fit_images if hasattr(args, 'num_fit_images') else 0
         self.number_of_epochs = args.number_of_epochs if hasattr(args, 'number_of_epochs') else 0
         self.learning_rate = args.learning_rate
+        self.checkpoint_batch_interval = args.checkpoint_batch_interval  if hasattr(args, 'checkpoint_batch_interval') else 0
         self.number_prediction_steps = args.number_prediction_steps if hasattr(args, 'number_prediction_steps') else 0
 
     def __str__(self):

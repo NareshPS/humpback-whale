@@ -7,7 +7,7 @@ from sys import stdout
 if __name__ == '__main__':
     commands = [
                     #Siamese tuple generation
-                    'python siamese_input_tuples.py -i input_labels.csv -o input_tuples.csv -c Image Id --output_cols Anchor Sample Label -p 5 -n 5 -f',
+                    'python siamese_input_tuples.py -i tests/store/label_df.csv -o input_tuples.csv -c Image Id --output_cols Anchor Sample Label -p 5 -n 5 -f',
                     
                     #Image augmentation
                     'python augment.py -d dataset/train -o dataset/train_preprocessed -i dataset/train.csv -n 10 -c Image -s 224 224 --output_file input_data.csv',
@@ -34,6 +34,6 @@ if __name__ == '__main__':
     for command in commands:
         print(command)
 
-        check_call(command)
+        check_call(command, shell = True)
 
     
