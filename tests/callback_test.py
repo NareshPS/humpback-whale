@@ -13,7 +13,7 @@ from pathlib import Path
 from tests.support.utils import load_test_model, get_input_data
 
 #Input files
-from iofiles.input_file import ModelInput, InputDataFile
+from iofiles.input_file import ModelInput, InputDataFile, ResultFile
 
 #Dropbox
 from client.dropbox import DropboxConnection
@@ -23,40 +23,34 @@ model_name = 'model_1'
 model_name_1 = 'model_1_1'
 batch_id = 2
 epoch_id = 3
-dropbox_auth = 'xyz'
-dropbox_path = '/root'
 checkpoint_batch_interval = 2
 
-def get_checkpoint(
-            dropbox_auth = dropbox_auth,
-            dropbox_dir = dropbox_path,
-            checkpoint_batch_interval = checkpoint_batch_interval):
+def get_dropbox(token = 'remote_auth_token', dir_path = Path('.')):
+    dropbox_params = DropboxConnection.Parameters(token, dir_path)
+    dropbox = DropboxConnection(dropbox_params)
+
+    return dropbox
+
+def get_checkpoint(dropbox = None, checkpoint_batch_interval = checkpoint_batch_interval):
     #Arrange
     batch_input = ModelInput(model_name)
     input_data_file = InputDataFile()
-    batch_input_files = [batch_input]
+    result_file = ResultFile()
+    batch_input_files = [batch_input, result_file]
     epoch_input_files = [input_data_file]
 
     checkpoint = BatchTrainStateCheckpoint(
                         batch_input_files = batch_input_files,
                         checkpoint_batch_interval = checkpoint_batch_interval,
                         epoch_input_files = epoch_input_files,
-                        dropbox_auth = dropbox_auth,
-                        dropbox_dir = dropbox_path)
+                        dropbox = dropbox)
 
     return checkpoint, batch_input_files, epoch_input_files
 
 class TestBatchTrainStateCheckpoint(ut.TestCase):
-    def test_init_invalid_args(self):
-        #Act and Assert
-        with self.assertRaises(ValueError):
-            BatchTrainStateCheckpoint(dropbox_auth = dropbox_auth)
-
-    def init(self, dropbox_auth, dropbox_dir, dropbox_connection = True):
+    def test_init(self):
         #Arrange
-        checkpoint, batch_input_files, epoch_input_files = get_checkpoint(
-                                                                dropbox_auth = dropbox_auth,
-                                                                dropbox_dir = dropbox_dir)
+        checkpoint, batch_input_files, epoch_input_files = get_checkpoint(dropbox = get_dropbox())
         
         #Assert
         self.assertEqual(checkpoint._batch_id, 0)
@@ -64,21 +58,11 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
         self.assertEqual(checkpoint._batch_input_files, batch_input_files)
         self.assertEqual(checkpoint._epoch_input_files, epoch_input_files)
         self.assertEqual(checkpoint._checkpoint_batch_interval, checkpoint_batch_interval)
-        self.assertEqual(checkpoint._dropbox_dir, dropbox_path)
+        self.assertIsNotNone(checkpoint._dropbox)
         self.assertIsNone(checkpoint._model)
         self.assertIsNone(checkpoint._input_data)
-
-        if dropbox_connection:
-            self.assertIsNotNone(checkpoint._dropbox)
-            self.assertTrue(isinstance(checkpoint._dropbox, DropboxConnection))
-        else:
-            self.assertIsNone(checkpoint._dropbox)
-
-    def test_init_dropbox(self):
-        self.init(dropbox_auth, dropbox_path)
-
-    def test_init_no_dropbox(self):
-        self.init(None, None, dropbox_connection = False)
+        self.assertIsNone(checkpoint._result)
+        self.assertIsNone(checkpoint._epoch_response)
 
     def test_set_model(self):
         #Arrange
@@ -90,6 +74,17 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
 
         #Assert
         self.assertIsNotNone(checkpoint._model)
+
+    def test_set_result(self):
+        #Arrange
+        checkpoint, _, _ = get_checkpoint()
+        result = 3
+
+        #Act
+        checkpoint.set_result(result)
+
+        #Assert
+        self.assertIsNotNone(checkpoint._result)
 
     def test_set_input_data(self):
         #Arrange
@@ -106,12 +101,15 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
     def test_on_epoch_begin(self):
         #Arrange
         checkpoint, _, _ = get_checkpoint()
+        checkpoint._model = MagicMock()
 
         #Act
         checkpoint.on_epoch_begin(epoch_id)
 
         #Assert
         self.assertEqual(epoch_id, checkpoint._epoch_id)
+        self.assertIsNotNone(checkpoint._epoch_response)
+        self.assertEqual(epoch_id, checkpoint._epoch_response._epoch_id)
 
     def on_epoch_end(self, checkpoint, call_dropbox):
         #Arrange
@@ -145,7 +143,7 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
 
     def test_on_epoch_end_dropbox_called(self):
         #Arrange
-        checkpoint, _, _ = get_checkpoint()
+        checkpoint, _, _ = get_checkpoint(dropbox = get_dropbox())
         model = load_test_model()
         input_data = get_input_data()
         checkpoint.set_model(model)
@@ -158,7 +156,7 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
 
     def test_on_epoch_end_dropbox_not_called(self):
         #Arrange
-        checkpoint, _, _ = get_checkpoint(dropbox_auth = None, dropbox_dir = None)
+        checkpoint, _, _ = get_checkpoint()
         model = load_test_model()
         input_data = get_input_data()
         checkpoint.set_model(model)
@@ -179,9 +177,10 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
         #Assert
         self.assertEqual(batch_id, checkpoint._batch_id)
 
-    def on_batch_end_no_dropbox(self, checkpoint, batch_id, save_called = True):
+    def on_batch_end_no_dropbox(self, checkpoint, batch_id, batch_input_files, save_called = True):
         #Arrange
         model_file = Path('model_1.batch.{}.epoch.3.h5'.format(batch_id))
+        checkpoint.set_result([0.5, .2])
 
         #Mocks
         checkpoint._model.save = MagicMock()
@@ -196,10 +195,14 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
             checkpoint._model.save.assert_not_called()
 
         self.assertIsNone(checkpoint._dropbox)
+        self.assertEqual(1, len(checkpoint._epoch_response._batch_ids))
+        self.assertEqual(batch_id, checkpoint._epoch_response._batch_ids[0])
 
-    def on_batch_end_with_dropbox(self, checkpoint, batch_id):
+    def on_batch_end_with_dropbox(self, checkpoint, batch_id, batch_input_files):
         #Arrange
         model_file = Path('model_1.batch.{}.epoch.3.h5'.format(batch_id))
+        result_file = Path('result.batch.{}.epoch.3.dmp'.format(batch_id))
+        checkpoint.set_result([0.5, .2])
 
         #Mocks
         checkpoint._model.save = MagicMock()
@@ -210,42 +213,47 @@ class TestBatchTrainStateCheckpoint(ut.TestCase):
             checkpoint.on_batch_end(batch_id)
 
             #Assert
-            mock_unlink.assert_called_once()
+            call_args_list = mock_unlink.call_args_list
+            self.assertEqual(len(call_args_list), len(batch_input_files))
 
         #Assert
-        checkpoint._dropbox.upload.assert_called_with(model_file)
+        arg_tuples = [args[0] for args in checkpoint._dropbox.upload.call_args_list]
+        upload_list = [item[0] for item in arg_tuples]
+        self.assertCountEqual([model_file, result_file], upload_list)
+        self.assertEqual(1, len(checkpoint._epoch_response._batch_ids))
+        self.assertEqual(batch_id, checkpoint._epoch_response._batch_ids[0])
 
     def test_on_batch_end_save_called(self):
         #Arrange
         batch_id = 1
-        checkpoint, _, _ = get_checkpoint(dropbox_auth = None, dropbox_dir = None)
+        checkpoint, batch_input_files, _ = get_checkpoint()
         model = load_test_model()
         checkpoint.set_model(model)
         checkpoint.on_batch_begin(batch_id)
         checkpoint.on_epoch_begin(epoch_id)
 
         #Act & Assert
-        self.on_batch_end_no_dropbox(checkpoint, batch_id)
+        self.on_batch_end_no_dropbox(checkpoint, batch_id, batch_input_files)
 
     def test_on_batch_end_save_called_with_dropbox(self):
         #Arrange
         batch_id = 1
-        checkpoint, _, _ = get_checkpoint()
+        checkpoint, batch_input_files, _ = get_checkpoint(dropbox = get_dropbox())
         model = load_test_model()
         checkpoint.set_model(model)
         checkpoint.on_batch_begin(batch_id)
         checkpoint.on_epoch_begin(epoch_id)
 
         #Act & Assert
-        self.on_batch_end_with_dropbox(checkpoint, batch_id)
+        self.on_batch_end_with_dropbox(checkpoint, batch_id, batch_input_files)
 
     def test_on_batch_end_save_not_called(self):
         #Arrange
-        checkpoint, _, _ = get_checkpoint(dropbox_auth = None, dropbox_dir = None)
+        checkpoint, batch_input_files, _ = get_checkpoint()
         model = load_test_model()
         checkpoint.set_model(model)
         checkpoint.on_batch_begin(batch_id)
         checkpoint.on_epoch_begin(epoch_id)
 
         #Act & Assert
-        self.on_batch_end_no_dropbox(checkpoint, batch_id, save_called = False)
+        self.on_batch_end_no_dropbox(checkpoint, batch_id, batch_input_files, save_called = False)

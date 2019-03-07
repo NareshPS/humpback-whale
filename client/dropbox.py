@@ -22,19 +22,40 @@ from common import logging
 from tqdm import tqdm
 
 class DropboxConnection(object):
-    def __init__(self, auth_token, remote_dir_path):
+    class Parameters(object):
+        def __init__(self, auth_token, remote_dir_path):
+            self._auth_token = auth_token
+            self._remote_dir_path = remote_dir_path
+
+        @property
+        def auth_token(self):
+            return self._auth_token
+
+        @property
+        def remote_dir_path(self):
+            return constants.DROPBOX_APP_PATH_PREFIX / self._remote_dir_path
+
+        def __str__(self):
+            return """
+                        remote_dir_path: {}
+                   """.format(self.remote_dir_path)
+
+    @classmethod
+    def get_client(cls, auth_token, remote_dir_path):
+        #Initialize the paramters
+        params = DropboxConnection.Parameters(auth_token, remote_dir_path)
+
+        #Create dropbox client
+        client = DropboxConnection(params)
+
+        return client
+
+    def __init__(self, params):
         #Required parameters
-        self._remote_dir_path = remote_dir_path
-
-        #Validation
-        if not remote_dir_path:
-            raise ValueError("No remote dir provided.")
-
-        if not auth_token:
-            raise ValueError("No authentication token provided")
+        self._params = params
 
         #Derived parameters
-        self._client = Dropbox(auth_token)
+        self._client = Dropbox(self._params.auth_token)
 
         #Logging
         self._logger = logging.get_logger(__name__)
@@ -58,7 +79,7 @@ class DropboxConnection(object):
             source_file_name = Path(source_file_path).name
 
             #Remote path
-            remote_file_path = (Path(constants.DROPBOX_APP_PATH_PREFIX) / self._remote_dir_path / source_file_name).as_posix()
+            remote_file_path = (self._params.remote_dir_path / source_file_name).as_posix()
 
             #File size
             upload_size = path.getsize(source_file_path)
@@ -152,7 +173,7 @@ class DropboxConnection(object):
             raise ValueError("Invalid remote file name")
 
         #Remote file path
-        remote_file_path = constants.DROPBOX_APP_PATH_PREFIX / self._remote_dir_path / remote_file_name
+        remote_file_path = self._params.remote_dir_path / remote_file_name
 
         #Download file size placeholder
         download_size = 0

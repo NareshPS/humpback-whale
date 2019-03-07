@@ -14,11 +14,15 @@ from pandas import read_csv
 from pandas import DataFrame
 import numpy as np
 
+#Image loading
+from operation.utils import imload
+
 #Input parameters
 from operation.input import TrainingParameters
 
 #Keras
-from keras.models import load_model
+from keras.models import load_model, Model, Sequential
+from keras.layers import Input, Dense, Activation, Flatten
 
 #Path manipulations
 from pathlib import Path
@@ -38,6 +42,9 @@ image_cols = ['Anchor', 'Sample']
 image_col = 'Image'
 label_col = 'Id'
 columns = [image_col, label_col]
+
+#Image list
+image_names = ['0000e88ab.jpg', '3889d6902.jpg']
 
 def load_test_model():
     #Model file path
@@ -113,3 +120,21 @@ def create_dataframe():
 
 def patch_imload(source, images, shape = None):
     return np.random.random((len(images), 400, 700, 1))
+
+def create_model(input_shape = input_shape, num_classes = 2, metrics = None):
+    model = Sequential()
+
+    model.add(Dense(100, input_shape = input_shape))
+    model.add(Flatten())
+    model.add(Dense(num_classes))
+    model.add(Activation('sigmoid'))
+
+    model.compile('adam', loss = 'binary_crossentropy', metrics = metrics)
+
+    return model
+
+def create_model_input_data(input_shape):
+    X = imload(dataset_location, image_names, shape = input_shape[:2])
+    Y = np.ones((len(image_names), 1))
+
+    return X, Y

@@ -144,17 +144,25 @@ class ImageTraining(object):
         #Prepare for training
         self._prepare(model)
 
-        #Complete training the current epoch
-        model = self._run_epoch(
-                        model,
-                        input_data,
-                        self._training_params.batch_id,
-                        self._training_params.epoch_id)
-
-        #Training over the remaining epochs
-        for epoch_id in range(self._training_params.epoch_id + 1, self._training_params.number_of_epochs):
+        with tqdm(total = self._training_params.number_of_epochs - self._training_params.epoch_id) as pbar:
             #Complete training the current epoch
-            model = self._run_epoch(model, input_data, 0, epoch_id)
+            model = self._run_epoch(
+                            model,
+                            input_data,
+                            self._training_params.batch_id,
+                            self._training_params.epoch_id,
+                            pbar)
+
+            #Update the progress bar after epoch end
+            pbar.update()
+
+            #Training over the remaining epochs
+            for epoch_id in range(self._training_params.epoch_id + 1, self._training_params.number_of_epochs):
+                #Complete training the current epoch
+                model = self._run_epoch(model, input_data, 0, epoch_id, pbar)
+
+                #Update the progress bar after epoch end
+                pbar.update()
 
         #Compute predictions
         predictor = Prediction(model, self._input_params, self._image_generation_params)
@@ -162,7 +170,7 @@ class ImageTraining(object):
 
         return model, result
 
-    def _run_epoch(self, model, input_data, start_batch_id, epoch_id):
+    def _run_epoch(self, model, input_data, start_batch_id, epoch_id, pbar):
         """It run one epoch of training
         
         Arguments:
@@ -170,6 +178,7 @@ class ImageTraining(object):
             input_data {pandas.DataFrame} -- The input dataframe.
             batch_id {int} -- The batch to start the training for the epoch id.
             epoch_id {int} -- The epoch id to train.
+            pbar {tqdm} -- The handle to the progress bar.
         """
         #Shuffle input
         if start_batch_id == 0:
@@ -180,7 +189,11 @@ class ImageTraining(object):
 
         #Epoch start operations
         self._checkpoint_callback.set_input_data(input_data)
+        self._checkpoint_callback.set_model(model)
         self._checkpoint_callback.on_epoch_begin(epoch_id)
+
+        #Loss placeholder
+        loss = None
 
         for batch_id in range(start_batch_id, len(train_gen)):
             self._logger.info('Training the batch_id: %d', batch_id)
@@ -190,12 +203,22 @@ class ImageTraining(object):
 
             #Notify batch start
             self._checkpoint_callback.on_batch_begin(batch_id)
-
+            pbar.set_description(
+                    'Processing Epoch: {}/{} Batch: {}/{} Loss: {}'.format(
+                                                                        epoch_id + 1,
+                                                                        self._training_params.number_of_epochs,
+                                                                        batch_id + 1,
+                                                                        len(train_gen),
+                                                                        loss))
             #Feed the batch data for training
-            model.train_on_batch(X, Y)
+            result = model.train_on_batch(X, Y)
 
-            #Update the model object on the checkpoint
+            #Update loss
+            loss = result if not isinstance(result, list) else result[0]
+
+            #Update the model and result object on the checkpoint
             self._checkpoint_callback.set_model(model)
+            self._checkpoint_callback.set_result(result)
 
             #Notify batch completion
             self._checkpoint_callback.on_batch_end(batch_id)

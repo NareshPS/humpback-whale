@@ -38,7 +38,7 @@ from argparse import ArgumentParser
 from common.parse import kv_str_to_tuple
 
 #Input files
-from iofiles.input_file import InputFiles, ModelInput, InputDataFile
+from iofiles.input_file import InputFiles, ModelInput, InputDataFile, ResultFile
 
 #Path manipulations
 from pathlib import Path
@@ -138,25 +138,24 @@ def parse_args():
 
     return args
 
-def batch_train_state_callback(model_name, checkpoint_batch_interval, dropbox_auth, dropbox_dir):
+def batch_train_state_callback(model_name, checkpoint_batch_interval, dropbox):
     """It creates the state checkpoint callback that provides callbacks to training events.
 
     Arguments:
         model_name {string} -- The name of the model.
         checkpoint_batch_interval {int} -- It specifies the number of batches after which to take a checkpoint
-        dropbox_auth {string} -- It specifies the dropbox authentication token to use to upload the checkpoints.
-        dropbox_dir {string} -- The destination dropbox directory.
+        dropbox {client.dropbox.DropboxConnection} -- The dropbox client.
     """ 
     #Initialize input files
     model_input = ModelInput(model_name)
     input_data_file = InputDataFile()
+    result_file = ResultFile()
 
     state_checkpoint_callback = BatchTrainStateCheckpoint(
-                                        batch_input_files = [model_input],
+                                        batch_input_files = [model_input, result_file],
                                         checkpoint_batch_interval = checkpoint_batch_interval,
-                                        epoch_input_files = [input_data_file],
-                                        dropbox_auth = dropbox_auth,
-                                        dropbox_dir = dropbox_dir)
+                                        epoch_input_files = [input_data_file, result_file],
+                                        dropbox = dropbox)
 
     return state_checkpoint_callback
 
@@ -189,15 +188,15 @@ if __name__ == "__main__":
 
     #Dropbox parameters
     dropbox_parameters = args.dropbox_parameters
-    dropbox_auth = None
-    dropbox_dir = None
+
+    #Dropbox connection placeholder
+    dropbox = None
 
     if dropbox_parameters:
-        dropbox_auth = dropbox_parameters[0]
-        dropbox_dir = constants.DROPBOX_APP_PATH_PREFIX / dropbox_parameters[1]
+        dropbox_params = DropboxConnection.Parameters(dropbox_parameters[0], dropbox_parameters[1])
+        dropbox = DropboxConnection(dropbox_params)
 
-    #Log input parameters 
-    logger.info('Additional parameters log_to_console: %s dropbox_dir: %s', log_to_console, dropbox_dir)
+        logger.info('Dropbox parameters:: dropbox_params: %s', dropbox_params)
 
     #Predictable randomness
     seed = 3
@@ -210,7 +209,7 @@ if __name__ == "__main__":
     input_data_file_name = input_data_file.file_name(0, training_params.epoch_id)
 
     #Prepare input files
-    input_files_client = InputFiles(dropbox_auth, dropbox_dir)
+    input_files_client = InputFiles(dropbox)
     input_data_file_path = input_files_client.get_all([input_data_file_name])[input_data_file_name]
 
     #Input data frame
@@ -240,8 +239,7 @@ if __name__ == "__main__":
     checkpoint_callback = batch_train_state_callback(
                                     input_params.model_name,
                                     training_params.checkpoint_batch_interval,
-                                    dropbox_auth,
-                                    dropbox_dir)
+                                    dropbox)
 
     #Training setup
     trainer = ImageTraining(

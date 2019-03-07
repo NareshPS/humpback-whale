@@ -10,6 +10,9 @@ from tqdm import tqdm
 #Path manipulations
 from pathlib import Path
 
+#Pickle
+from pickle import dump as pickle_dump
+
 class ModelInput(object):
     def __init__(self, model_name):
         """It initializes the parameters.
@@ -70,32 +73,38 @@ class InputDataFile(object):
 
         return input_file_name
 
+class ResultFile(object):
+    def __init__(self, name = 'result'):
+        self._name = name
+    
+    def save(self, result, batch_id, epoch_id):
+        print('Calling pickle')
+        pickle_dump(result, self.file_name(batch_id, epoch_id).open(mode = 'wb'))
+
+    def file_name(self, batch_id, epoch_id):
+        """It creates the file name for the current iteration.
+
+        Arguments:
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
+        
+        Returns:
+            {Path} -- The name of the result file
+        """
+        result_file_name = Path("{}.batch.{}.epoch.{}.dmp".format(self._name, batch_id, epoch_id))
+
+        return result_file_name
+
 class InputFiles(object):
-    def __init__(self, remote_auth_token = None, remote_dir_path = None):
+    def __init__(self, dropbox):
         """It initializes and validates the input parameters.
         
         Arguments:
-            remote_auth_token {string} -- The authentication token to access the remote store.
-            remote_dir_path {A Path object} -- The path to the remote store.
-        
-        Raises:
-            ValueError -- If remote_auth_token in invalid.
-            ValueError -- If remote_dir_path is invalid.
+            dropbox {client.dropbox.DropboxConnection} -- The dropbox client.
         """
 
         #Keyword parameters
-        self._remote_auth_token = remote_auth_token
-        self._remote_dir_path = remote_dir_path
-
-        #Validation
-        if self._remote_auth_token and self._remote_dir_path is None:
-            raise ValueError('remote_dir_path must be valid.')
-
-        #Derived parameters
-        self._dropbox = None
-        
-        if self._remote_auth_token:
-            self._dropbox = DropboxConnection(self._remote_auth_token, self._remote_dir_path)
+        self._dropbox = dropbox
 
         #Logging
         self._logger = logging.get_logger(__name__)

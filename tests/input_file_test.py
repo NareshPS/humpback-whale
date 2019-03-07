@@ -11,19 +11,21 @@ from pathlib import Path
 
 #Input file and parameters
 from operation.input import TrainingParameters
-from iofiles.input_file import InputFiles, ModelInput, InputDataFile
+from iofiles.input_file import InputFiles, ModelInput, InputDataFile, ResultFile
+
+#Dropbox
+from client.dropbox import DropboxConnection
 
 #Test support
 from tests.support.utils import get_input_data, load_test_model
+
+from pickle import Pickler
 
 #Random numbers
 from random import randint
 
 #Common parameters
 file_paths = [Path('a.txt'), Path('b.txt'), Path('c.txt')]
-remote_auth_token = 'remote_auth_token'
-remote_dir_path = Path('.')
-
 model_name = 'model_name'
 batch_id = 2
 epoch_id = 4
@@ -79,14 +81,28 @@ class TestInputDataFile(ut.TestCase):
         #Act & Assert
         self.assertEqual(input_data_file.file_name(batch_id, epoch_id), file_name)
 
-class TestInputFiles(ut.TestCase):
+class TestResultFile(ut.TestCase):
     def test_init(self):
         #Valid inputs
-        _ = InputFiles(remote_auth_token, remote_dir_path)
+        _ = ResultFile()
 
-        #Invalid inputs
-        with self.assertRaises(ValueError):
-            _ = InputFiles(remote_auth_token, None)
+    def test_file_name(self):
+        #Arrange
+        result_file = ResultFile()
+        file_name = Path('result.batch.{}.epoch.{}.dmp'.format(batch_id, epoch_id))
+
+        #Act & Assert
+        self.assertEqual(result_file.file_name(batch_id, epoch_id), file_name)
+
+class TestInputFiles(ut.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        dropbox_params = DropboxConnection.Parameters('remote_auth_token', Path('.'))
+        cls._dropbox = DropboxConnection(dropbox_params)
+
+    def test_init(self):
+        #Valid inputs
+        _ = InputFiles(self._dropbox)
 
     def get_all(self, inputs, func):
         #Arrange
@@ -104,28 +120,21 @@ class TestInputFiles(ut.TestCase):
 
     def test_get_all_just_local_files(self):
         #Arrange
-        inputs = InputFiles(remote_auth_token, remote_dir_path)
+        inputs = InputFiles(self._dropbox)
 
         #Act & Assert
         self.get_all(inputs, lambda: True)
 
     def test_get_all_just_remote_files(self):
         #Arrange
-        inputs = InputFiles(remote_auth_token, remote_dir_path)
+        inputs = InputFiles(self._dropbox)
         inputs._dropbox.download = MagicMock()
 
         self.get_all(inputs, lambda: False)
 
     def test_get_all_local_and_remote_files(self):
         #Arrange
-        inputs = InputFiles(remote_auth_token, remote_dir_path)
+        inputs = InputFiles(self._dropbox)
         inputs._dropbox.download = MagicMock()
 
         self.get_all(inputs, lambda: bool(randint(0, 1)))
-
-    def test_get_all_remote_files_dropbox_not_initialized(self):
-        #Arrange
-        inputs = InputFiles()
-
-        with self.assertRaises(ValueError):
-            self.get_all(inputs, lambda: False)

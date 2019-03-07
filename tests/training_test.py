@@ -22,6 +22,9 @@ from operation.image import ImageDataIterator
 #Input parameters
 from operation.input import InputParameters, ImageGenerationParameters, TrainingParameters
 
+#Training responses
+from model.response import EpochResponse
+
 #Test support
 from tests.support.utils import get_args, get_input_data, load_test_model, patch_imload
 
@@ -129,6 +132,12 @@ class TestImageTraining(ut.TestCase):
 
         call_args_list = checkpoint.set_input_data.call_args_list
         self.assertEqual(len(call_args_list), total_training_epochs)
+
+        call_args_list = checkpoint.set_model.call_args_list
+        self.assertEqual(len(call_args_list), total_training_epochs + total_training_batches)
+
+        call_args_list = checkpoint.set_result.call_args_list
+        self.assertEqual(len(call_args_list), total_training_batches)
 
     def batch_train(self, batch_id = 0, epoch_id = 0, number_of_epochs = 1):
         #Arrange

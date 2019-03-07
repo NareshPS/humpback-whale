@@ -49,12 +49,10 @@ if __name__ == "__main__":
     dropbox = None
 
     if dropbox_parameters:
-        dropbox_auth_token = dropbox_parameters[0]
-        dropbox_remote_dir = constants.DROPBOX_APP_PATH_PREFIX / dropbox_parameters[1]
+        dropbox_params = DropboxConnection.Parameters(dropbox_parameters[0], dropbox_parameters[1])
+        dropbox = DropboxConnection(dropbox_params)
 
-        dropbox = DropboxConnection(dropbox_auth_token, dropbox_remote_dir)
-
-        logger.info('Dropbox parameters:: dropbox_remote_dir: %s', dropbox_remote_dir)
+        logger.info('Dropbox parameters:: dropbox_params: %s', dropbox_params)
 
     #Log input parameters
     logger.info(

@@ -8,7 +8,10 @@ from keras.callbacks import Callback
 from client.dropbox import DropboxConnection
 
 #Inputs
-from iofiles.input_file import ModelInput, InputDataFile
+from iofiles.input_file import ModelInput, InputDataFile, ResultFile
+
+#Training response
+from model.response import EpochResponse
 
 #Constants
 from common import constants
@@ -24,21 +27,14 @@ class BatchTrainStateCheckpoint(Callback):
             batch_input_files = [],
             checkpoint_batch_interval = 1,
             epoch_input_files = [],
-            dropbox_auth = None,
-            dropbox_dir = None):
+            dropbox = None):
         """It initializes the parameters.
         
-        Arguments:
+        Keyword Arguments:
             batch_input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint on batch end.
             checkpoint_batch_interval {int} -- The number of batches after which to upload checkpoint the files.
             epoch_input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint on epoch end.
-
-        Keyword Arguments:
-            dropbox_auth {string} -- The authentication token to access dropbox. (default: {None})
-            dropbox_dir {pathlib.Path} -- The path to destination dropbox folder. (default: {None})
-        
-        Raises:
-            ValueError -- If dropbox_auth is specified without dropbox_dir.
+            dropbox {client.dropbox.DropboxConnection} -- The dropbox client (default: {None})
         """
         super(BatchTrainStateCheckpoint, self).__init__()
 
@@ -48,22 +44,15 @@ class BatchTrainStateCheckpoint(Callback):
         self._epoch_input_files = epoch_input_files
 
         #Additional parameters
-        self._dropbox_dir = dropbox_dir
+        self._dropbox = dropbox
 
-        #Derived parameters
-        self._dropbox = None
+        #Other parameters
         self._model = None
         self._input_data = None
         self._batch_id = 0
         self._epoch_id = 0
-
-        #Validation
-        if dropbox_auth is not None and self._dropbox_dir is None:
-            raise ValueError("No dropbox dir provided.")
-
-        #Dropbox client
-        if dropbox_auth:
-            self._dropbox = DropboxConnection(dropbox_auth, self._dropbox_dir)
+        self._result = None
+        self._epoch_response = None
 
         #Logging
         self._logger = logging.get_logger(__name__)
@@ -87,6 +76,14 @@ class BatchTrainStateCheckpoint(Callback):
         """
         self._input_data = input_data
 
+    def set_result(self, result):
+        """It updates the current result object
+
+        Arguments:
+            result {float or [float]} -- It is the return value of the training call.
+        """
+        self._result = result
+
     def _upload(self, input_files, batch_id, epoch_id):
         """It generates the checkpoint files locally, then uploads them to dropbox.
         
@@ -104,6 +101,8 @@ class BatchTrainStateCheckpoint(Callback):
                 input_file.save(self._model, batch_id, epoch_id)
             elif isinstance(input_file, InputDataFile):
                 input_file.save(self._input_data, batch_id, epoch_id)
+            elif isinstance(input_file, ResultFile):
+                input_file.save(self._epoch_response, batch_id, epoch_id)
 
         if self._dropbox:
             #Upload the input files
@@ -139,6 +138,9 @@ class BatchTrainStateCheckpoint(Callback):
         """
         self._logger.info('on_batch_end:: batch_id: %d', batch_id)
 
+        #Append batch results
+        self._epoch_response.append(self._result, batch_id)
+
         #Checkpoint the state if required
         if (batch_id + 1) % self._checkpoint_batch_interval == 0:
             self._upload(self._batch_input_files, batch_id, self._epoch_id)
@@ -154,6 +156,9 @@ class BatchTrainStateCheckpoint(Callback):
 
         #Save the last epoch id
         self._epoch_id = epoch_id
+
+        #Create epoch response
+        self._epoch_response = EpochResponse(self._epoch_id , self._model.metrics_names)
 
     def on_epoch_end(self, epoch_id, logs = None):
         """It execute the required epoch end operations
