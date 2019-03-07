@@ -9,68 +9,100 @@ from common import ut_constants
 #Path parsing
 from pathlib import Path
 
-#Input file
-from iofiles.input_file import InputFiles, ModelInput
+#Input file and parameters
+from operation.input import TrainingParameters
+from iofiles.input_file import InputFiles, ModelInput, InputDataFile, ResultFile
+
+#Dropbox
+from client.dropbox import DropboxConnection
 
 #Test support
-from tests.support.utils import get_session_params
+from tests.support.utils import get_input_data, load_test_model
+
+from pickle import Pickler
 
 #Random numbers
 from random import randint
 
 #Common parameters
 file_paths = [Path('a.txt'), Path('b.txt'), Path('c.txt')]
-remote_auth_token = 'remote_auth_token'
-remote_dir_path = Path('.')
-
 model_name = 'model_name'
+batch_id = 2
+epoch_id = 4
 
 class TestModelInput(ut.TestCase):
     def test_init(self):
         #Valid inputs
-        _ = ModelInput(model_name, get_session_params(1, 1, 20), 1)
-        _ = ModelInput(model_name, get_session_params(1, 20, 20), 1)
-        _ = ModelInput(model_name, get_session_params(3, 1, 5), 1)
-        _ = ModelInput(model_name, get_session_params(2, 5, 9), 1)
+        _ = ModelInput(model_name)
 
-        #Invalid inputs
-        with self.assertRaises(ValueError):
-            _ = ModelInput(model_name,  get_session_params(0, 1, 20), 1)
+    def test_save(self):
+        #Arrange
+        model = load_test_model()
+        model_input = ModelInput(model_name)
+        
+        #Mocks
+        model.save = MagicMock()
 
-        with self.assertRaises(ValueError):
-            _ = ModelInput(model_name, get_session_params(1, 0, 20), 1)
+        #Act
+        model_input.save(model, batch_id, epoch_id)
 
-        with self.assertRaises(ValueError):
-            _ = ModelInput(model_name, get_session_params(1, 1, 0), 1)
-
-        with self.assertRaises(ValueError):
-            _ = ModelInput(model_name,  get_session_params(1, 6, 5), 1)
-
-    def test_last_saved_file_name(self):
-        #First input file
-        model_input = ModelInput(model_name, get_session_params(1, 1, 10), 1)
-        self.assertEqual('{}.session_id.0.set_id.0.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
-
-        #Non-first iteration and first set input file
-        model_input = ModelInput(model_name, get_session_params(2, 1, 10), 1)
-        self.assertEqual('{}.session_id.1.set_id.10.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
-
-        #Non-first iteration and non-first set input file
-        model_input = ModelInput(model_name, get_session_params(2, 2, 10), 1)
-        self.assertEqual('{}.session_id.2.set_id.1.epoch.1.h5'.format(model_name), str(model_input.last_saved_file_name()))
+        #Assert
+        model.save.assert_called_with(str(model_input.file_name(batch_id, epoch_id)))
 
     def test_file_name(self):
-        model_input = ModelInput(model_name, get_session_params(1, 1, 10), 1)
-        self.assertEqual('{}.session_id.1.set_id.1.epoch.1.h5'.format(model_name), str(model_input.file_name()))
+        #Arrange
+        model_input = ModelInput(model_name)
+        self.assertEqual('{}.batch.2.epoch.4.h5'.format(model_name), str(model_input.file_name(batch_id, epoch_id)))
 
-class TestInputFiles(ut.TestCase):
+class TestInputDataFile(ut.TestCase):
     def test_init(self):
         #Valid inputs
-        _ = InputFiles(remote_auth_token, remote_dir_path)
+        _ = InputDataFile()
 
-        #Invalid inputs
-        with self.assertRaises(ValueError):
-            _ = InputFiles(remote_auth_token, None)
+    def test_save(self):
+        #Arrange
+        input_data = get_input_data()
+        input_data_file = InputDataFile()
+
+        #Mocks
+        input_data.to_csv = MagicMock()
+
+        #Act
+        input_data_file.save(input_data, batch_id, epoch_id)
+
+        #Assert
+        input_data.to_csv.assert_called_with(input_data_file.file_name(batch_id, epoch_id))
+
+    def test_file_name(self):
+        #Arrange
+        input_data_file = InputDataFile()
+        file_name = Path('input_data.batch.0.epoch.{}.csv'.format(epoch_id))
+
+        #Act & Assert
+        self.assertEqual(input_data_file.file_name(batch_id, epoch_id), file_name)
+
+class TestResultFile(ut.TestCase):
+    def test_init(self):
+        #Valid inputs
+        _ = ResultFile()
+
+    def test_file_name(self):
+        #Arrange
+        result_file = ResultFile()
+        file_name = Path('result.batch.{}.epoch.{}.dmp'.format(batch_id, epoch_id))
+
+        #Act & Assert
+        self.assertEqual(result_file.file_name(batch_id, epoch_id), file_name)
+
+class TestInputFiles(ut.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        dropbox_params = DropboxConnection.Parameters('remote_auth_token', Path('.'))
+        cls._dropbox = DropboxConnection(dropbox_params)
+
+    def test_init(self):
+        #Valid inputs
+        _ = InputFiles(self._dropbox)
 
     def get_all(self, inputs, func):
         #Arrange
@@ -88,28 +120,21 @@ class TestInputFiles(ut.TestCase):
 
     def test_get_all_just_local_files(self):
         #Arrange
-        inputs = InputFiles(remote_auth_token, remote_dir_path)
+        inputs = InputFiles(self._dropbox)
 
         #Act & Assert
         self.get_all(inputs, lambda: True)
 
     def test_get_all_just_remote_files(self):
         #Arrange
-        inputs = InputFiles(remote_auth_token, remote_dir_path)
+        inputs = InputFiles(self._dropbox)
         inputs._dropbox.download = MagicMock()
 
         self.get_all(inputs, lambda: False)
 
     def test_get_all_local_and_remote_files(self):
         #Arrange
-        inputs = InputFiles(remote_auth_token, remote_dir_path)
+        inputs = InputFiles(self._dropbox)
         inputs._dropbox.download = MagicMock()
 
         self.get_all(inputs, lambda: bool(randint(0, 1)))
-
-    def test_get_all_remote_files_dropbox_not_initialized(self):
-        #Arrange
-        inputs = InputFiles()
-
-        with self.assertRaises(ValueError):
-            self.get_all(inputs, lambda: False)

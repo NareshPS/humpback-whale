@@ -9,23 +9,19 @@ from common import constants
 #Argument parsing
 from argparse import ArgumentParser
 
-#Models
-from model import models
-
 #Keras imports
 from keras.models import load_model
 
-#Model operation
+#Model imports
 from model.operation import Operation
-
-#Base models
 from model.basemodel import BaseModel
+from model import models
+
+#Input parameters
+from operation.input import TrainingParameters
 
 #Inputs
 from iofiles.input_file import ModelInput
-
-#Input parameters
-from operation.input import SessionParameters
 
 #Logger
 logger = None
@@ -251,14 +247,14 @@ if __name__ == "__main__":
 
     #Output files
     model_name = "{}_{}".format(name, base_model_name)
-    session_params = SessionParameters(args)
-    model_input = ModelInput(model_name, session_params, 1)
+    model_input = ModelInput(model_name)
+    model_file_name = model_input.file_name(0, 0)
 
-    logger.info('Output files model_file: %s', model_input.last_saved_file_name())
+    logger.info('Output files model_file: %s', model_file_name)
 
     #Run action
-    model = act(action, name, base_model_name, model_input.last_saved_file_name(), input_shape, args)
+    model = act(action, name, base_model_name, model_file_name, input_shape, args)
 
     #Save the trained model.
-    model.save(str(model_input.last_saved_file_name()))
-    print("Saved model to: {}".format(model_input.last_saved_file_name()))
+    model.save(str(model_file_name))
+    print("Saved model to: {}".format(model_file_name))

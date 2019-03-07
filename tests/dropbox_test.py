@@ -21,8 +21,7 @@ from pathlib import Path
 from common import logging
 
 #Common parameters
-remote_dir_path = Path('/remote/file/path')
-auth_token = 'hello i am called a token'
+remote_dir = Path('remote_dir')
 small_file = 'small_file.txt'
 cnn_model_file = 'cnn_model2d_1.h5'
 
@@ -32,19 +31,23 @@ class TestDropboxConnection(ut.TestCase):
 
         #Initialize logging
         logging.initialize('unittest')
+    
+    def get_client(self):
+        return DropboxConnection(self._dropbox_params)
+
+    @classmethod
+    def setUpClass(cls):
+        cls._dropbox_params = DropboxConnection.Parameters('auth_token', remote_dir)
+
+    def test_get_client(self):
+        #Act
+        client = DropboxConnection.get_client('auth_token', remote_dir)
+
+        #Assert
+        self.assertIsNotNone(client)
 
     def test_init(self):
-        with self.assertRaises(ValueError):
-            _ = DropboxConnection(None, remote_dir_path)
-
-        with self.assertRaises(ValueError):
-            _ = DropboxConnection(auth_token, None)
-
-        #Success
-        _ = DropboxConnection(auth_token, remote_dir_path)
-
-    def get_client(self):
-        return DropboxConnection(auth_token, remote_dir_path)
+        _ = DropboxConnection(self._dropbox_params)
 
     def test_upload_invalid_source_file(self):
         #Arrange
@@ -61,7 +64,7 @@ class TestDropboxConnection(ut.TestCase):
         #Arrange
         client = self.get_client()
         client._upload_small_file = MagicMock()
-        remote_file_path = Path(remote_dir_path) / small_file
+        remote_file_path = constants.DROPBOX_APP_PATH_PREFIX / remote_dir / small_file
         local_file_path = ut_constants.DROPBOX_STORE / small_file
 
         #Act
@@ -76,7 +79,7 @@ class TestDropboxConnection(ut.TestCase):
         #Arrange
         client = self.get_client()
         client._upload_large_file = MagicMock()
-        remote_file_path = Path(remote_dir_path) / cnn_model_file
+        remote_file_path = constants.DROPBOX_APP_PATH_PREFIX / remote_dir / cnn_model_file
         local_file_path = ut_constants.DATA_STORE / cnn_model_file
 
         #Act
@@ -104,7 +107,7 @@ class TestDropboxConnection(ut.TestCase):
         download_size = 100
         client._client.files_get_metadata = MagicMock()
         type(client._client.files_get_metadata.return_value).size = PropertyMock(return_value = download_size)
-        remote_file_path = remote_dir_path / cnn_model_file
+        remote_file_path = constants.DROPBOX_APP_PATH_PREFIX / remote_dir / cnn_model_file
 
         #Act
         client.download(cnn_model_file)
@@ -119,7 +122,7 @@ class TestDropboxConnection(ut.TestCase):
     def upload(self):
         #Arrange
         auth_token = None
-        client = DropboxConnection(auth_token, 'test_1')
+        client = DropboxConnection.get_client(auth_token, 'test_1')
 
         #Act
         client.upload(ut_constants.DATA_STORE / cnn_model_file)
@@ -128,7 +131,7 @@ class TestDropboxConnection(ut.TestCase):
     def download(self):
         #Arrange
         auth_token = None
-        client = DropboxConnection(auth_token, 'test_1')
+        client = DropboxConnection.get_client(auth_token, 'test_1')
 
         #Act
         client.download(small_file)

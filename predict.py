@@ -14,12 +14,10 @@ from keras.models import load_model
 #Image data generation
 from operation.image import ImageDataGeneration
 from operation.input import InputParameters, TrainingParameters, ImageGenerationParameters, update_params
+from iofiles.input_file import InputDataFile, InputFiles
 
 #Predictions
 from operation.prediction import Prediction
-
-#Numpy operations
-from numpy import nonzero
 
 #Useful constants
 from common import constants
@@ -118,12 +116,10 @@ if __name__ == "__main__":
     dropbox = None
 
     if dropbox_parameters:
-        dropbox_auth_token = dropbox_parameters[0]
-        dropbox_remote_dir = constants.DROPBOX_APP_PATH_PREFIX / dropbox_parameters[1]
+        dropbox_params = DropboxConnection.Parameters(dropbox_parameters[0], dropbox_parameters[1])
+        dropbox = DropboxConnection(dropbox_params)
 
-        dropbox = DropboxConnection(dropbox_auth_token, dropbox_remote_dir)
-
-        logger.info('Dropbox parameters:: dropbox_remote_dir: %s', dropbox_remote_dir)
+        logger.info('Dropbox parameters:: dropbox_params: %s', dropbox_params)
 
     #Model file
     model_file = Path("{}.h5".format(input_params.model_name))
@@ -143,21 +139,29 @@ if __name__ == "__main__":
     #Load model
     model = load_model(str(model_file))
 
-    #Input dataframe
-    input_data_df = read_csv(input_params.input_data, index_col = 0)
+    #Input data file
+    input_data_file = InputDataFile()
+    input_data_file_name = input_data_file.file_name(0, 0)
+
+    #Prepare input files
+    input_files_client = InputFiles(dropbox)
+    input_data_file_path = input_files_client.get_all([input_data_file_name])[input_data_file_name]
+
+    #Input data frame
+    input_data = read_csv(input_data_file_path, index_col = 0)
 
     #Update input data parameters
-    num_classes = len(getattr(input_data_df, image_generation_params.label_col).unique())
+    num_classes = len(getattr(input_data, image_generation_params.label_col).unique())
     image_generation_params_update = dict(num_classes = num_classes)
     update_params(image_generation_params, **image_generation_params_update)
     logger.info('Updated image generation parameters: %s', image_generation_params)
 
     #Compute predictions
     predictor = Prediction(model, input_params, image_generation_params)
-    predicted_data = predictor.predict(input_data_df, num_prediction_steps)
+    predicted_data = predictor.predict(input_data, num_prediction_steps)
 
     #Compute accuracy
-    num_matches = nonzero(predicted_data[constants.PANDAS_MATCH_COLUMN])[0].shape[0]
+    num_matches = (predicted_data[constants.PANDAS_MATCH_COLUMN].to_numpy().nonzero())[0].shape[0]
     num_mismatches = len(predicted_data[constants.PANDAS_MATCH_COLUMN]) - num_matches
     accuracy = (num_matches/len(predicted_data[constants.PANDAS_MATCH_COLUMN])) * 100.
 

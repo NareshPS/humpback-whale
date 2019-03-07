@@ -13,17 +13,25 @@ class TrainingParameters(object):
             args {An argparse Argument} -- The argparse arguments
         """
         #Required parameters
-        self.num_fit_images = args.num_fit_images
-        self.number_of_epochs = args.number_of_epochs
+        self.batch_id = args.batch_id if hasattr(args, 'batch_id') else 0
+        self.epoch_id = args.epoch_id if hasattr(args, 'epoch_id') else 0
+        self.num_fit_images = args.num_fit_images if hasattr(args, 'num_fit_images') else 0
+        self.number_of_epochs = args.number_of_epochs if hasattr(args, 'number_of_epochs') else 0
         self.learning_rate = args.learning_rate
+        self.checkpoint_batch_interval = args.checkpoint_batch_interval  if hasattr(args, 'checkpoint_batch_interval') else 0
+        self.number_prediction_steps = args.number_prediction_steps if hasattr(args, 'number_prediction_steps') else 0
 
     def __str__(self):
             return """Parameters::
-                        num_fit_images: {}
+                        batch_id: {} epoch_id: {}
+                        num_fit_images: {} number_prediction_steps: {}
                         number_of_epochs: {} learning_rate: {}""".format(
-                                                                                    self.num_fit_images,
-                                                                                    self.number_of_epochs,
-                                                                                    self.learning_rate)
+                                                                        self.batch_id,
+                                                                        self.epoch_id,
+                                                                        self.num_fit_images,
+                                                                        self.number_prediction_steps,
+                                                                        self.number_of_epochs,
+                                                                        self.learning_rate)
 
 class InputParameters(object):
     def __init__(self, args):
@@ -34,7 +42,6 @@ class InputParameters(object):
         """
         #Required parameters
         self.model_name = args.model_name
-        self.input_data = args.input_data
         self.input_shape = tuple(args.input_shape)
 
         #Validation
@@ -43,10 +50,9 @@ class InputParameters(object):
 
     def __str__(self):
             return """Parameters::
-                        model_name: {} input_data: {} 
+                        model_name: {}
                         input_shape: {}""".format(
                                                 self.model_name,
-                                                self.input_data,
                                                 self.input_shape)
 
 class ImageGenerationParameters(object):
@@ -89,26 +95,3 @@ class ImageGenerationParameters(object):
                                                                 self.validation_split,
                                                                 self.num_classes,
                                                                 self.normalize)
-
-class SessionParameters(object):
-    def __init__(self, args):
-        """It initializes the training parameters.
-        
-        Arguments:
-            args {An argparse Argument} -- The argparse arguments
-        """
-        #Required parameters 
-        self.session_id = args.session_id
-        self.input_data_training_set_size = args.input_data_training_set_size
-        self.input_data_training_set_id = args.input_data_training_set_id
-        self.num_df_sets = 1
-
-    def __str__(self):
-            return """Parameters::
-                        session_id: {}
-                        input_data_training_set_size: {} input_data_training_set_id: {}
-                        num_df_sets: {}""".format(
-                                                self.session_id,
-                                                self.input_data_training_set_size,
-                                                self.input_data_training_set_id,
-                                                self.num_df_sets)

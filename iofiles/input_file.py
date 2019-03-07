@@ -10,111 +10,101 @@ from tqdm import tqdm
 #Path manipulations
 from pathlib import Path
 
+#Pickle
+from pickle import dump as pickle_dump
+
 class ModelInput(object):
-    def __init__(self, model_name, session_params, epoch):
+    def __init__(self, model_name):
         """It initializes the parameters.
         
         Arguments:
             model_name {string} -- The name of the model
-            session_params {operation.input.SessionParameters} -- It contains the parameters to identify the current session.
-            epoch {int} -- The current epoch number.
         """
         #Required parameters
         self._model_name = model_name
-        self._session_params = session_params
-        self._epoch = epoch
 
         #Validation
         if model_name is None:
             raise ValueError('model_name must be valid')
-    
-        if self._session_params.session_id < 1:
-            raise ValueError('session_id must be > 1')
 
-        if self._session_params.input_data_training_set_id < 1:
-            raise ValueError('input_data_training_set_id must be > 1')
+    def save(self, model, batch_id, epoch_id):
+        """It saves the model object to the disk.
 
-        if self._session_params.num_df_sets < 1:
-            raise ValueError('num_df_sets must be >= 1')
-
-        if self._session_params.input_data_training_set_id > self._session_params.num_df_sets:
-            raise ValueError(
-                    'input_data_training_set_id: {} must be <= num_df_sets: {}'.format(
-                                                                                    self._session_params.input_data_training_set_id,
-                                                                                    self._session_params.num_df_sets))
-
-    def last_saved_file_name(self):
-        """It creates the last saved model file name.
-        
-        Returns:
-            {string} -- The name of the last saved model file.
+        Arguments:
+            model {keras.Model} -- The model object to be set.
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
         """
+        model.save(str(self.file_name(batch_id, epoch_id)))
 
-        #Last saved placeholders
-        last_saved_session_id = 0
-        last_saved_set_id = 0
-
-        if self._session_params.input_data_training_set_id == 1:
-            #For the first set, the last saved state is the last set of previous iteration
-            if self._session_params.session_id != 1:
-                last_saved_set_id = self._session_params.num_df_sets
-
-            #For the first set, the last saved iteration is the last iteration.
-            last_saved_session_id = self._session_params.session_id - 1
-        #Normal case
-        else:
-            last_saved_session_id = self._session_params.session_id
-            last_saved_set_id = self._session_params.input_data_training_set_id - 1
-
-        model_file_name = Path("{}.session_id.{}.set_id.{}.epoch.{}.h5".format(
-                                                                            self._model_name,
-                                                                            last_saved_session_id,
-                                                                            last_saved_set_id,
-                                                                            self._epoch))
-
-        return model_file_name
-
-    def file_name(self):
+    def file_name(self, batch_id, epoch_id):
         """It creates the file name for the current iteration.
+
+        Arguments:
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
         
         Returns:
-            {string} -- The name of the model file for the current iteration.
+            {Path} -- The name of the model file
         """
-
-        model_file_name = Path("{}.session_id.{}.set_id.{}.epoch.{}.h5".format(
-                                                                            self._model_name,
-                                                                            self._session_params.session_id,
-                                                                            self._session_params.input_data_training_set_id,
-                                                                            self._epoch))
+        model_file_name = Path("{}.batch.{}.epoch.{}.h5".format(self._model_name, batch_id, epoch_id))
 
         return model_file_name
+
+class InputDataFile(object):
+    def __init__(self, name = 'input_data'):
+        #Required parameters
+        self._name = name
+
+    def save(self, input_data, batch_id, epoch_id):
+        input_data.to_csv(self.file_name(0, epoch_id))
+
+    def file_name(self, batch_id, epoch_id):
+        """It creates the file name for the current iteration.
+
+        Arguments:
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
+        
+        Returns:
+            {Path} -- The name of the model file
+        """
+        input_file_name = Path("{}.batch.{}.epoch.{}.csv".format(self._name, 0, epoch_id))
+
+        return input_file_name
+
+class ResultFile(object):
+    def __init__(self, name = 'result'):
+        self._name = name
+    
+    def save(self, result, batch_id, epoch_id):
+        print('Calling pickle')
+        pickle_dump(result, self.file_name(batch_id, epoch_id).open(mode = 'wb'))
+
+    def file_name(self, batch_id, epoch_id):
+        """It creates the file name for the current iteration.
+
+        Arguments:
+            batch_id {int} -- The id of the current batch.
+            epoch_id {int} -- The id of the current epoch.
+        
+        Returns:
+            {Path} -- The name of the result file
+        """
+        result_file_name = Path("{}.batch.{}.epoch.{}.dmp".format(self._name, batch_id, epoch_id))
+
+        return result_file_name
 
 class InputFiles(object):
-    def __init__(self, remote_auth_token = None, remote_dir_path = None):
+    def __init__(self, dropbox):
         """It initializes and validates the input parameters.
         
         Arguments:
-            remote_auth_token {string} -- The authentication token to access the remote store.
-            remote_dir_path {A Path object} -- The path to the remote store.
-        
-        Raises:
-            ValueError -- If remote_auth_token in invalid.
-            ValueError -- If remote_dir_path is invalid.
+            dropbox {client.dropbox.DropboxConnection} -- The dropbox client.
         """
 
         #Keyword parameters
-        self._remote_auth_token = remote_auth_token
-        self._remote_dir_path = remote_dir_path
-
-        #Validation
-        if self._remote_auth_token and self._remote_dir_path is None:
-            raise ValueError('remote_dir_path must be valid.')
-
-        #Derived parameters
-        self._dropbox = None
-        
-        if self._remote_auth_token:
-            self._dropbox = DropboxConnection(self._remote_auth_token, self._remote_dir_path)
+        self._dropbox = dropbox
 
         #Logging
         self._logger = logging.get_logger(__name__)

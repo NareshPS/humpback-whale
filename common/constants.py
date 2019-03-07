@@ -12,14 +12,15 @@ LOG_CONFIGS = {
                 'siamese_input_tuples.py' : 'siamese_input_tuples.yml',
                 'model_generation.py' : 'model_generation.yml',
                 'insights.py' : 'insights.yml',
-                'siamese_train.py' : 'siamese_train.yml',
+                'train.py' : 'train.yml',
                 'unittest' : 'unittest.yml',
                 'evaluate.py' : 'evaluate.yml',
                 'evaluate_inputs.py' : 'evaluate_inputs.yml',
                 'predict.py' : 'predict.yml',
                 'augment.py' : 'augment.yml',
                 'classify_labels.py' : 'classify_labels.yml',
-                'rebalance.py' : 'rebalance.yml'
+                'rebalance.py' : 'rebalance.yml',
+                'defragment.py' : 'defragment.yml'
             }
 
 #Dropbox connection configuration
