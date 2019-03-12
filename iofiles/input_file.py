@@ -16,7 +16,7 @@ from pickle import dump as pickle_dump
 class ModelInput(object):
     def __init__(self, model_name):
         """It initializes the parameters.
-        
+
         Arguments:
             model_name {string} -- The name of the model
         """
@@ -43,7 +43,7 @@ class ModelInput(object):
         Arguments:
             batch_id {int} -- The id of the current batch.
             epoch_id {int} -- The id of the current epoch.
-        
+
         Returns:
             {Path} -- The name of the model file
         """
@@ -65,7 +65,7 @@ class InputDataFile(object):
         Arguments:
             batch_id {int} -- The id of the current batch.
             epoch_id {int} -- The id of the current epoch.
-        
+
         Returns:
             {Path} -- The name of the model file
         """
@@ -76,7 +76,7 @@ class InputDataFile(object):
 class ResultFile(object):
     def __init__(self, name = 'result'):
         self._name = name
-    
+
     def save(self, result, batch_id, epoch_id):
         print('Calling pickle')
         pickle_dump(result, self.file_name(batch_id, epoch_id).open(mode = 'wb'))
@@ -87,7 +87,7 @@ class ResultFile(object):
         Arguments:
             batch_id {int} -- The id of the current batch.
             epoch_id {int} -- The id of the current epoch.
-        
+
         Returns:
             {Path} -- The name of the result file
         """
@@ -98,7 +98,7 @@ class ResultFile(object):
 class InputFiles(object):
     def __init__(self, dropbox):
         """It initializes and validates the input parameters.
-        
+
         Arguments:
             dropbox {client.dropbox.DropboxConnection} -- The dropbox client.
         """
@@ -110,6 +110,11 @@ class InputFiles(object):
         self._logger = logging.get_logger(__name__)
 
     def get_all(self, file_paths):
+        """It downloads the files in file_paths if they are not locally available.
+
+        Arguments:
+            file_paths {[pathlib.Path]} -- The list of file paths
+        """
         #Categorize files into two lists: those that are locally available and the ones that needs to be downloaded.  
         local_files = [file_path for file_path in file_paths if file_path.exists()]
         remote_files_to_download = [file_path for file_path in file_paths if file_path not in local_files]
@@ -135,7 +140,21 @@ class InputFiles(object):
 
         return valid_file_paths
 
+    def put_all(self, file_paths):
+        """It uploads the file paths to the dropbox
+
+        Arguments:
+            file_paths {[pathlib.Path]} -- The list of file paths
+        """
+        for file_path in file_paths:
+            self._dropbox.upload(file_path)
+
     def _download(self, file_paths):
+        """It downloads the files in file_paths.
+
+        Arguments:
+            file_paths {[pathlib.Path]} -- The list of file paths
+        """
         #Result dictionary
         valid_file_paths = {file_path : Path(file_path.name) for file_path in file_paths}
 

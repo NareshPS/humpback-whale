@@ -3,9 +3,6 @@
 #Constants
 from common import constants
 
-#Allow reproducible results
-from numpy.random import seed as np_seed
-
 #Data processing
 from pandas import DataFrame
 import numpy as np
@@ -21,18 +18,17 @@ from operation.utils import imload, imwrite
 #Commandline arguments
 from argparse import ArgumentParser
 
+#Input files
+from iofiles.input_file import InputFiles
+
+#Dropbox store
+from client.dropbox import DropboxConnection
+
 #Path manipulations
 from pathlib import Path
 
 #Logging
 from common import logging
-
-#Progress bar
-from tqdm import tqdm
-
-#Parallel execution
-from multiprocessing import Pool
-from functools import partial
 
 #ArgumentParser boolean parsing
 from distutils.util import strtobool
@@ -72,6 +68,10 @@ def parse_args():
         nargs = 2, type = int,
         help = 'It specifies the target image size.')
     parser.add_argument(
+        '-p', '--dropbox_parameters',
+        nargs = 2,
+        help = 'It specifies dropbox parameters required to upload the augmented data.')
+    parser.add_argument(
        '--parallel',
        type = strtobool, default = True,
        help = 'It executes the augmentations in parallel.')
@@ -81,7 +81,7 @@ def parse_args():
         help = 'It enables logging to console')
 
     args = parser.parse_args()
-    
+
     return args
 
 def get_augmentation_executor():
@@ -160,6 +160,7 @@ if __name__ == '__main__':
     num_inputs = args.num_inputs
     image_col = args.image_col
     target_shape = tuple(args.target_shape)
+    dropbox_parameters = args.dropbox_parameters
     parallel = args.parallel
     log_to_console = args.log_to_console
 
@@ -173,7 +174,7 @@ if __name__ == '__main__':
     logger.info('Parameters:: image_col: %s target_shape: %s', image_col, target_shape)
     logger.info('Parameters:: num_inputs: %s parallel: %s log_to_console: %s', num_inputs, parallel, log_to_console)
 
-    ### Validation Start ###
+    ####################################### Validation [Start] ############################################
     #Source location
     if not dataset_location.exists():
         raise ValueError('Dataset location: {} is not found.'.format(dataset_location))
@@ -181,17 +182,28 @@ if __name__ == '__main__':
     #Destination location
     if not output_dataset_location.exists():
         output_dataset_location.mkdir(parents = True, exist_ok = True)
+    ####################################### Validation [End] ############################################
 
-    #Input labels
-    if not input_file.exists():
-        raise ValueError('Input file: {} is not found.'.format(input_file))
-    ### Validation End ###
+    #Dropbox connection placeholder
+    dropbox = None
+
+    if dropbox_parameters:
+        dropbox_params = DropboxConnection.Parameters(dropbox_parameters[0], dropbox_parameters[1])
+        dropbox = DropboxConnection(dropbox_params)
+
+        logger.info('Dropbox parameters:: dropbox_params: %s', dropbox_params)
+
+    ####################################### Prepare the input dataset [Start] ############################################
+    #Prepare input files
+    input_files_client = InputFiles(dropbox)
+    input_file = input_files_client.get_all([input_file])[input_file]
 
     #Required inputs
     input_df = read_csv(input_file)
     input_df = input_df.loc[:(num_inputs - 1), :] if num_inputs else input_df
+    ####################################### Prepare the input dataset [End] ############################################
 
-    ####################################### Augment the dataset [Start]############################################
+    ####################################### Augment the dataset [Start] ############################################
     #Image augmentation
     augmentation_executor = get_augmentation_executor()
 
@@ -209,7 +221,7 @@ if __name__ == '__main__':
                     dataset_location,
                     output_dataset_location,
                     target_shape)
-               
+
     #Output dataframe
     for row, image_names in results:
         for name in image_names:
@@ -220,13 +232,19 @@ if __name__ == '__main__':
             #Add to the dataframe
             output_df = output_df.append(augmented_row, ignore_index = True)
 
-    ####################################### Augment the dataset [End]############################################
+    ####################################### Augment the dataset [End] ############################################
 
     #Shuffle the output dataframe
     output_df = output_df.sample(frac = 1).reset_index(drop = True)
 
     #Write the output dataframe
     output_df.to_csv(output_file)
+
+    ####################################### Process output [Start] ############################################
+
+    #Upload the output to dropbox
+    if dropbox:
+        input_files_client.put_all([output_file])
 
     #Statistics
     input_size = len(input_df)
@@ -252,3 +270,4 @@ if __name__ == '__main__':
 
     #Output the statistics
     print(completion_statistics)
+    ####################################### Process output [End] ############################################

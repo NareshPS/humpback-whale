@@ -169,7 +169,7 @@ if __name__ == "__main__":
     #Initialize logging
     logging.initialize(__file__, log_to_console = log_to_console)
     logger = logging.get_logger(__name__)
-    
+
     #Input data parameters
     input_params = InputParameters(args)
     logger.info('Input parameters: %s', input_params)
