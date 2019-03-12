@@ -127,28 +127,37 @@ def augment(augmentation_executor, image_col, dataset_location, output_dataset_l
     #Extract the image name
     image_name = data_row[image_col]
 
-    #Image object
-    image_objs = imload(dataset_location, [image_name], target_shape)
-
-    #Augmented image objects
-    augmented_objs = augmentation_executor.augmentations(image_objs)
-
-    logger.debug('Augmented image objects: {}'.format(augmented_objs.shape))
-
     #Image path
     image_path = Path(image_name)
 
     #Create target image names
-    target_image_names = ["{}-{}{}".format(image_path.stem, index, image_path.suffix) for index in range(len(augmented_objs) + 1)]
-    target_image_objs = np.concatenate([image_objs, augmented_objs], axis = 0)
+    target_image_names = list(map(lambda index: "{}-{}{}".format(image_path.stem, index, image_path.suffix), range(len(augmentation_executor) + 1)))
 
-    logger.debug('Reshaped image objects: {}'.format(target_image_objs.shape))
+    #Check if the target images already exist.
+    augmentation_required = not all(map(lambda name: (output_dataset_location / name).exists(), target_image_names))
 
-    #Augmented image map
-    augmented_image_name_and_objects = dict(zip(target_image_names, target_image_objs))
+    logger.debug('Image: %s require augmentation: %s', image_name, augmentation_required)
 
-    #Write images to the disk
-    imwrite(output_dataset_location, augmented_image_name_and_objects)
+    #Augment the image data if there are missing target images
+    if augmentation_required:
+        #Image object
+        image_objs = imload(dataset_location, [image_name], target_shape)
+
+        #Augmented image objects
+        augmented_objs = augmentation_executor.augmentations(image_objs)
+
+        logger.debug('Augmented image objects: {}'.format(augmented_objs.shape))
+
+        #Create target image objects
+        target_image_objs = np.concatenate([image_objs, augmented_objs], axis = 0)
+
+        logger.debug('Reshaped image objects: {}'.format(target_image_objs.shape))
+
+        #Augmented image map
+        augmented_image_name_and_objects = dict(zip(target_image_names, target_image_objs))
+
+        #Write images to the disk
+        imwrite(output_dataset_location, augmented_image_name_and_objects)
 
     return data_row, target_image_names
 

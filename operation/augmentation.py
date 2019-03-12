@@ -15,7 +15,7 @@ class ImageAugmentation(object):
         """
         def __init__(self, transformation_params, num_output_images = 1):
             """It initializes the augmentation parameters.
-            
+
             Arguments:
                 transformation_params {A ImageDataTransformation.Parameters object} -- The transformation parameters.
                 num_output_images {int} -- The number of transformed images.
@@ -36,7 +36,7 @@ class ImageAugmentation(object):
 
             Arguments:
                 image_objs {A numpy array} -- The input image to be transformed.
-            
+
             Returns:
                 {A numpy array} - The list of output images.
             """
@@ -69,7 +69,7 @@ class ImageAugmentation(object):
     ### ImageAugmentation members ###    
     def __init__(self, instances):
         """It initializes the augmentation parameters
-        
+
         Arguments:
             instances {[A ImageAugmentation.Instance object]} -- The list of augmentation instances.
         """
@@ -90,7 +90,7 @@ class ImageAugmentation(object):
 
             Arguments:
                 image_obj {A numpy array} -- The input image to be transformed.
-            
+
             Returns:
                 {A numpy array} - The list of output images.
         """
