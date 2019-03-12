@@ -30,6 +30,16 @@ from common import logging
 #Progress bar
 from tqdm import tqdm
 
+#Parallel execution
+from multiprocessing import Pool
+from functools import partial
+
+#ArgumentParser boolean parsing
+from distutils.util import strtobool
+
+#Parallel execution
+from common.execution import execute
+
 def parse_args():
     parser = ArgumentParser(description = 'It augments the dataset.')
 
@@ -61,6 +71,10 @@ def parse_args():
         '-s', '--target_shape',
         nargs = 2, type = int,
         help = 'It specifies the target image size.')
+    parser.add_argument(
+       '--parallel',
+       type = strtobool, default = True,
+       help = 'It executes the augmentations in parallel.')
     parser.add_argument(
         '-l', '--log_to_console',
         action = 'store_true', default = False,
@@ -103,6 +117,38 @@ def get_augmentation_executor():
 
     return executor
 
+def augment(augmentation_executor, image_col, dataset_location, output_dataset_location, target_shape, data_index_row):
+    #Unpack parameters
+    _, data_row = data_index_row
+
+    #Extract the image name
+    image_name = data_row[image_col]
+
+    #Image object
+    image_objs = imload(dataset_location, [image_name], target_shape)
+
+    #Augmented image objects
+    augmented_objs = augmentation_executor.augmentations(image_objs)
+
+    logger.debug('Augmented image objects: {}'.format(augmented_objs.shape))
+
+    #Image path
+    image_path = Path(image_name)
+
+    #Create target image names
+    target_image_names = ["{}-{}{}".format(image_path.stem, index, image_path.suffix) for index in range(len(augmented_objs) + 1)]
+    target_image_objs = np.concatenate([image_objs, augmented_objs], axis = 0)
+
+    logger.debug('Reshaped image objects: {}'.format(target_image_objs.shape))
+
+    #Augmented image map
+    augmented_image_name_and_objects = dict(zip(target_image_names, target_image_objs))
+
+    #Write images to the disk
+    imwrite(output_dataset_location, augmented_image_name_and_objects)
+
+    return data_row, target_image_names
+
 if __name__ == '__main__':
     #Parse commandline arguments
     args = parse_args()
@@ -114,17 +160,18 @@ if __name__ == '__main__':
     num_inputs = args.num_inputs
     image_col = args.image_col
     target_shape = tuple(args.target_shape)
+    parallel = args.parallel
     log_to_console = args.log_to_console
 
     #Initialize logging
-    logging.initialize(__file__, log_to_console = log_to_console)
+    logging.initialize(__file__, log_to_console = log_to_console, no_logging = parallel)
     logger = logging.get_logger(__name__)
 
     #Log input parameters
     logger.info('Parameters:: dataset_location: %s output_dataset_location: %s', dataset_location, output_dataset_location)
     logger.info('Parameters:: input_file: %s output_file: %s', input_file, output_file)
     logger.info('Parameters:: image_col: %s target_shape: %s', image_col, target_shape)
-    logger.info('Parameters:: num_inputs: %s log_to_console: %s', num_inputs, log_to_console)
+    logger.info('Parameters:: num_inputs: %s parallel: %s log_to_console: %s', num_inputs, parallel, log_to_console)
 
     ### Validation Start ###
     #Source location
@@ -151,36 +198,21 @@ if __name__ == '__main__':
     #Output dataframe
     output_df = DataFrame(columns = list(input_df))
 
-    #Augment images
-    for _, row in tqdm(input_df.iterrows(), total = len(input_df), desc = 'Augmenting images'):
-        #Extract the image name
-        image_name = row[image_col]
-
-        #Image object
-        image_objs = imload(dataset_location, [image_name], target_shape)
-
-        #Augmented image objects
-        augmented_objs = augmentation_executor.augmentations(image_objs)
-
-        logger.debug('Augmented image objects: {}'.format(augmented_objs.shape))
-
-        #Image path
-        image_path = Path(image_name)
-
-        #Create target image names
-        target_image_names = ["{}-{}{}".format(image_path.stem, index, image_path.suffix) for index in range(len(augmented_objs) + 1)]
-        target_image_objs = np.concatenate([image_objs, augmented_objs], axis = 0)
-
-        logger.debug('Reshaped image objects: {}'.format(target_image_objs.shape))
-
-        #Augmented image map
-        augmented_image_name_and_objects = dict(zip(target_image_names, target_image_objs))
-
-        #Write images to the disk
-        imwrite(output_dataset_location, augmented_image_name_and_objects)
-
-        #Add to output dataframe
-        for name, _ in augmented_image_name_and_objects.items():
+    #Perform augmentations
+    results = execute(
+                    augment,
+                    input_df.iterrows(),
+                    len(input_df),
+                    parallel, #Parallel/Serial execution
+                    augmentation_executor,
+                    image_col,
+                    dataset_location,
+                    output_dataset_location,
+                    target_shape)
+               
+    #Output dataframe
+    for row, image_names in results:
+        for name in image_names:
             #Augmented row
             augmented_row = row.copy()
             augmented_row[image_col] = name
