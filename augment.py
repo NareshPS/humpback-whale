@@ -226,11 +226,11 @@ if __name__ == '__main__':
     #Output tuples
     output_tuples = []
     image_col_loc = input_df.columns.get_loc(image_col)
-    
+
     #Update the output dataframe with results
     for row, image_names in tqdm(results, total = len(results), desc = 'Constructing output dataframe: '):
         #Extract original values
-        row_values = row.to_list()
+        row_values = row.tolist()
 
         for name in image_names:
             #Update the row values with the new image name and add it to the list of output tuples
