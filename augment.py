@@ -223,18 +223,23 @@ if __name__ == '__main__':
                     target_shape)
 
 
-    #Output dataframe
-    output_df = DataFrame(columns = list(input_df))
+    #Output tuples
+    output_tuples = []
+    image_col_loc = input_df.columns.get_loc(image_col)
     
     #Update the output dataframe with results
     for row, image_names in tqdm(results, total = len(results), desc = 'Constructing output dataframe: '):
-        for name in image_names:
-            #Augmented row
-            augmented_row = row.copy()
-            augmented_row[image_col] = name
+        #Extract original values
+        row_values = row.to_list()
 
-            #Add to the dataframe
-            output_df = output_df.append(augmented_row, ignore_index = True)
+        for name in image_names:
+            #Update the row values with the new image name and add it to the list of output tuples
+            row_values[image_col_loc] = name
+
+            output_tuples.append(list(row_values))
+
+    #Create output dataframe
+    output_df = DataFrame(output_tuples, columns = list(input_df))
 
     ####################################### Augment the dataset [End] ############################################
 
