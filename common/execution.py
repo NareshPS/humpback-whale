@@ -8,19 +8,22 @@ from common import logging
 #Progress bar
 from tqdm import tqdm
 
+import time
+
 def _execute_parallel(func, iterator, length, *args):
     #Results placeholder
-    results = None
+    results = []
 
     #Multiprocessing pool and partial function for parallel execution
     partial_func = partial(func, *args)
 
-    with Pool() as parallel_pool:
-        worker_iterator = parallel_pool.imap(partial_func, iterator)
-        iterator_with_progress_bar = tqdm(worker_iterator, total = length, desc = 'Processing in parallel: ')
+    with Pool(5) as parallel_pool:
+        with tqdm(total = length, desc = 'Processing in parallel: ') as pbar:
+            for result in parallel_pool.imap_unordered(partial_func, iterator):
+                #Append the response
+                results.append(result)
 
-        #Collect responses
-        results = list(iterator_with_progress_bar)
+                pbar.update(1)
 
     return results
 

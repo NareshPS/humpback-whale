@@ -36,6 +36,9 @@ from distutils.util import strtobool
 #Parallel execution
 from common.execution import execute
 
+#Progress bar
+from tqdm import tqdm
+
 def parse_args():
     parser = ArgumentParser(description = 'It augments the dataset.')
 
@@ -207,9 +210,6 @@ if __name__ == '__main__':
     #Image augmentation
     augmentation_executor = get_augmentation_executor()
 
-    #Output dataframe
-    output_df = DataFrame(columns = list(input_df))
-
     #Perform augmentations
     results = execute(
                     augment,
@@ -222,8 +222,12 @@ if __name__ == '__main__':
                     output_dataset_location,
                     target_shape)
 
+
     #Output dataframe
-    for row, image_names in results:
+    output_df = DataFrame(columns = list(input_df))
+    
+    #Update the output dataframe with results
+    for row, image_names in tqdm(results, total = len(results), desc = 'Constructing output dataframe: '):
         for name in image_names:
             #Augmented row
             augmented_row = row.copy()
