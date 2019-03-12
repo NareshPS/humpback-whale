@@ -12,30 +12,26 @@ import time
 
 def _execute_parallel(func, iterator, length, *args):
     #Results placeholder
-    results = []
+    results = None
 
     #Multiprocessing pool and partial function for parallel execution
     partial_func = partial(func, *args)
 
     with Pool(5) as parallel_pool:
-        with tqdm(total = length, desc = 'Processing in parallel: ') as pbar:
-            for result in parallel_pool.imap_unordered(partial_func, iterator):
-                #Append the response
-                results.append(result)
+        worker_iterator = parallel_pool.imap(partial_func, iterator, chunksize = 8)
+        iterator_with_progress_bar = tqdm(worker_iterator, total = length, desc = 'Processing in parallel: ')
 
-                pbar.update(1)
+        #Collect responses
+        results = list(iterator_with_progress_bar)
 
     return results
 
 def _execute_serial(func, iterator, length, *args):
-    #Results placeholder
-    results = []
+    #Measure progress
+    iterator_with_progress_bar = tqdm(iterator, total = length, desc = 'Processing in sequence: ')
 
-    for item in tqdm(iterator, total = length, desc = 'Processing in sequence: '):
-        result = func(*args, item)
-
-        #Append the results to the output list
-        results.append(result)
+    #Collect results
+    results = list(map(lambda item: func(*args, item), iterator_with_progress_bar))
 
     return results
 
