@@ -79,7 +79,7 @@ class TestImageDataGeneration(ut.TestCase):
         _ = ImageDataGeneration(
                         input_data_df,
                         input_data_params,
-                        image_generation_params, 
+                        image_generation_params,
                         transformer = None)
 
     def flow_transformer(self, transformer, image_transform_cols):
@@ -90,7 +90,7 @@ class TestImageDataGeneration(ut.TestCase):
         generator = ImageDataGeneration(
                         input_data_df,
                         input_data_params,
-                        image_generation_params, 
+                        image_generation_params,
                         transformer = transformer)
 
         iterator = generator.flow()

@@ -8,7 +8,7 @@ def update_params(obj, **kwargs):
 class TrainingParameters(object):
     def __init__(self, args):
         """It initializes the training parameters.
-        
+
         Arguments:
             args {An argparse Argument} -- The argparse arguments
         """
@@ -36,7 +36,7 @@ class TrainingParameters(object):
 class InputParameters(object):
     def __init__(self, args):
         """It initializes the training parameters.
-        
+
         Arguments:
             args {An argparse Argument} -- The argparse arguments
         """
@@ -58,7 +58,7 @@ class InputParameters(object):
 class ImageGenerationParameters(object):
     def __init__(self, args):
         """It initializes the training parameters.
-        
+
         Arguments:
             args {An argparse Argument} -- The argparse arguments
         """

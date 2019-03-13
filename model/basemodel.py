@@ -26,7 +26,7 @@ class BaseModel(object):
                             'resnet' : ResNet,
                             'mobilenet' : MobileNetV2
                         })
-    
+
     def __init__(self, base_model_name, input_shape, dimensions, num_unfrozen_base_layers = 0):
         """It initializes the base model parameters.
 
@@ -76,10 +76,10 @@ class BaseModel(object):
 
     def cnn(self):
         """It creates a base model based on the input parameters
-        
+
         Raises:
             ValueError -- It raise ValueError if the input base model is not supported.
-        
+
         Returns:
             [A Model object] -- A model object.
         """
@@ -102,7 +102,7 @@ class BaseModel(object):
 
     def _prepare_model(self, base_model, additional_layers_spec):
         """It creates a model based on the base model and the additional layer specification
-        
+
         Arguments:
             base_model {A Model object} -- A base model.
             additional_layers_spec {A ModelSpecification object} -- A model specification that defines the attachments to the base model.
@@ -112,7 +112,7 @@ class BaseModel(object):
         """
         #Model placeholder
         model = base_model
-        
+
         #Output
         predictions = additional_layers_spec.get_specification(base_model.output)
 
@@ -123,7 +123,7 @@ class BaseModel(object):
 
     def _prepare_specification(self):
         """It creates a model specification to add to the base model.
-        
+
         Returns:
             [A ModelSpecification object] -- A model specification objects that defines attachments to the base model.
         """

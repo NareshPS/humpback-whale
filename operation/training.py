@@ -30,7 +30,7 @@ class ImageTraining(object):
             checkpoint_callback,
             summary = True):
         """It initializes the training parameters.
-        
+
         Arguments:
             input_params {operation.input.InputParameters} -- The input parameters for the training.    
             training_params {operation.input.TrainingParameters} -- The parameter to start training.
@@ -73,7 +73,7 @@ class ImageTraining(object):
         Arguments:
             input_data {pandas.DataFrame} -- The input dataframe.
             randomize {boolean} -- It indicates randomization of the input data. (default: {True})
-        
+
         Returns:
             (operation.image.ImageDataIterator, operation.image.ImageDataIterator) -- The training and validation data iterators.
         """
@@ -99,7 +99,7 @@ class ImageTraining(object):
 
     def train(self, model, input_data):
         """It executes the training.
-        
+
         Arguments:
             model {keras.Model} -- The keras model object.
             input_data {pandas.DataFrame} -- The input dataframe.      
@@ -128,7 +128,7 @@ class ImageTraining(object):
 
     def batch_train(self, model, input_data):
         """It trains the model with input data starting from the input batch id.
-        
+
         Arguments:
             model {keras.Model} -- The keras model object.
             input_data {pandas.DataFrame} -- The input dataframe.
@@ -172,7 +172,7 @@ class ImageTraining(object):
 
     def _run_epoch(self, model, input_data, start_batch_id, epoch_id, pbar):
         """It run one epoch of training
-        
+
         Arguments:
             model {keras.Model} -- The keras model object.
             input_data {pandas.DataFrame} -- The input dataframe.
@@ -200,6 +200,8 @@ class ImageTraining(object):
 
             #Batch training data from the generator
             X, Y = train_gen.__getitem__(batch_id)
+
+            self._logger.debug('X.len: %s X.shape: %s Y.shape: %s', len(X), [x.shape for x in X], Y.shape)
 
             #Notify batch start
             self._checkpoint_callback.on_batch_begin(batch_id)

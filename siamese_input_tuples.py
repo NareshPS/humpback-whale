@@ -53,7 +53,7 @@ def parse_args():
         help = 'It enables logging to console')
 
     args = parser.parse_args()
-    
+
     return args
 
 if __name__ == "__main__":
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     if output_file_path.exists() and not force_write:
         raise ValueError("File: {} already exists. Please specify overwrite flag to regenerate.".format(output_file_path))
-        
+
     #Generation object
     tuple_generation = TupleGeneration(input_df, image_col, label_col, output_cols)
 

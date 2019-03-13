@@ -13,7 +13,7 @@ from common import constants
 
 def initialize(entry_point, log_to_console = False, no_logging = False):
     """It initializes logging configuration.
-    
+
     Arguments:
         module_name {string} -- A string representing the name of the entry point file.
         log_to_console {boolean} -- A boolean flag to enable console logging.
@@ -28,16 +28,18 @@ def initialize(entry_point, log_to_console = False, no_logging = False):
 
             #Apply no logging flag
             config = _apply_no_logging(config, no_logging)
-            
+
             #Apply console logging flag
             config = _apply_console_logging(config, log_to_console)
-        base_logging_config.dictConfig(config)
+
+            #Apply config changes
+            base_logging_config.dictConfig(config)
     else:
         raise ValueError("Log config: {} is missing".format(filename))
 
 def get_logger(module_name):
     """It gets a logger given a module name.
-    
+
     Arguments:
         module_name {string} -- A string representing the name of the module
 
@@ -48,7 +50,7 @@ def get_logger(module_name):
 
 def _apply_console_logging(config, log_to_console):
     """If console logging is enabled, it updates the configuration to that effect.
-    
+
     Arguments:
         config {dict} -- YAML configuration
         log_to_console {boolean} -- A boolean flag to enable console logging.
@@ -63,7 +65,7 @@ def _apply_console_logging(config, log_to_console):
 
 def _apply_no_logging(config, no_logging):
     """If no_logging is enabled, the handler list is set to empty.
-    
+
     Arguments:
         config {dict} -- YAML configuration
         no_logging {boolean} -- A boolean flag to disable logging.

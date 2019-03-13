@@ -64,7 +64,7 @@ class TestImageTraining(ut.TestCase):
     def test_init(self):
         #Arrange
         input_params, training_params, image_generation_params, transformation_params = get_params()
-    
+
         #Act
         trainer = ImageTraining(
                         input_params,

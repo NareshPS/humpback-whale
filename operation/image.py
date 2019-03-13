@@ -38,7 +38,7 @@ class ImageDataIterator(Sequence):
 
     def __init__(self, image_data_generator, dataframe, batch_size, subset, randomize = True):
         """It initializes the required and optional parameters
-        
+
         Arguments:
             image_data_generator {An ImageDataGenerator object} -- A generator object that allows loading a data slice.
             dataframe {A pandas.DataFrame object} -- A data frame object containing the input data.
@@ -69,7 +69,7 @@ class ImageDataIterator(Sequence):
 
     def __len__(self):
         """It calculates the number of batches per epoch
-        
+
         Returns:
             {int} -- An integer indicating the number of batches.
         """
@@ -82,10 +82,10 @@ class ImageDataIterator(Sequence):
 
     def __getitem__(self, batch_id):
         """It loads the data for a given batch_id.
-        
+
         Arguments:
             batch_id {int} -- An integer indicating the batch id.
-        
+
         Returns:
             {(Numpy data, Numpy data)} -- A tuple of input data and labels for the input batch id.
         """
@@ -93,7 +93,7 @@ class ImageDataIterator(Sequence):
         #Mark start and end of the current slice
         start = batch_id*self._batch_size
         end = start + self._batch_size
-        
+
         self._logger.info(
                         "Using dataset:{} slice [{}, {}] for batch_id: {}".format(
                                                                             ImageDataGeneration.valid_subsets.inv[self._subset],
@@ -133,7 +133,7 @@ class ImageDataGeneration:
 
     def __init__(self, dataframe, input_params, image_generation_params, transformer = None, randomize = True):
         """It initializes the dataframe object.
-        
+
         Arguments:
             dataframe {Pandas DataFrame} -- A pandas dataframe object with columnar data with image names and labels.
             input_params {A InputDataParameter object} -- An input parameter object.
@@ -169,7 +169,7 @@ class ImageDataGeneration:
         #Split the dataframe into training and validation.
         self._main_df = self._dataframe.loc[:(boundary - 1), :]
         self._validation_df = self._dataframe.loc[boundary:, :].reset_index(drop = True)
-        
+
         n_dataframe = len(self._dataframe)
         n_main_df = len(self._main_df)
         n_validation_df = len(self._validation_df)
@@ -179,7 +179,7 @@ class ImageDataGeneration:
 
     def _get_images(self, n_images):
         """It extracts the image names from the dataframe.
-        
+
         Arguments:
             n_images {An numpy.array object} -- It is a 4-D numpy array containing image data.
         """
@@ -199,7 +199,7 @@ class ImageDataGeneration:
 
     def fit(self, n_images):
         """It calculates statistics on the input dataset. These are used to perform transformation.
-        
+
         Arguments:
             n_images {An numpy.array object} -- It is a 4-D numpy array containing image data.
         """
@@ -214,7 +214,7 @@ class ImageDataGeneration:
         #Image objects
         img_objs_map = self._get_image_objects(images)
         img_objs = np.asarray(list(img_objs_map.values()))
-        
+
         self._logger.info("fit:: images: {} to the transformer to compute statistics".format(img_objs.shape))
 
         #Fit the data in the transformer
@@ -222,7 +222,7 @@ class ImageDataGeneration:
 
     def flow(self, subset = 'training'):
         """It creates an iterator to the input dataframe.
-        
+
         Arguments:
             subset {string} -- A string to indicate select between training and validation splits.
         """
@@ -235,7 +235,7 @@ class ImageDataGeneration:
 
         #Dataframe placeholder
         dataframe = None
-        
+
         #Pick the correct dataframe
         if q_subset == ImageDataSubset.Training or q_subset == ImageDataSubset.Prediction:
             dataframe = self._main_df
@@ -253,10 +253,10 @@ class ImageDataGeneration:
 
     def _load_subset_slice(self, df_slice, subset):
         """It loads the image objects and the labels for the data frame slice.
-        
+
         Arguments:
             df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
-        
+
         Returns:
             {An object} -- A list of image objects in prediction phase. A tuple of image objects and their labels in training phase.
         """
@@ -275,10 +275,10 @@ class ImageDataGeneration:
 
     def _load_train_phase_slice(self, df_slice):
         """It loads the image objects and the labels for the data frame slice.
-        
+
         Arguments:
             df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
-        
+
         Returns:
             (Numpy object, Numpy object) -- A tuple of input data and labels.
         """
@@ -286,10 +286,10 @@ class ImageDataGeneration:
 
     def _load_predict_phase_slice(self, df_slice):
         """It loads the image objects for the data frame slice.
-        
+
         Arguments:
             df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
-        
+
         Returns:
             (Numpy object, Numpy object) -- A tuple of input data and labels.
         """
@@ -299,19 +299,23 @@ class ImageDataGeneration:
 
     def _load_slice(self, df_slice):
         """It loads the image objects for the data frame slice.
-        
+
         Arguments:
             df_slice {A pandas.DataFrame object} -- A pandas DataFrame object containing input data and labels.
-        
+
         Returns:
             (Numpy object, Numpy object) -- A tuple of input data and labels.
         """
+        #Calculate the number of classes
+        num_classes = self._image_generation_params.num_classes
+
         #Process labels
         df_slice_y = df_slice[self._image_generation_params.label_col].values
-        df_slice_y_categorical = to_categorical(df_slice_y, num_classes = self._image_generation_params.num_classes)
+        df_slice_y_categorical = to_categorical(df_slice_y, num_classes = num_classes) if num_classes > 2 else df_slice_y
 
         #Process image columns
-        df_slice_x = []  
+        df_slice_x = []
+
         for x_col in self._image_generation_params.image_cols:
             images = df_slice[x_col].tolist()
 
@@ -333,7 +337,7 @@ class ImageDataGeneration:
         """It loads the image objects for the list of images.
         If the image is available, it is loaded from the cache.
         Otherwise, it is loaded from the disk.
-        
+
         Arguments:
             images {[string]} -- A list of image names.
         """
@@ -378,7 +382,7 @@ class ImageDataGeneration:
     def _apply_parameters(self, img_objs):
         """It processes image objects based on the input parameters.
         e.g. normalization, reshaping etc.
-        
+
         Arguments:
             img_objs {numpy.ndarray} -- A numpy array of image objects.
         """

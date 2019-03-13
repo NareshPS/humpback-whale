@@ -250,7 +250,8 @@ if __name__ == "__main__":
                     checkpoint_callback)
 
     #Train
-    model, result = trainer.batch_train(model, input_data)
+    #model, result = trainer.batch_train(model, input_data)
+    model, result = trainer.train(model, input_data)
 
     #Compute accuracy
     num_matches = (result[constants.PANDAS_MATCH_COLUMN].to_numpy().nonzero())[0].shape[0]
