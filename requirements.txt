@@ -41,3 +41,6 @@ pandas
 
 #Refactoring library
 rope
+
+#Memory analysis
+objgraph

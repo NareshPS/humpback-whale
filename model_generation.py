@@ -49,12 +49,12 @@ def define_common_parameters(parser):
 
 def parse_create_parameters(params):
     """It parses create parameters.
-    
+
     Arguments:
         params {[string]} -- A list of the action parameters.
     """
     parser = ArgumentParser()
-    
+
     parser.add_argument(
         '-d', '--dimensions',
         default = 90, type = int,
@@ -71,11 +71,11 @@ def parse_create_parameters(params):
 
 def parse_update_parameters(params):
     """It parses update parameters.
-    
+
     Arguments:
         params {[string]} -- A list of the action parameters.
     """
-    
+
     parser = ArgumentParser()
 
     #Update parameters
@@ -92,7 +92,7 @@ def parse_update_parameters(params):
 
 def parse_action_parameters(action, raw_params):
     """It parses action specific input arguments.
-    
+
     Arguments:
         action {string} -- A string to represent the name of the action.
         raw_params {string} -- A string containing the action parameters.
@@ -140,7 +140,7 @@ def parse_args():
 
 def create(name, base_model_name, input_shape, args):
     """It creates a model based on the input parameters.
-    
+
     Arguments:
         name {string} -- A string to represent the name of the model.
         base_model_name {string} -- A string to represent the base model to use.
@@ -156,7 +156,7 @@ def create(name, base_model_name, input_shape, args):
                 dimensions,
                 learning_rate,
                 num_unfrozen_base_layers)
-    
+
     #Model function
     model_func = getattr(models, name)
 
@@ -168,7 +168,7 @@ def create(name, base_model_name, input_shape, args):
 
 def update(model_file_name, args):
     """It updates the input model based on the input arguments.
-    
+
     Arguments:
         model_file_name {string} -- The name of the model file.
         args {An ArgParse object} -- It provides access to the input parameters
@@ -185,7 +185,7 @@ def update(model_file_name, args):
 
     #Load the model
     model = load_model(model_file_name)
-    
+
     #Configure the model
     op = Operation(num_unfrozen_base_layers, configure_base = True, base_level = base_level)
     model = op.configure(model)
@@ -204,7 +204,7 @@ def update(model_file_name, args):
 
 def act(action, name, base_model_name, model_file, input_shape, args):
     """It runs the input action with the input arguments.
-    
+
     Arguments:
         action {string} -- A string to represent the name of the action. 
         name {string} -- A string to represent the name of the model.
