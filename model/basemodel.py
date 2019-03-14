@@ -67,7 +67,7 @@ class BaseModel(object):
         """It creates a base model object
         """
         #Base model placeholder to be updated in the if/else clause
-        base_model_params = dict(include_top=False, weights='imagenet', input_shape = self._input_shape, pooling = 'max')
+        base_model_params = dict(include_top=False, weights = None, input_shape = self._input_shape, pooling = 'max')
 
         #Base model object
         base_model = BaseModel.base_models[self._base_model_name](**base_model_params)
