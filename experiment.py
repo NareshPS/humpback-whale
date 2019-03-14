@@ -1,10 +1,13 @@
+#Keras
 from keras import backend as K
 from keras.optimizers import Adam
 from keras.engine.topology import Input
 from keras.layers import Concatenate, Conv2D, Dense, Flatten, Lambda, Reshape
 from keras.models import Model, load_model
+from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 
-from keras.applications.densenet import DenseNet121, preprocess_input
+#Data processing
+import numpy as np
 
 BOX_SIZE = 512
 
@@ -13,7 +16,7 @@ def preprocess_image(img):
 
 
 def get_branch_model(inp_shape):
-    model = DenseNet121(input_shape=inp_shape, include_top=False, weights=None, pooling='max')
+    model = MobileNetV2(input_shape=inp_shape, include_top=False, weights=None, pooling='max')
     return model
 
 
@@ -59,4 +62,16 @@ def build_model(img_shape, activation='sigmoid'):
 img_shape = (512, 512, 3)
 
 model, _, _ = build_model(img_shape)
+
+#Save the model to the disk for use with other applications
 model.save('siamese_densenet.batch.0.epoch.0.h5')
+
+#Load model to avoid load failures
+model = load_model('siamese_densenet.batch.0.epoch.0.h5')
+
+#Run a training lap
+X1 = np.random.random((2, BOX_SIZE, BOX_SIZE, 3))
+X2 = np.random.random((2, BOX_SIZE, BOX_SIZE, 3))
+Y = np.reshape(np.asarray([1, 0]), (2, 1))
+
+model.fit([X1, X2], Y)
