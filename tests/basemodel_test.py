@@ -18,9 +18,6 @@ from tests.support.utils import input_shape, dimensions
 #Constants
 from common import constants
 
-#Basic parameters
-num_unfrozen_layers = 2
-
 class TestBaseModel(ut.TestCase):
     def test_cnn_invalid_base_model_name(self):
         #Arrange Act & Assert

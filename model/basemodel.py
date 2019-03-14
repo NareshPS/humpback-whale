@@ -8,9 +8,6 @@ from keras.models import Model
 #Model specification
 from model.definition import ModelSpecification, LayerSpecification, LayerType
 
-#Model operation
-from model.operation import Operation
-
 #Constants
 from common import constants
 
@@ -27,23 +24,18 @@ class BaseModel(object):
                             'mobilenet' : MobileNetV2
                         })
 
-    def __init__(self, base_model_name, input_shape, dimensions, num_unfrozen_base_layers = 0):
+    def __init__(self, base_model_name, input_shape, dimensions):
         """It initializes the base model parameters.
 
         Arguments:
             base_model_name {string} -- A string containing the name of a base model.
             input_shape {(int, int)} -- A tuple indicating the dimensions of model input.
             dimensions {int} -- An integer indicating the size of feature vector.
-            num_unfrozen_base_layers {int} -- The number of bottom layers of base model to train.
         """
         #Input parameters
         self._base_model_name = base_model_name
         self._input_shape = input_shape
         self._dimensions = dimensions
-        self._num_unfrozen_base_layers = num_unfrozen_base_layers
-
-        #Derived parameters
-        self._operation = Operation(self._num_unfrozen_base_layers, configure_base = False)
 
         #Validation
         if BaseModel.base_models.get(base_model_name) is None:
@@ -57,11 +49,10 @@ class BaseModel(object):
 
         #Log input parameters
         self._logger.info(
-                        "Input parameters:: base_model_name: %s input_shape: %s dimensions: %d num_unfrozen_base_layers: %d",
+                        "Input parameters:: base_model_name: %s input_shape: %s dimensions: %d",
                         self._base_model_name,
                         self._input_shape,
-                        self._dimensions,
-                        self._num_unfrozen_base_layers)
+                        self._dimensions)
 
     def _get_base_model(self):
         """It creates a base model object
@@ -88,9 +79,6 @@ class BaseModel(object):
 
         #Base model
         base_model = self._get_base_model()
-
-        #Unfreeze base layers
-        base_model = self._operation.configure(base_model)
 
         #Additional layer specification
         additional_layer_spec = self._prepare_specification()

@@ -14,7 +14,7 @@ from model.definition import ModelSpecification, LayerSpecification, LayerType
 #Local imports
 from common import constants
 
-def siamese_network(base_model_name, input_shape, feature_dims, learning_rate, num_unfrozen_base_layers = 0):
+def siamese_network(base_model_name, input_shape, feature_dims, learning_rate):
     """It creates a siamese network model using the input as a base model.
 
     Arguments:
@@ -22,13 +22,12 @@ def siamese_network(base_model_name, input_shape, feature_dims, learning_rate, n
         input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
         feature_dims {int} -- An integer indicating the dimensions of the feature vector.
         learning_rate {float} -- A float value to control speed of learning.
-        num_unfrozen_base_layers {int} -- The number of bottom layers of base model to train.
 
     Returns:
         {A Model object} -- A keras model.
     """
     #Base model
-    base_model = BaseModel(base_model_name, input_shape, feature_dims, num_unfrozen_base_layers)
+    base_model = BaseModel(base_model_name, input_shape, feature_dims)
 
     #Siamese inputs
     anchor_input = Input(shape = input_shape, name = 'Anchor')
@@ -75,21 +74,19 @@ def siamese_network(base_model_name, input_shape, feature_dims, learning_rate, n
 
     return network
 
-def cnn(base_model_name, input_shape, feature_dims, learning_rate, num_unfrozen_base_layers = 0):
+def cnn(base_model_name, input_shape, feature_dims, learning_rate):
     """It creates a convolutional network model using the input as a base model.
 
     Arguments:
         base_model_name {string} -- A string containing the name of a base model.
         input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
         feature_dims {int} -- An integer indicating the dimensions of the feature vector.
-        learning_rate {float} -- A float value to control speed of learning.
-        num_unfrozen_base_layers {int} -- The number of bottom layers of base model to train.
 
     Returns:
         {A Model object} -- A keras model.
     """
     #Base model
-    base_model = BaseModel(base_model_name, input_shape, feature_dims, num_unfrozen_base_layers)
+    base_model = BaseModel(base_model_name, input_shape, feature_dims)
 
     #Model
     model = base_model.cnn()
