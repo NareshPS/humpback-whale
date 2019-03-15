@@ -29,7 +29,7 @@ class BatchTrainStateCheckpoint(Callback):
             epoch_input_files = [],
             dropbox = None):
         """It initializes the parameters.
-        
+
         Keyword Arguments:
             batch_input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint on batch end.
             checkpoint_batch_interval {int} -- The number of batches after which to upload checkpoint the files.
@@ -86,14 +86,14 @@ class BatchTrainStateCheckpoint(Callback):
 
     def _upload(self, input_files, batch_id, epoch_id):
         """It generates the checkpoint files locally, then uploads them to dropbox.
-        
+
         Arguments:
             input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint.
             batch_id {int} -- The id of the current batch.
             epoch_id {int} -- The id of the current epoch.
         """
         self._logger.info('Got %d files to upload to dropbox', len(input_files))
-        
+
         #Iterate over to generate input files.
         for input_file in input_files:
             #Save file locally
@@ -119,7 +119,7 @@ class BatchTrainStateCheckpoint(Callback):
 
     def on_batch_begin(self, batch_id, logs = None):
         """It execute the required batch start operations
-        
+
         Arguments:
             batch_id {int} -- The id of the current batch.
             logs {dict} -- A dictionary of metrics.
@@ -131,7 +131,7 @@ class BatchTrainStateCheckpoint(Callback):
 
     def on_batch_end(self, batch_id, logs = None):
         """It execute the required batch end operations
-        
+
         Arguments:
             batch_id {int} -- The id of the current batch.
             logs {dict} -- A dictionary of metrics.
@@ -144,10 +144,10 @@ class BatchTrainStateCheckpoint(Callback):
         #Checkpoint the state if required
         if (batch_id + 1) % self._checkpoint_batch_interval == 0:
             self._upload(self._batch_input_files, batch_id, self._epoch_id)
- 
+
     def on_epoch_begin(self, epoch_id, logs = None):
         """It execute the required epoch start operations
-        
+
         Arguments:
             epoch_id {int} -- The id of the current batch.
             logs {dict} -- A dictionary of metrics.
@@ -162,7 +162,7 @@ class BatchTrainStateCheckpoint(Callback):
 
     def on_epoch_end(self, epoch_id, logs = None):
         """It execute the required epoch end operations
-        
+
         Arguments:
             epoch_id {int} -- The id of the current batch.
             logs {dict} -- A dictionary of metrics.

@@ -66,12 +66,11 @@ model, _, _ = build_model(img_shape)
 #Save the model to the disk for use with other applications
 model.save('siamese_densenet.batch.0.epoch.0.h5')
 
-#Load model to avoid load failures
-model = load_model('siamese_densenet.batch.0.epoch.0.h5')
-
 #Run a training lap
 X1 = np.random.random((2, BOX_SIZE, BOX_SIZE, 3))
 X2 = np.random.random((2, BOX_SIZE, BOX_SIZE, 3))
 Y = np.reshape(np.asarray([1, 0]), (2, 1))
 
+print('Running a training lap to cross verify model correctness.')
 model.fit([X1, X2], Y)
+print('Model training complete')
