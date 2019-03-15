@@ -19,21 +19,34 @@ from tests.support.utils import input_shape, dimensions
 from common import constants
 
 class TestBaseModel(ut.TestCase):
-    def test_cnn_invalid_base_model_name(self):
+    def test_invalid_base_model_name(self):
         #Arrange Act & Assert
         with self.assertRaises(ValueError):
-            base_model = BaseModel('nanana', input_shape, dimensions)
-            base_model.cnn()
+            base_model = BaseModel('nanana', input_shape)
+            base_model.base_model()
+
+    def validate_base_model_creation(self, feature_model_name, module_path):
+        #Arrange
+        base_model = BaseModel(feature_model_name, input_shape)
+
+        #Act & Assert
+        with mock_patch(module_path) as base_mock:
+            base_model.base_model()
+            base_mock.assert_called_once()
+
+    def test_validate_base_model_creation(self):
+        self.validate_base_model_creation('resnet', 'keras_applications.resnet50.ResNet50')
+        self.validate_base_model_creation('inceptionv3', 'keras_applications.inception_v3.InceptionV3')
+        self.validate_base_model_creation('mobilenet', 'keras_applications.mobilenet_v2.MobileNetV2')
 
     def cnn_validate_base_model_creation(self, feature_model_name, module_path):
         #Arrange
-        base_model = BaseModel(feature_model_name, input_shape, dimensions)
+        base_model = BaseModel(feature_model_name, input_shape)
 
         #Act & Assert
         with mock_patch(module_path) as base_mock:
             base_model._prepare_model = MagicMock()
-            base_model._prepare_specification = MagicMock()
-            base_model.cnn()
+            base_model.cnn(dimensions)
             base_mock.assert_called_once()
 
     def test_cnn_validate_base_model_creation(self):  
@@ -43,10 +56,10 @@ class TestBaseModel(ut.TestCase):
 
     def test_cnn_model(self):
         #Arrange
-        base_model = BaseModel('inceptionv3', input_shape, dimensions)
+        base_model = BaseModel('inceptionv3', input_shape)
 
         #Act
-        model = base_model.cnn()
+        model = base_model.cnn(dimensions)
 
         #Assert
         self.assertIsNotNone(model)

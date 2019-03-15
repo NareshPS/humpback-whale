@@ -83,7 +83,7 @@ if __name__ == "__main__":
     logger.info('Using model_func: %s', model_func)
 
     #Create the model
-    model = model_func(base_model_name, input_shape, dimensions, learning_rate)
+    model = model_func(base_model_name, input_shape, learning_rate, dimensions)
     logger.info("Created a new model using base_model_name: {}".format(base_model_name))
 
     #Save the trained model.

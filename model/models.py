@@ -14,28 +14,36 @@ from model.definition import ModelSpecification, LayerSpecification, LayerType
 #Local imports
 from common import constants
 
-def siamese_network(base_model_name, input_shape, feature_dims, learning_rate):
+def siamese_network(base_model_name, input_shape, learning_rate, feature_dims):
     """It creates a siamese network model using the input as a base model.
 
     Arguments:
         base_model_name {string} -- A string containing the name of a base model.
         input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
-        feature_dims {int} -- An integer indicating the dimensions of the feature vector.
         learning_rate {float} -- A float value to control speed of learning.
+        feature_dims {int} -- An integer indicating the dimensions of the feature vector.
 
     Returns:
         {A Model object} -- A keras model.
     """
+    #Layer name guidances
+    anchor_name_guidance = 'Anchor'
+    sample_name_guidance = 'Sample'
+
     #Base model
-    base_model = BaseModel(base_model_name, input_shape, feature_dims)
+    base_model = BaseModel(base_model_name, input_shape)
 
     #Siamese inputs
-    anchor_input = Input(shape = input_shape, name = 'Anchor')
-    sample_input = Input(shape = input_shape, name = 'Sample')
+    anchor_input = Input(shape = input_shape, name = anchor_name_guidance)
+    sample_input = Input(shape = input_shape, name = sample_name_guidance)
+
+    #Feature models
+    anchor_model = base_model.base_model(anchor_name_guidance)
+    sample_model = base_model.base_model(sample_name_guidance)
 
     #Feature inputs
-    anchor_features = base_model.cnn()(anchor_input)
-    sample_features = base_model.cnn()(sample_input)
+    anchor_features = anchor_model(anchor_input)
+    sample_features = sample_model(sample_input)
 
     #Layer arrgs
     kwargs = dict(kernel_initializer = 'he_normal')
@@ -68,28 +76,29 @@ def siamese_network(base_model_name, input_shape, feature_dims, learning_rate):
     #Create an optimizer object
     adam_optimizer = Adam(lr = learning_rate)
 
-    network = Model(inputs = [anchor_input, sample_input], outputs = [X], name = 'Siamese Model')
-    network.compile(loss='binary_crossentropy', optimizer = adam_optimizer, metrics = ['accuracy'])
-    network.summary()
+    model = Model(inputs = [anchor_input, sample_input], outputs = [X], name = 'Siamese Model')
+    model.compile(loss='binary_crossentropy', optimizer = adam_optimizer, metrics = ['accuracy'])
+    model.summary()
 
-    return network
+    return model
 
-def cnn(base_model_name, input_shape, feature_dims, learning_rate):
+def cnn(base_model_name, input_shape, learning_rate, feature_dims):
     """It creates a convolutional network model using the input as a base model.
 
     Arguments:
         base_model_name {string} -- A string containing the name of a base model.
         input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
+        learning_rate {float} -- A float value to control speed of learning.
         feature_dims {int} -- An integer indicating the dimensions of the feature vector.
 
     Returns:
         {A Model object} -- A keras model.
     """
     #Base model
-    base_model = BaseModel(base_model_name, input_shape, feature_dims)
+    base_model = BaseModel(base_model_name, input_shape)
 
     #Model
-    model = base_model.cnn()
+    model = base_model.cnn(feature_dims)
 
     #Create an optimizer object
     adam_optimizer = Adam(lr = learning_rate)

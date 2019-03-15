@@ -8,6 +8,9 @@ from keras.models import Model
 #Model specification
 from model.definition import ModelSpecification, LayerSpecification, LayerType
 
+#Randomize model names
+from random import random
+
 #Constants
 from common import constants
 
@@ -24,18 +27,16 @@ class BaseModel(object):
                             'mobilenet' : MobileNetV2
                         })
 
-    def __init__(self, base_model_name, input_shape, dimensions):
+    def __init__(self, base_model_name, input_shape):
         """It initializes the base model parameters.
 
         Arguments:
             base_model_name {string} -- A string containing the name of a base model.
             input_shape {(int, int)} -- A tuple indicating the dimensions of model input.
-            dimensions {int} -- An integer indicating the size of feature vector.
         """
         #Input parameters
         self._base_model_name = base_model_name
         self._input_shape = input_shape
-        self._dimensions = dimensions
 
         #Validation
         if BaseModel.base_models.get(base_model_name) is None:
@@ -49,24 +50,30 @@ class BaseModel(object):
 
         #Log input parameters
         self._logger.info(
-                        "Input parameters:: base_model_name: %s input_shape: %s dimensions: %d",
+                        "Input parameters:: base_model_name: %s input_shape: %s",
                         self._base_model_name,
-                        self._input_shape,
-                        self._dimensions)
+                        self._input_shape)
 
-    def _get_base_model(self):
+    def base_model(self, name_guidance = ''):
         """It creates a base model object
         """
         #Base model placeholder to be updated in the if/else clause
-        base_model_params = dict(include_top=False, weights = None, input_shape = self._input_shape, pooling = 'max')
+        base_model_params = dict(include_top = False, weights = None, input_shape = self._input_shape, pooling = 'max')
 
         #Base model object
         base_model = BaseModel.base_models[self._base_model_name](**base_model_params)
 
+        #Mangle the base model name
+        mangled_model_name = '{}_{}_{}_{}'.format(name_guidance, self._base_model_name, self._input_shape[0], int(random() * 1000))
+        base_model.name = mangled_model_name
+
         return base_model
 
-    def cnn(self):
+    def cnn(self, dimensions):
         """It creates a base model based on the input parameters
+
+        Arguments:
+            dimensions {int} -- An integer indicating the size of feature vector.
 
         Raises:
             ValueError -- It raise ValueError if the input base model is not supported.
@@ -75,16 +82,32 @@ class BaseModel(object):
             [A Model object] -- A model object.
         """
 
-        self._logger.info("Creating a cnn model with base_model: %s", self._base_model_name)
+        self._logger.info(
+                        "Creating a cnn model with base_model: %s dimensions: %d",
+                        self._base_model_name,
+                        dimensions)
 
         #Base model
-        base_model = self._get_base_model()
+        base_model = self.base_model()
 
         #Additional layer specification
-        additional_layer_spec = self._prepare_specification()
+        kwargs = dict(kernel_initializer = 'he_normal')  
+
+        #Layer specifications
+        additional_layer_spec = [
+                                    #Dense units
+                                    LayerSpecification(LayerType.Dense, 128, activation = 'relu', **kwargs),
+                                    LayerSpecification(LayerType.Dropout, 0.5),
+
+                                    #Output unit
+                                    LayerSpecification(LayerType.Dense, dimensions, activation = 'softmax', **kwargs)
+                                ]
+
+        #Model specification
+        model_specification = ModelSpecification(additional_layer_spec)
 
         #Model
-        model = self._prepare_model(base_model, additional_layer_spec)
+        model = self._prepare_model(base_model, model_specification)
 
         return model
 
@@ -98,9 +121,6 @@ class BaseModel(object):
         Returns:
             [A Model object] -- A model object.
         """
-        #Model placeholder
-        model = base_model
-
         #Output
         predictions = additional_layers_spec.get_specification(base_model.output)
 
@@ -108,27 +128,3 @@ class BaseModel(object):
         model = Model(inputs = base_model.input, outputs = predictions)
 
         return model
-
-    def _prepare_specification(self):
-        """It creates a model specification to add to the base model.
-
-        Returns:
-            [A ModelSpecification object] -- A model specification objects that defines attachments to the base model.
-        """
-        #Layer args
-        kwargs = dict(kernel_initializer = 'he_normal')
-
-        #Layer specifications
-        layer_specifications = [
-                                    #Dense units
-                                    LayerSpecification(LayerType.Dense, 128, activation = 'relu', **kwargs),
-                                    LayerSpecification(LayerType.Dropout, 0.5),
-
-                                    #Output unit
-                                    LayerSpecification(LayerType.Dense, self._dimensions, activation = 'softmax', **kwargs)
-                                ]
-
-        #Model specification
-        model_specification = ModelSpecification(layer_specifications)
-
-        return model_specification
