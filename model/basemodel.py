@@ -54,7 +54,7 @@ class BaseModel(object):
                         self._base_model_name,
                         self._input_shape)
 
-    def base_model(self, name_guidance = ''):
+    def base_model(self, name_guidance = 'Model'):
         """It creates a base model object
         """
         #Base model placeholder to be updated in the if/else clause
