@@ -12,6 +12,9 @@ from model.basemodel import BaseModel
 #Model specification
 from model.definition import ModelSpecification, LayerSpecification, LayerType
 
+#Loss functions
+from model.loss import triplet_loss
+
 #Local imports
 from common import constants
 
@@ -33,9 +36,6 @@ def siamese_network(base_model_name, input_shape, learning_rate, feature_dims):
     anchor_name_guidance = 'Anchor'
     sample_name_guidance = 'Sample'
 
-    #Layer arrgs
-    kwargs = dict()
-
     #Base model handler
     base_model = BaseModel(base_model_name, input_shape)
 
@@ -50,10 +50,10 @@ def siamese_network(base_model_name, input_shape, learning_rate, feature_dims):
     anchor_features = feature_model(anchor_input)
     sample_features = feature_model(sample_input)
 
-    lambda_product = Lambda(lambda x : x[0] * x[1], **kwargs)([anchor_features, sample_features])
-    lambda_add = Lambda(lambda x : x[0] + x[1], **kwargs)([anchor_features, sample_features])
-    lambda_abs = Lambda(lambda x : K.abs(x[0] - x[1]), **kwargs)([anchor_features, sample_features])
-    lambda_eucledian_dist = Lambda(lambda x: K.square(x), **kwargs)(lambda_abs)
+    lambda_product = Lambda(lambda x : x[0] * x[1])([anchor_features, sample_features])
+    lambda_add = Lambda(lambda x : x[0] + x[1])([anchor_features, sample_features])
+    lambda_abs = Lambda(lambda x : K.abs(x[0] - x[1]))([anchor_features, sample_features])
+    lambda_eucledian_dist = Lambda(lambda x: K.square(x))(lambda_abs)
 
     #Layer specifications
     layer_specifications = [
@@ -85,7 +85,52 @@ def siamese_network(base_model_name, input_shape, learning_rate, feature_dims):
     adam_optimizer = Adam(lr = learning_rate)
 
     model = Model(inputs = [anchor_input, sample_input], outputs = [X], name = 'Siamese Model')
-    model.compile(loss='binary_crossentropy', optimizer = adam_optimizer, metrics = ['accuracy'])
+    model.compile(loss = 'binary_crossentropy', optimizer = adam_optimizer, metrics = ['accuracy'])
+    model.summary()
+
+    return model
+
+def siamese_triplet(base_model_name, input_shape, learning_rate, feature_dims):
+    """It creates a siamese triplet model using the input as a base model.
+
+    Arguments:
+        base_model_name {string} -- A string containing the name of a base model.
+        input_shape {(int, int, int))} -- A tuple to indicate the shape of inputs.
+        learning_rate {float} -- A float value to control speed of learning.
+        feature_dims {int} -- An integer indicating the dimensions of the feature vector.
+
+    Returns:
+        {A Model object} -- A keras model.
+    """
+    #Layer name guidances
+    anchor_name_guidance = 'Anchor'
+    positive_name_guidance = 'Positive'
+    negative_name_guidance = 'Negative'
+
+    #Base model handler
+    base_model = BaseModel(base_model_name, input_shape)
+
+    #Feature models
+    feature_model = base_model.base_model()
+
+    #Siamese inputs
+    anchor_input = Input(shape = input_shape, name = anchor_name_guidance)
+    positive_input = Input(shape = input_shape, name = positive_name_guidance)
+    negative_input = Input(shape = input_shape, name = negative_name_guidance)
+
+    #Feature vectors
+    anchor_features = feature_model(anchor_input)
+    positive_features = feature_model(positive_input)
+    negative_features = feature_model(negative_input)
+
+    #Loss layer
+    X = Lambda(triplet_loss, output_shape = (1, ))([anchor_features, positive_features, negative_features])
+
+    #Create an optimizer object
+    adam_optimizer = Adam(lr = learning_rate)
+
+    model = Model(inputs = [anchor_input, positive_input, negative_input], outputs = [X], name = 'Siamese Triplet')
+    model.compile(loss = 'mae', optimizer = adam_optimizer, metrics = ['accuracy'])
     model.summary()
 
     return model
