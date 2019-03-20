@@ -9,7 +9,6 @@ from random import randrange
 from cachetools import LRUCache
 
 #Dataset processing
-from funcy import chunks
 from operation import utils
 import numpy as np
 

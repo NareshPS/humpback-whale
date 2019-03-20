@@ -26,3 +26,4 @@ LABEL_DATAFRAME_PATH = Path(DATA_STORE) / 'label_df.csv'
 LABEL_DATAFRAME_LABEL_COL = 'Id'
 LABEL_DATAFRAME_IMAGE_COL = 'Image'
 TUPLE_DATAFRAME_COLS = ['Anchor', 'Sample', 'Label']
+TRIPLET_DATAFRAME_COLS = ['Anchor', 'Positive', 'Negative']

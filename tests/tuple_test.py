@@ -32,10 +32,10 @@ class TestTupleGeneration(ut.TestCase):
                         ut_constants.LABEL_DATAFRAME_IMAGE_COL,
                         ut_constants.LABEL_DATAFRAME_LABEL_COL,
                         ut_constants.TUPLE_DATAFRAME_COLS)
-        
+
         return tup_gen.get_tuples(num_positive_samples, num_negative_samples)
 
-    def verify(self, tuple_df, anchor, requested_positive_samples, requested_negative_samples):
+    def verify_tuples(self, tuple_df, anchor, requested_positive_samples, requested_negative_samples):
         #Label DataFrame
         label_df = self.get_label_df()
         label = label_df.loc[label_df[ut_constants.LABEL_DATAFRAME_IMAGE_COL] == anchor].iloc[0][ut_constants.LABEL_DATAFRAME_LABEL_COL]
@@ -46,15 +46,23 @@ class TestTupleGeneration(ut.TestCase):
         expected_negative_samples = requested_negative_samples
 
         #Columns
-        anchor_col = ut_constants.TUPLE_DATAFRAME_COLS[0]
-        label_col = ut_constants.TUPLE_DATAFRAME_COLS[2]
+        anchor_col, sample_col, label_col = ut_constants.TUPLE_DATAFRAME_COLS
 
-        positive_samples = tuple_df.loc[(tuple_df[anchor_col] == anchor) & (tuple_df[label_col] == 1)]
-        negative_samples = tuple_df.loc[(tuple_df[anchor_col] == anchor) & (tuple_df[label_col] == 0)]
+        #Positive and negative sample counts
+        positive_samples = tuple_df.loc[(tuple_df[anchor_col] == anchor) & (tuple_df[label_col] == 1)][sample_col].tolist()
+        negative_samples = tuple_df.loc[(tuple_df[anchor_col] == anchor) & (tuple_df[label_col] == 0)][sample_col].tolist()
+
+        #Positive and negative sample choices
+        positive_sample_choices = label_df.loc[label_df[ut_constants.LABEL_DATAFRAME_LABEL_COL] == label][ut_constants.LABEL_DATAFRAME_IMAGE_COL].tolist()
+        negative_sample_choices = label_df.loc[label_df[ut_constants.LABEL_DATAFRAME_LABEL_COL] != label][ut_constants.LABEL_DATAFRAME_IMAGE_COL].tolist()
 
         #Assert counts
         self.assertEqual(len(positive_samples), expected_positive_samples)
         self.assertEqual(len(negative_samples), expected_negative_samples)
+
+        #Assert samples
+        _ = [self.assertIn(sample, positive_sample_choices) for sample in positive_samples]
+        _ = [self.assertIn(sample, negative_sample_choices) for sample in negative_samples]
 
     def test_get_tuples_within_range(self):
         #Arrange
@@ -66,7 +74,7 @@ class TestTupleGeneration(ut.TestCase):
 
         #Assert
         for anchor in anchors:
-            self.verify(tuple_df, anchor, num_positive_samples, num_negative_samples)
+            self.verify_tuples(tuple_df, anchor, num_positive_samples, num_negative_samples)
 
     def test_get_tuples_too_large_sample_count(self):
         #Arrange
@@ -78,4 +86,65 @@ class TestTupleGeneration(ut.TestCase):
 
         #Assert
         for anchor in anchors:
-            self.verify(tuple_df, anchor, num_positive_samples, num_negative_samples)
+            self.verify_tuples(tuple_df, anchor, num_positive_samples, num_negative_samples)
+
+    def get_triplets(self, num_samples):
+        #Arrange
+        label_df = self.get_label_df()
+        tup_gen = TupleGeneration(
+                        label_df,
+                        ut_constants.LABEL_DATAFRAME_IMAGE_COL,
+                        ut_constants.LABEL_DATAFRAME_LABEL_COL,
+                        ut_constants.TRIPLET_DATAFRAME_COLS)
+
+        return tup_gen.get_triplets(num_samples)
+
+    def verify_triplets(self, tuple_df, anchor, num_samples):
+        #Label DataFrame
+        label_df = self.get_label_df()
+        label = label_df.loc[label_df[ut_constants.LABEL_DATAFRAME_IMAGE_COL] == anchor].iloc[0][ut_constants.LABEL_DATAFRAME_LABEL_COL]
+        max_samples = len(label_df.loc[label_df[ut_constants.LABEL_DATAFRAME_LABEL_COL] == label])
+
+        #Expected sample counts
+        expected_num_samples = min(max_samples, num_samples)
+
+        #Columns
+        anchor_col, positive_col, negative_col = ut_constants.TRIPLET_DATAFRAME_COLS
+
+        #Positive and negative sample counts
+        positive_samples = tuple_df.loc[tuple_df[anchor_col] == anchor][positive_col].tolist()
+        negative_samples = tuple_df.loc[tuple_df[anchor_col] == anchor][negative_col].tolist()
+
+        #Positive and negative sample choices
+        positive_sample_choices = label_df.loc[label_df[ut_constants.LABEL_DATAFRAME_LABEL_COL] == label][ut_constants.LABEL_DATAFRAME_IMAGE_COL].tolist()
+        negative_sample_choices = label_df.loc[label_df[ut_constants.LABEL_DATAFRAME_LABEL_COL] != label][ut_constants.LABEL_DATAFRAME_IMAGE_COL].tolist()
+
+        #Assert counts
+        self.assertEqual(len(positive_samples), expected_num_samples)
+        self.assertEqual(len(negative_samples), expected_num_samples)
+
+        #Assert samples
+        _ = [self.assertIn(sample, positive_sample_choices) for sample in positive_samples]
+        _ = [self.assertIn(sample, negative_sample_choices) for sample in negative_samples]
+
+    def test_get_triplets_within_range(self):
+        #Arrange
+        num_samples = 1
+
+        #Act
+        triplet_df = self.get_triplets(num_samples)
+
+        #Assert
+        for anchor in anchors:
+            self.verify_triplets(triplet_df, anchor, num_samples)
+
+    def test_get_triplets_too_large_sample_count(self):
+        #Arrange
+        num_samples = 5
+
+        #Act
+        triplet_df = self.get_triplets(num_samples)
+
+        #Assert
+        for anchor in anchors:
+            self.verify_triplets(triplet_df, anchor, num_samples)
