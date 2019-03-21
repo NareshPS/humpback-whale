@@ -1,7 +1,7 @@
 #Unittest
 import unittest as ut
 from unittest.mock import patch as mock_patch
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock, Mock
 
 #Constants
 from common import ut_constants
@@ -18,6 +18,9 @@ from pandas import DataFrame
 from operation.transform import ImageDataTransformation
 from operation.training import ImageTraining
 from operation.image import ImageDataIterator
+
+#Random numbers
+from random import random
 
 #Input parameters
 from operation.input import InputParameters, ImageGenerationParameters, TrainingParameters
@@ -157,8 +160,8 @@ class TestImageTraining(ut.TestCase):
         trainer._training_params.number_of_epochs = number_of_epochs
 
         #Mock the relevant calls
-        model.fit_generator = MagicMock()
-        model.train_on_batch = MagicMock()
+        model.fit_generator = Mock(return_value = [random() for _ in model.metrics_names])
+        model.train_on_batch = Mock(return_value = [random() for _ in model.metrics_names])
         trainer._transformer.fit = MagicMock()
         K.set_value = MagicMock()
 
@@ -208,7 +211,7 @@ class TestImageTraining(ut.TestCase):
         trainer._dropbox_dir = None
 
         #Mock the relevant calls
-        model.train_on_batch = MagicMock()
+        model.train_on_batch = Mock(return_value = [random() for _ in model.metrics_names])
         K.set_value = MagicMock()
 
         with mock_patch('operation.utils.imload', side_effect = patch_imload):
@@ -229,7 +232,7 @@ class TestImageTraining(ut.TestCase):
         trainer._dropbox_dir = None
 
         #Mock the relevant calls
-        model.train_on_batch = MagicMock()
+        model.train_on_batch = Mock(return_value = [random() for _ in model.metrics_names])
         trainer._transformer.fit = MagicMock()
         input_data.sample = MagicMock()
 

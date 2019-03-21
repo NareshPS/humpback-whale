@@ -168,7 +168,8 @@ def batch_train_state_callback(model_name, checkpoint_batch_interval, dropbox):
     state_checkpoint_callback = BatchTrainStateCheckpoint(
                                         batch_input_files = [model_input, result_file],
                                         checkpoint_batch_interval = checkpoint_batch_interval,
-                                        epoch_input_files = [input_data_file, result_file],
+                                        epoch_begin_input_files = [input_data_file],
+                                        epoch_end_input_files = [result_file],
                                         dropbox = dropbox)
 
     return state_checkpoint_callback

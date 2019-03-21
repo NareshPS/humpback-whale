@@ -26,14 +26,16 @@ class BatchTrainStateCheckpoint(Callback):
             self,
             batch_input_files = [],
             checkpoint_batch_interval = 1,
-            epoch_input_files = [],
+            epoch_begin_input_files = [],
+            epoch_end_input_files = [],
             dropbox = None):
         """It initializes the parameters.
 
         Keyword Arguments:
             batch_input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint on batch end.
             checkpoint_batch_interval {int} -- The number of batches after which to upload checkpoint the files.
-            epoch_input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint on epoch end.
+            epoch_begin_input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint on epoch begin.
+            epoch_end_input_files [iofiles.input_files.object] -- The list of input file objects to checkpoint on epoch end.
             dropbox {client.dropbox.DropboxConnection} -- The dropbox client (default: {None})
         """
         super(BatchTrainStateCheckpoint, self).__init__()
@@ -41,7 +43,8 @@ class BatchTrainStateCheckpoint(Callback):
         #Required parameters
         self._batch_input_files = batch_input_files
         self._checkpoint_batch_interval = checkpoint_batch_interval
-        self._epoch_input_files = epoch_input_files
+        self._epoch_begin_input_files = epoch_begin_input_files
+        self._epoch_end_input_files = epoch_end_input_files
 
         #Additional parameters
         self._dropbox = dropbox
@@ -160,6 +163,9 @@ class BatchTrainStateCheckpoint(Callback):
         #Create epoch response
         self._epoch_response = EpochResponse(self._epoch_id , self._model.metrics_names)
 
+        #Initiate the upload
+        self._upload(self._epoch_begin_input_files, self._batch_id, self._epoch_id)
+
     def on_epoch_end(self, epoch_id, logs = None):
         """It execute the required epoch end operations
 
@@ -169,5 +175,5 @@ class BatchTrainStateCheckpoint(Callback):
         """
         self._logger.info('on_epoch_end:: epoch_id: %d', epoch_id)
 
-        #Initiate the download
-        self._upload(self._epoch_input_files, self._batch_id, epoch_id)
+        #Initiate the upload
+        self._upload(self._epoch_end_input_files, self._batch_id, epoch_id)

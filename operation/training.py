@@ -177,7 +177,7 @@ class ImageTraining(object):
             input_data = input_data.sample(frac = 1).reset_index(drop = True)
 
         #Iterate over all the remaining training batches
-        train_gen, validation_gen = self._generators(input_data)
+        train_gen, validation_gen = self._generators(input_data, randomize = False)
 
         #Epoch start operations
         self._checkpoint_callback.set_input_data(input_data)

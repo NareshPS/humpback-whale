@@ -78,7 +78,8 @@ class ResultFile(object):
         self._name = name
 
     def save(self, result, batch_id, epoch_id):
-        pickle_dump(result, self.file_name(batch_id, epoch_id).open(mode = 'wb'))
+        with self.file_name(batch_id, epoch_id).open(mode = 'wb') as handle:
+            pickle_dump(result, handle)
 
     def file_name(self, batch_id, epoch_id):
         """It creates the file name for the current iteration.
