@@ -11,6 +11,9 @@ from operation.image import ImageDataGeneration
 from operation.transform import ImageDataTransformation
 from operation.prediction import Prediction
 
+#Metrics operations
+from collections import defaultdict
+
 #Constants
 from common import constants
 
@@ -184,8 +187,8 @@ class ImageTraining(object):
         self._checkpoint_callback.set_model(model)
         self._checkpoint_callback.on_epoch_begin(epoch_id)
 
-        #Loss placeholder
-        loss = None
+        #Metrics placeholder
+        combined_metrics, total_samples = defaultdict(float), 0
 
         print('Epoch {}/{}'.format(epoch_id + 1, self._training_params.number_of_epochs))
 
@@ -206,7 +209,8 @@ class ImageTraining(object):
 
                 #Update progress bar
                 metrics = self._result_map(model, result)
-                pbar.set_postfix(**metrics)
+                combined_metrics, average_metrics, total_samples = self._metrics_average(combined_metrics, metrics, total_samples, X[0].shape[0])
+                pbar.set_postfix(**average_metrics)
                 pbar.update(1)
 
                 #Update the model and result object on the checkpoint
@@ -230,6 +234,24 @@ class ImageTraining(object):
                 self._print_summary(result)
 
         return model
+
+    def _metrics_average(self, past_metrics, metrics, n_past_samples, batch_sample_size):
+        """It calculates the rolling average for the training metrics.
+
+        Arguments:
+            past_metrics {dict(string, float)} -- The dictionary of metrics values summed over the seen batches.
+            metrics {dict(string, float)} -- The current batch metrics values.
+            n_past_samples {int} -- The total number of samples seen so far excluding the current batch.
+            batch_sample_size {int} -- The current batch sample size.
+        """
+        #Sum the past result with the current result
+        combined_metrics = dict(map(lambda kv_pair : (kv_pair[0], kv_pair[1]*batch_sample_size + past_metrics[kv_pair[0]]), metrics.items()))
+
+        #Average the combined result
+        total_samples = n_past_samples + batch_sample_size
+        average_metrics = dict(map(lambda kv_pair : (kv_pair[0], kv_pair[1] / total_samples), combined_metrics.items()))
+
+        return combined_metrics, average_metrics, total_samples
 
     def _result_map(self, model, result):
         """It takes the result list and converts it into a dictionary.
