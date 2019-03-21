@@ -27,6 +27,9 @@ from numpy.random import seed as np_seed
 from tensorflow import set_random_seed as tf_seed
 from imgaug import seed as imgaug_seed
 
+#Enum support
+from enum import Enum
+
 #Dropbox store
 from client.dropbox import DropboxConnection
 
@@ -51,6 +54,13 @@ from math import ceil
 
 #Metric recording
 from common.metric import Metric
+
+class TrainingMethod(Enum):
+    TRAIN_ON_BATCH = 'train_on_batch'
+    FIT_GENERATOR = 'fit_generator'
+
+    def __str__(self):
+        return self.value
 
 def parse_args():
     parser = ArgumentParser(description = 'It trains a siamese network for whale identification.')
@@ -126,6 +136,10 @@ def parse_args():
         type = int,
         help = 'It specifies the number of batches after which to take a checkpoint.')
     parser.add_argument(
+        '--training_method', default = TrainingMethod.TRAIN_ON_BATCH,
+        type = TrainingMethod, choices = list(TrainingMethod),
+        help = 'It specifies the training method to use')
+    parser.add_argument(
         '-p', '--dropbox_parameters',
         nargs = 2,
         help = 'It specifies dropbox parameters required to upload the checkpoints.')
@@ -186,6 +200,10 @@ if __name__ == "__main__":
     transformation_params = ImageDataTransformation.Parameters.parse(dict(args.transformations))
     logger.info('Transformation parameters: %s', transformation_params)
 
+    #Training method
+    training_method = args.training_method
+    logger.info('Training method: %s', training_method)
+
     #Dropbox parameters
     dropbox_parameters = args.dropbox_parameters
 
@@ -228,7 +246,7 @@ if __name__ == "__main__":
 
     #Add to the list of input files
     input_files = input_files_client.get_all([model_file])
-    
+
     #Model file
     model_file = input_files[model_file]
     model = load_model(str(model_file))
@@ -250,8 +268,7 @@ if __name__ == "__main__":
                     checkpoint_callback)
 
     #Train
-    #model, result = trainer.batch_train(model, input_data)
-    model, result = trainer.train(model, input_data)
+    model, result = trainer.batch_train(model, input_data) if training_method == TrainingMethod.TRAIN_ON_BATCH else trainer.train(model, input_data)
 
     #Compute accuracy
     num_matches = (result[constants.PANDAS_MATCH_COLUMN].to_numpy().nonzero())[0].shape[0]

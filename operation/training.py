@@ -144,25 +144,17 @@ class ImageTraining(object):
         #Prepare for training
         self._prepare(model)
 
-        with tqdm(total = self._training_params.number_of_epochs - self._training_params.epoch_id) as pbar:
+        #Complete training the current epoch
+        model = self._run_epoch(
+                        model,
+                        input_data,
+                        self._training_params.batch_id,
+                        self._training_params.epoch_id)
+
+        #Training over the remaining epochs
+        for epoch_id in range(self._training_params.epoch_id + 1, self._training_params.number_of_epochs):
             #Complete training the current epoch
-            model = self._run_epoch(
-                            model,
-                            input_data,
-                            self._training_params.batch_id,
-                            self._training_params.epoch_id,
-                            pbar)
-
-            #Update the progress bar after epoch end
-            pbar.update()
-
-            #Training over the remaining epochs
-            for epoch_id in range(self._training_params.epoch_id + 1, self._training_params.number_of_epochs):
-                #Complete training the current epoch
-                model = self._run_epoch(model, input_data, 0, epoch_id, pbar)
-
-                #Update the progress bar after epoch end
-                pbar.update()
+            model = self._run_epoch(model, input_data, 0, epoch_id)
 
         #Compute predictions
         predictor = Prediction(model, self._input_params, self._image_generation_params)
@@ -170,7 +162,7 @@ class ImageTraining(object):
 
         return model, result
 
-    def _run_epoch(self, model, input_data, start_batch_id, epoch_id, pbar):
+    def _run_epoch(self, model, input_data, start_batch_id, epoch_id):
         """It run one epoch of training
 
         Arguments:
@@ -195,35 +187,34 @@ class ImageTraining(object):
         #Loss placeholder
         loss = None
 
-        for batch_id in range(start_batch_id, len(train_gen)):
-            self._logger.info('Training the batch_id: %d', batch_id)
+        print('Epoch {}/{}'.format(epoch_id + 1, self._training_params.number_of_epochs))
 
-            #Batch training data from the generator
-            X, Y = train_gen.__getitem__(batch_id)
+        with tqdm(desc = 'Batch: ', total = len(train_gen) - start_batch_id) as pbar:
+            for batch_id in range(start_batch_id, len(train_gen)):
+                self._logger.info('Training the batch_id: %d', batch_id)
 
-            self._logger.debug('X.len: %s X.shape: %s Y.shape: %s', len(X), [x.shape for x in X], Y.shape)
+                #Batch training data from the generator
+                X, Y = train_gen.__getitem__(batch_id)
 
-            #Notify batch start
-            self._checkpoint_callback.on_batch_begin(batch_id)
-            pbar.set_description(
-                    'Processing Epoch: {}/{} Batch: {}/{} Loss: {}'.format(
-                                                                        epoch_id + 1,
-                                                                        self._training_params.number_of_epochs,
-                                                                        batch_id + 1,
-                                                                        len(train_gen),
-                                                                        loss))
-            #Feed the batch data for training
-            result = model.train_on_batch(X, Y)
+                self._logger.debug('X.len: %s X.shape: %s Y.shape: %s', len(X), [x.shape for x in X], Y.shape)
 
-            #Update loss
-            loss = result if not isinstance(result, list) else result[0]
+                #Notify batch start
+                self._checkpoint_callback.on_batch_begin(batch_id)
 
-            #Update the model and result object on the checkpoint
-            self._checkpoint_callback.set_model(model)
-            self._checkpoint_callback.set_result(result)
+                #Feed the batch data for training
+                result = model.train_on_batch(X, Y)
 
-            #Notify batch completion
-            self._checkpoint_callback.on_batch_end(batch_id)
+                #Update progress bar
+                metrics = self._result_map(model, result)
+                pbar.set_postfix(**metrics)
+                pbar.update(1)
+
+                #Update the model and result object on the checkpoint
+                self._checkpoint_callback.set_model(model)
+                self._checkpoint_callback.set_result(result)
+
+                #Notify batch completion
+                self._checkpoint_callback.on_batch_end(batch_id)
 
         #Notify epoch completion
         self._checkpoint_callback.on_epoch_end(epoch_id)
@@ -239,6 +230,23 @@ class ImageTraining(object):
                 self._print_summary(result)
 
         return model
+
+    def _result_map(self, model, result):
+        """It takes the result list and converts it into a dictionary.
+
+        Arguments:
+            model {keras.models.Model} -- The keras model object.
+            result {float or [float]} -- It is training result.
+        """
+        metrics = {}
+
+        if not isinstance(result, list):
+            result = [result]
+
+        for index, metric in enumerate(model.metrics_names):
+            metrics[metric] = result[index]
+
+        return metrics
 
     def _print_summary(self, result):
         """It prints the prediction summary.
