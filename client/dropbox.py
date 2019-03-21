@@ -62,10 +62,10 @@ class DropboxConnection(object):
 
     def upload(self, source_file_path):
         """It upload the source files to the dropbox.
-        
+
         Arguments:
             source_file_path {string} -- The source file path.
-        
+
         Raises:
             ValueError -- It raise value error for invalid files.
         """
@@ -106,7 +106,7 @@ class DropboxConnection(object):
 
     def _upload_small_file(self, handle, remote_file_path):
         """It uploads a small source files to the dropbox.
-        
+
         Arguments:
             handle {A File handle} -- The source file handle.
             remote_file_path {string} -- The destination path of the file.
@@ -115,7 +115,7 @@ class DropboxConnection(object):
 
     def _upload_large_file(self, handle, upload_size, remote_file_path):
         """It uploads a large source files to the dropbox.
-        
+
         Arguments:
             handle {A File handle} -- The source file handle.
             upload_size {int} -- The number of bytes to be uploaded.
@@ -136,7 +136,7 @@ class DropboxConnection(object):
 
                 #If it is the last chunk, finalize the upload
                 if remaining_bytes <= constants.DROPBOX_CHUNK_SIZE:
-                    #Commit info              
+                    #Commit info
                     commit = Dropbox_CommitInfo(path = remote_file_path, mode = Dropbox_WriteMode.overwrite)
 
                     #Finish upload
@@ -152,19 +152,22 @@ class DropboxConnection(object):
                     self._client.files_upload_session_append_v2(
                                     handle.read(constants.DROPBOX_CHUNK_SIZE),
                                     cursor)
-                    
+
                     #Update the cursor
                     cursor.offset = handle.tell()
 
                     #Update the progress
                     pbar.update(constants.DROPBOX_CHUNK_SIZE)
 
+                #Refresh the progress bar
+                pbar.refresh()
+
     def download(self, remote_file_name):
         """It downloads the remote files from the dropbox.
-        
+
         Arguments:
             remote_file_name {string} -- The name of the remote file.
-        
+
         Raises:
             ValueError -- It raise value error for invalid file name.
         """
@@ -177,7 +180,7 @@ class DropboxConnection(object):
 
         #Download file size placeholder
         download_size = 0
-        
+
         try:
             download_size = self._client.files_get_metadata(remote_file_path.as_posix()).size
         except ApiError as e:
@@ -195,7 +198,7 @@ class DropboxConnection(object):
 
     def _download_file(self, dest_file_name, remote_file_path, download_size):
         """It downloads the remote files from the dropbox.
-        
+
         Arguments:
             remote_file_path {A Path object} -- The path of the remote file.
             dest_file_name {string} -- The destination file name.
