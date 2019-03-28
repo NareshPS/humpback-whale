@@ -1,4 +1,4 @@
-"""This classes handles the keras training response.
+"""This classes handles the keras fit result.
 """
 #Default valued dictionary
 from collections import defaultdict

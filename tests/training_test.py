@@ -25,8 +25,8 @@ from random import random
 #Input parameters
 from operation.input import InputParameters, ImageGenerationParameters, TrainingParameters
 
-#Training responses
-from model.response import EpochResponse
+#Training result
+from model.result import EpochResponse
 
 #Test support
 from tests.support.utils import get_args, get_input_data, load_test_model, patch_imload

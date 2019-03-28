@@ -2,8 +2,8 @@
 import unittest as ut
 from unittest.mock import MagicMock
 
-#Response classes
-from model.response import EpochResponse
+#Result classes
+from model.result import EpochResponse
 
 #Default valued dictionary
 from collections import defaultdict

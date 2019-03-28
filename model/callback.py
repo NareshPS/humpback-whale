@@ -10,8 +10,8 @@ from client.dropbox import DropboxConnection
 #Inputs
 from iofiles.input_file import ModelInput, InputDataFile, ResultFile
 
-#Training response
-from model.response import EpochResponse
+#Training result
+from model.result import EpochResponse
 
 #Constants
 from common import constants
