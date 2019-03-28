@@ -13,11 +13,8 @@ from image import operations as img_ops
 from keras import backend as K
 
 class History:
-    """Support to analyze the training history to gain better insight.
+    """Support to analyze metrics to get a better understanding of the training process.
     """
-
-    _acc_cols = set(['acc', 'val_acc'])
-    _loss_cols = set(['loss', 'val_loss'])
 
     def __init__(self, history):
         #History object must exist to plot accuracy.
@@ -25,16 +22,16 @@ class History:
             raise ValueError("History object must exist.")
 
         self._history = history.history
-        
+
     def accuracy(self, acc_cols = None):
         """It pulls the accuracy metrics for the input columns.
-        
+
         Keyword Arguments:
             cols {[string]} -- It is a list of column names. (default: {None})
-        
+
         Raises:
             ValueError -- It raises a ValueError for invalid column names.
-        
+
         Returns:
             ([], []) -- A tuple of metrics values and their names.
         """
@@ -54,13 +51,13 @@ class History:
 
     def loss(self, loss_cols = None):
         """It pulls the loss metrics for the input columns.
-        
+
         Keyword Arguments:
             cols {[string]} -- It is a list of column names. (default: {None})
-        
+
         Raises:
             ValueError -- It raises a ValueError for invalid column names.
-        
+
         Returns:
             ([], []) -- A tuple of metrics values and their names.
         """
@@ -76,7 +73,7 @@ class History:
                             loss_cols,
                             self._loss_cols))
         return {col:self._history[col] for col in loss_cols}
-        
+
     def _plot(self, plot_id, params, legend, title = None, ylabel = None):    
         if len(params) == 0:
             raise ValueError("params must contain a list of history items.")
@@ -84,7 +81,7 @@ class History:
         #Initialize figure and axes variables.
         figure = self._figure
         axes = self._axes[plot_id]
- 
+
         #Set axes data
         for param in params:
             axes.plot(self._history[param])
@@ -92,10 +89,10 @@ class History:
         #Set axes parameters
         axes.legend(legend, loc='lower right')
         axes.set_xlabel('Epoch')
-        
+
         if title is not None:
             axes.set_title(title)
-            
+
         if ylabel is not None:
             axes.set_ylabel(ylabel)
 
@@ -107,7 +104,7 @@ class WeightInsights:
     """
     def __init__(self, model):
         """Convolve the input image witht he 
-        
+
         Arguments:
             model {A ModelInsights object} -- A model insights object.
         """
@@ -117,16 +114,16 @@ class WeightInsights:
 
         self._model = model
         self._conv_weights = self._model.get_conv_weights()
-    
+
     def convole(self, image, plot):
         """Convolve the input image with the convolutional weights
-        
+
         Arguments:
             image {An image object} -- An image object to convolve.
             plot {A plotting object} -- The convolved image is plotted using this object.
         """
         convolutions = img_ops.convolve([image], self._model.get_conv_weights())
-        
+
         print(convolutions.shape)
 
 class ModelInsights:
@@ -136,7 +133,7 @@ class ModelInsights:
 
     def _get_conv_weights(self):
         """It extracts the trained weights from covolutional layers.
-        
+
         Returns:
             A numpy array -- A numpy array containing the convolutional weights.
         """
@@ -152,11 +149,11 @@ class ModelInsights:
 
     def visualize_layer(self, layer_name, images):
         """It applies activations to input images up to a convolution layer.
-        
+
         Arguments:
             layer_name {string} -- The name of layer whose activations are to be visualized.
             images {[Image objects]} -- A list of images.
-        
+
         Raises:
             ValueError -- It is raise if
             1- The input layer name is invalid.
@@ -204,11 +201,11 @@ class ModelInsights:
         layers = model.layers
 
         print("Layers: {}".format(len(layers)))
-        
+
         print("\nNames and shapes.")
         for layer in layers:
             print("({}, {})".format(layer.name, layer.output_shape))
-        
+
         print("\nNames and weights.")
         for layer in layers:
             if layer.name.startswith(ModelInsights.visual_layer_prefix):

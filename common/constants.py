@@ -20,7 +20,6 @@ LOG_CONFIGS = {
                 'augment.py' : 'augment.yml',
                 'classify_labels.py' : 'classify_labels.yml',
                 'rebalance.py' : 'rebalance.yml',
-                'defragment.py' : 'defragment.yml'
             }
 
 #Dropbox connection configuration

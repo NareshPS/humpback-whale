@@ -58,10 +58,10 @@ if __name__ == "__main__":
     logger.info('Additional parameters log_to_console: %s', log_to_console)
 
     #Input dataframe
-    input_df = read_csv(input_data)
+    input_data = read_csv(input_data)
 
     #Label evaluation
-    label_evaluation = LabelEvaluation(input_df)
+    label_evaluation = LabelEvaluation(input_data)
     label_statistics = label_evaluation.distribution(label_col)
     label_count_bins = label_evaluation.bin(label_col, number_of_bins)
     label_count_histogram = label_evaluation.histogram(label_col)
