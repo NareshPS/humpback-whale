@@ -55,4 +55,3 @@ class TestRunMetrics(ut.TestCase):
 
         #Act & Assert
         self.get(result, epoch_id, batch_id)
-

@@ -156,13 +156,13 @@ class InputFiles(object):
             file_paths {[pathlib.Path]} -- The list of file paths
         """
         #Result dictionary
-        valid_file_paths = {file_path : Path(file_path.name) for file_path in file_paths}
+        valid_file_paths = {file_path : file_path for file_path in file_paths}
 
         #Download files
-        for file_name in valid_file_paths.values():
-            self._dropbox.download(file_name)
+        for file_path in valid_file_paths.values():
+            self._dropbox.download(file_path)
 
             #Trace download completion
-            self._logger.info('Downloaded: %s', file_name)
+            self._logger.info('Downloaded: %s', file_path)
 
         return valid_file_paths

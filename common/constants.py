@@ -20,6 +20,7 @@ LOG_CONFIGS = {
                 'augment.py' : 'augment.yml',
                 'classify_labels.py' : 'classify_labels.yml',
                 'rebalance.py' : 'rebalance.yml',
+                'consolidate_result.py' : 'consolidate_result.yml'
             }
 
 #Dropbox connection configuration
@@ -37,3 +38,6 @@ PANDAS_MATCH_COLUMN = 'Match'
 
 #PIL Image constants
 PIL_IMAGE_RGB_COLOR_MODE = 'RGB'
+
+#Input files
+INPUT_RESULT_FILE_PREFIX = 'result'

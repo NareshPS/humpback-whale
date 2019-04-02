@@ -1,0 +1,21 @@
+version: 1
+formatters:
+  simple:
+    format: '%(asctime)s: %(levelname)s: %(name)s: %(message)s'
+handlers:
+  rotatingFile:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: simple
+    maxBytes: 10485760
+    backupCount: 5
+    filename: 'consolidate_result.log'
+    mode: 'w'
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
+root:
+  level: INFO
+  handlers: [rotatingFile]

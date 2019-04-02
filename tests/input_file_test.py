@@ -25,7 +25,7 @@ from pickle import Pickler
 from random import randint
 
 #Common parameters
-file_paths = [Path('a.txt'), Path('b.txt'), Path('c.txt')]
+file_paths = [Path('a.txt'), Path('b.txt'), Path('remote_dir') / 'c.txt']
 model_name = 'model_name'
 batch_id = 2
 epoch_id = 4
@@ -39,7 +39,7 @@ class TestModelInput(ut.TestCase):
         #Arrange
         model = load_test_model()
         model_input = ModelInput(model_name)
-        
+
         #Mocks
         model.save = MagicMock()
 
@@ -110,7 +110,7 @@ class TestInputFiles(ut.TestCase):
             mock_exists.side_effect = func
 
             valid_file_paths = inputs.get_all(file_paths)
-            
+
             #Assert
             for file_path_hint, file_path_verified in valid_file_paths.items():
                 self.assertEqual(file_path_hint, file_path_verified)
