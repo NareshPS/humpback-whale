@@ -33,8 +33,13 @@ commands = [
             'python evaluate_inputs.py --input_data input_data.batch.0.epoch.0.csv --label_col Id',
 
             #Rebalance the input
-            'python rebalance.py --input_data input_data.batch.0.epoch.0.csv --label_col Id --output_file rebalanced_input_data.csv'
-                ]
+            'python rebalance.py --input_data input_data.batch.0.epoch.0.csv --label_col Id --output_file rebalanced_input_data.csv',
+
+            #Consolidate results
+            'python consolidate_result.py -e epoch_0 epoch_1'
+
+            ]
+
 def parse_args():
     parser = ArgumentParser(description = 'It runs the project entry points')
 

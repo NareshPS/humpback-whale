@@ -41,3 +41,6 @@ PIL_IMAGE_RGB_COLOR_MODE = 'RGB'
 
 #Input files
 INPUT_RESULT_FILE_PREFIX = 'result'
+
+#Output files
+CONSOLIDATED_RESULT_FILE = Path('consolidated_result.dmp')

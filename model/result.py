@@ -19,6 +19,18 @@ class EpochResponse(object):
         self._batch_ids = []
         self._metrics = defaultdict(list)
 
+    @property
+    def epoch_id(self):
+        return self._epoch_id
+
+    @property
+    def batch_ids(self):
+        return self._batch_ids
+
+    @property
+    def metric_names(self):
+        return self._metric_names
+
     def _update(self, result, batch_id):
         """It updates the metrics for the epoch with the new batch result.
 
@@ -50,6 +62,9 @@ class EpochResponse(object):
 
     def metrics(self):
         return self._metrics
+
+    def get(self, metric_name):
+        return self._metrics[metric_name]
 
     def __str__(self):
         return """
