@@ -8,7 +8,7 @@ from common import constants
 
 #Local pandas wrappers
 from common.pandas import csv_to_dataframe, dataframe_to_csv
-from common.pandas import unique_items, count_items, sum_items, min_freq, random_choice, randomize
+from common.pandas import unique_items, count_items, sum_items, min_freq, random_choice, randomize, remove
 
 #Test support
 from tests.support.utils import image_col, label_col, columns
@@ -96,3 +96,16 @@ class TestPandas(ut.TestCase):
         #Assert
         self.assertEqual(len(data), len(result))
         self.assertCountEqual(unique_items(data, image_col), unique_items(result, image_col))
+
+    def test_remove(self):
+        #Arrange
+        data = create_dataframe()
+        value = 0
+        value_count = len(data[data[label_col] == value])
+
+        #Act
+        result = remove(data, label_col, value)
+
+        #Assert
+        self.assertEqual(len(result), len(data) - value_count)
+        self.assertTrue(value not in unique_items(result, label_col))

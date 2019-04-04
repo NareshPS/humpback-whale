@@ -13,7 +13,7 @@ from random import sample
 
 def csv_to_dataframe(filepath):
     """It loads the input csv files as a pandas DataFrame
-    
+
     Arguments:
         filepath {pathlib.Path} -- It indicates the path to the input file.
     """
@@ -21,7 +21,7 @@ def csv_to_dataframe(filepath):
 
 def dataframe_to_csv(dataframe, filepath):
     """It saves the data frame to the input file path.
-    
+
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame that will be saved to file.
     """
@@ -29,7 +29,7 @@ def dataframe_to_csv(dataframe, filepath):
 
 def unique_items(dataframe, column):
     """It gets the list of unique items in the data frame.
-    
+
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame on which to operate.
         column {string} -- The name of the column from which the unique elements will be extracted.
@@ -38,7 +38,7 @@ def unique_items(dataframe, column):
 
 def count_items(dataframe, column):
     """It counts the occurances of each value in the column
-    
+
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame on which to operate.
         column {string} -- The name of the column to count the values.
@@ -47,7 +47,7 @@ def count_items(dataframe, column):
 
 def sum_items(dataframe, column):
     """It sums the values of the column in the data frame.
-    
+
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame on which to operate.
         column {string} -- The name of the column to sum the values.
@@ -56,7 +56,7 @@ def sum_items(dataframe, column):
 
 def min_freq(dataframe, column):
     """It calculates the frequency of the least frequent label.
-    
+
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame on which to operate.
         column {string} -- The name of the column to calculate the frequeny.
@@ -72,7 +72,7 @@ def min_freq(dataframe, column):
 def random_choice(dataframe, column, items_per_column_value):
     """It creates a new dataframe with the same number of items for each column value.
         The number of items are indicated by the input parameter.
-    
+
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame on which to operate.
         column {string} -- The name of the column to be redistributed.
@@ -98,8 +98,20 @@ def random_choice(dataframe, column, items_per_column_value):
 
 def randomize(dataframe):
     """It randomizes the input dataframe.
-    
+
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame on which to operate.
     """
     return dataframe.sample(frac = 1).reset_index(drop = True)
+
+def remove(dataframe, column, value):
+    """It removes the rows with the input column value from the dataframe.
+
+    Arguments:
+        dataframe {pandas.DataFrame} -- The data frame on which to operate.
+        column {string} -- The name of the column on which to operate.
+        value {string} -- The value of the column to use for row removal.
+    """
+    dataframe = dataframe[dataframe[column] != value].reset_index(drop = True)
+
+    return dataframe
