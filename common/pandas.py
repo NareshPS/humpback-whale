@@ -104,14 +104,14 @@ def randomize(dataframe):
     """
     return dataframe.sample(frac = 1).reset_index(drop = True)
 
-def remove(dataframe, column, value):
+def remove(dataframe, column, values):
     """It removes the rows with the input column value from the dataframe.
 
     Arguments:
         dataframe {pandas.DataFrame} -- The data frame on which to operate.
         column {string} -- The name of the column on which to operate.
-        value {string} -- The value of the column to use for row removal.
+        values{string} -- The list of values of the column to use for row removal.
     """
-    dataframe = dataframe[dataframe[column] != value].reset_index(drop = True)
+    dataframe = dataframe[~dataframe[column].isin(values)].reset_index(drop = True)
 
     return dataframe

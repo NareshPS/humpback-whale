@@ -104,7 +104,7 @@ class TestPandas(ut.TestCase):
         value_count = len(data[data[label_col] == value])
 
         #Act
-        result = remove(data, label_col, value)
+        result = remove(data, label_col, [value])
 
         #Assert
         self.assertEqual(len(result), len(data) - value_count)
