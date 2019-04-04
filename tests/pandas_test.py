@@ -7,8 +7,7 @@ from common import ut_constants
 from common import constants
 
 #Local pandas wrappers
-from common.pandas import csv_to_dataframe, dataframe_to_csv
-from common.pandas import unique_items, count_items, sum_items, min_freq, random_choice, randomize, remove
+from common.pandas import *
 
 #Test support
 from tests.support.utils import image_col, label_col, columns
@@ -109,3 +108,31 @@ class TestPandas(ut.TestCase):
         #Assert
         self.assertEqual(len(result), len(data) - value_count)
         self.assertTrue(value not in unique_items(result, label_col))
+
+    def test_group_aggregate_as_list(self):
+        #Arrange
+        candidate_label = 0
+        data = create_dataframe()
+        unique_labels = unique_items(data, label_col)
+        candidate_label_images = data[data[label_col] == candidate_label][image_col].values
+
+        #Act
+        grouped = group_aggregate_as_list(data, label_col, image_col)
+
+        #Assert
+        self.assertCountEqual(unique_labels, grouped[label_col].values)
+        self.assertCountEqual(candidate_label_images, grouped[grouped[label_col] == 0][image_col].values[0])
+
+    def test_to_dict(self):
+        #Arrange
+        candidate_label = 0
+        data = create_dataframe()
+        unique_labels = unique_items(data, label_col)
+        candidate_label_images = data[data[label_col] == candidate_label][image_col].values
+
+        #Act
+        labelled_images = to_dict(data, label_col, image_col)
+
+        #Assert
+        self.assertCountEqual(unique_labels, list(labelled_images.keys()))
+        self.assertCountEqual(candidate_label_images, labelled_images[candidate_label])

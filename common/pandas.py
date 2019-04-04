@@ -115,3 +115,37 @@ def remove(dataframe, column, values):
     dataframe = dataframe[~dataframe[column].isin(values)].reset_index(drop = True)
 
     return dataframe
+
+def group_aggregate_as_list(dataframe, grouping_column, aggregate_column):
+    """It groups the dataframe by a column aggregating the rest as a list.
+
+    Arguments:
+        dataframe {pandas.DataFrame} -- The data frame on which to operate.
+        grouping_column {string} -- The name of the column on which to group the data frame.
+        aggregate_column {string} -- The column to aggregate as list.
+
+    """
+    grouped_dataframe = dataframe.groupby(grouping_column, as_index = False)[aggregate_column].agg({aggregate_column : list})
+
+    return grouped_dataframe
+
+def to_dict(dataframe, key_column, value_column):
+    """It creates a dictionary out of the dataframe. The keys of the dictionary are taken from the key column.
+    The values are taken from the value column.
+
+    Arguments:
+        dataframe {pandas.DataFrame} -- The data frame on which to operate.
+        key_column {string} -- The name of the column to use as key.
+        value_column {string} -- The column to use as value.
+
+    """
+    #Group the input dataframe by key column. The values in value column are added as a list to the output dataframe.
+    grouped_dataframe = group_aggregate_as_list(dataframe, key_column, value_column)
+
+    #Get the data as records
+    records = grouped_dataframe.to_dict('records')
+
+    #Create resulting dictionary
+    result = dict(map(lambda x : (x[key_column], x[value_column]), records))
+
+    return result

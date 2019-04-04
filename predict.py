@@ -14,7 +14,7 @@ from keras.models import load_model
 #Image data generation
 from operation.image import ImageDataGeneration
 from operation.input import InputParameters, TrainingParameters, ImageGenerationParameters, update_params
-from iofiles.input_file import InputDataFile, InputFiles
+from iofiles.input_file import InputDataFile, InputFiles, ModelInput
 
 #Predictions
 from operation.prediction import Prediction
@@ -41,10 +41,6 @@ def parse_args():
         '-d', '--dataset_location',
         required = True, type = Path,
         help = 'It specifies the input dataset location.')
-    parser.add_argument(
-        '-i', '--input_data',
-        required = True, type = Path,
-        help = 'It specifies the path to the input data file.')
     parser.add_argument(
         '--image_cols',
         required = True, nargs = '+',
@@ -84,7 +80,7 @@ def parse_args():
         help = 'It enables logging to console')
 
     args = parser.parse_args()
-    
+
     return args
 
 if __name__ == "__main__":
@@ -122,30 +118,23 @@ if __name__ == "__main__":
         logger.info('Dropbox parameters:: dropbox_params: %s', dropbox_params)
 
     #Model file
-    model_file = Path("{}.h5".format(input_params.model_name))
-
-    #Local file does not exist. Verify if dropbox parameters are provided to enable download.
-    if not model_file.exists() and not dropbox:
-        raise ValueError("File: {} does not exist locally. Please specify dropbox parameters to download.".format(model_file))
-
-    #Download the file from the dropbox
-    if not model_file.exists():
-        dropbox.download(model_file)
-
-    #Model file is successfully downloaded
-    if not model_file.exists():
-        raise ValueError("Model file: {} is not found.".format(model_file))
-
-    #Load model
-    model = load_model(str(model_file))
+    model_file = ModelInput(input_params.model_name)
+    model_file_name = model_file.file_name(0, 0)
 
     #Input data file
-    input_data_file = InputDataFile()
+    input_data_file = InputDataFile(constants.PREDICTION_INPUT_DATA_FILE_NAME_GUIDANCE)
     input_data_file_name = input_data_file.file_name(0, 0)
 
     #Prepare input files
     input_files_client = InputFiles(dropbox)
-    input_data_file_path = input_files_client.get_all([input_data_file_name])[input_data_file_name]
+    input_files = input_files_client.get_all([input_data_file_name, model_file_name])
+
+    #Assign input files
+    input_data_file_path = input_files[input_data_file_name]
+    model_file_path = input_files[model_file_name]
+
+    #Load model
+    model = load_model(str(model_file_path))
 
     #Input data frame
     input_data = read_csv(input_data_file_path, index_col = 0)

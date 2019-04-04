@@ -3,6 +3,7 @@ from pandas import DataFrame
 from collections import defaultdict
 from random import sample as random_sample
 from random import shuffle as random_shuffle
+from common.pandas import to_dict
 
 #Progress bar
 from tqdm import tqdm
@@ -27,13 +28,20 @@ class TupleGeneration(object):
         self._label_df = label_df
         self._image_col = image_col
         self._label_col = label_col
-        self._outout_df_cols = output_df_cols
+        self._output_df_cols = output_df_cols
 
         #Derived parameters
         self._labelled_images = None
 
         #Logging
         self._logger = logging.get_logger(__name__)
+
+        self._logger.info(
+                        'label_df: %d image_col: %s label_col: %s output_df_cols: %s',
+                        len(self._label_df),
+                        self._image_col,
+                        self._label_col,
+                        self._output_df_cols)
 
     def _get_labelled_images(self):
         """It creates a dictionary of the label to its images.
@@ -47,14 +55,7 @@ class TupleGeneration(object):
             return self._labelled_images
 
         #Placeholder for label dictionary
-        self._labelled_images = defaultdict(set)
-
-        for _, row in self._label_df.iterrows():
-            label = row[self._label_col]
-            image = row[self._image_col]
-
-            #Assign the image name to the label
-            self._labelled_images[label].add(image)
+        self._labelled_images = to_dict(self._label_df, self._label_col, self._image_col)
 
         self._logger.info(
                         'Created label to images dictionary for %d labels',
@@ -65,7 +66,11 @@ class TupleGeneration(object):
     def _get_images(self):
         """It creates a set of all the images in the dataframe.
         """
-        return set(self._label_df[self._image_col])
+        images = set(self._label_df[self._image_col])
+
+        self._logger.info('Unique images: %d', len(images))
+
+        return images
 
     def get_tuples(self, num_positive_samples, num_negative_samples):
         """It generates a list of tuples (Anchor, Sample, [0|1]) for each image.
@@ -90,13 +95,13 @@ class TupleGeneration(object):
         labelled_images = self._get_labelled_images()
 
         samples = []
-        for _, label_images in tqdm(labelled_images.items(), desc = 'Generating input tuples', total = len(labelled_images)):
+        for label, label_images in tqdm(labelled_images.items(), desc = 'Generating input tuples', total = len(labelled_images)):
             #Available samples
             n_avail_positive_samples = min(num_positive_samples, len(label_images))
             n_avail_negative_samples = num_negative_samples
 
             #Candidates for negative sample
-            negative_sample_candidates = images - label_images
+            negative_sample_candidates = images - set(label_images)
 
             for anchor in label_images:
                 #Positive samples
@@ -116,7 +121,7 @@ class TupleGeneration(object):
                     samples.append(sample)
 
         #Pandas DataFrame
-        tuple_df = DataFrame(samples, columns = self._outout_df_cols)
+        tuple_df = DataFrame(samples, columns = self._output_df_cols)
 
         return tuple_df
 
@@ -167,6 +172,6 @@ class TupleGeneration(object):
                     samples.append(sample)
 
         #Pandas DataFrame
-        triplets = DataFrame(samples, columns = self._outout_df_cols)
+        triplets = DataFrame(samples, columns = self._output_df_cols)
 
         return triplets

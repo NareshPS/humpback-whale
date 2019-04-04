@@ -40,6 +40,10 @@ def parse_args():
         default = 10, type = int,
         help = 'It defines the number of samples per example image.')
     parser.add_argument(
+        '-n', '--num_inputs',
+        default = 200, type = int,
+        help = 'It defines the number of inputs to process')
+    parser.add_argument(
         '--triplets',
         action = 'store_true', default = False,
         help = 'It instructs to generate input triplets.')
@@ -65,6 +69,7 @@ if __name__ == "__main__":
     input_cols = args.input_cols
     output_cols = args.output_cols
     num_samples = args.num_samples
+    num_inputs = args.num_inputs
     triplets = args.triplets
     force_write = args.force_write
     log_to_console = args.log_to_console
@@ -76,12 +81,13 @@ if __name__ == "__main__":
     #Log input parameters
     logger.info('Parameters:: input_file: %s output_file: %s', input_file, output_file)
     logger.info('Parameters:: input_cols: %s output_cols: %s', input_cols, output_cols)
-    logger.info('Parameters:: num_samples: %d', num_samples)
+    logger.info('Parameters:: num_samples: %d num_inputs: %d', num_samples, num_inputs)
     logger.info('Parameters:: triplets: %s', triplets)
     logger.info('Additional parameters force_write: %s log_to_console: %s', force_write, log_to_console)
 
     #Required inputs
     input_data = read_csv(input_file)
+    input_data = input_data if num_inputs == -1 else input_data[:num_inputs]
 
     image_col, label_col = input_cols
 

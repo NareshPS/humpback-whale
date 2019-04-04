@@ -41,6 +41,7 @@ PIL_IMAGE_RGB_COLOR_MODE = 'RGB'
 
 #Input files
 INPUT_RESULT_FILE_PREFIX = 'result'
+PREDICTION_INPUT_DATA_FILE_NAME_GUIDANCE = 'prediction_input_data'
 
 #Output files
 CONSOLIDATED_RESULT_FILE = Path('consolidated_result.dmp')
