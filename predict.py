@@ -19,6 +19,9 @@ from iofiles.input_file import InputDataFile, InputFiles, ModelInput
 #Predictions
 from operation.prediction import Prediction
 
+#Ceiling roundoff
+from math import ceil
+
 #Useful constants
 from common import constants
 
@@ -63,10 +66,6 @@ def parse_args():
         nargs = 2,
         help = 'It specifies dropbox parameters required to download the checkpoints.')
     parser.add_argument(
-        '--num_prediction_steps',
-        default = 2, type = int,
-        help = 'The number of steps to use for verification by prediction')
-    parser.add_argument(
         '-b', '--batch_size',
         default = 32, type = int,
         help = 'It specifies the prediction batch size.')
@@ -90,7 +89,6 @@ if __name__ == "__main__":
     #Required params
     input_params = InputParameters(args)
     image_generation_params = ImageGenerationParameters(args)
-    num_prediction_steps = args.num_prediction_steps
 
     dropbox_parameters = args.dropbox_parameters
     log_to_console = args.log_to_console
@@ -100,7 +98,7 @@ if __name__ == "__main__":
     logger = logging.get_logger(__name__)
 
     #Log input parameters
-    logger.info('Running with parameters input_params: %s num_prediction_steps: %s', input_params, num_prediction_steps)
+    logger.info('Running with parameters input_params: %s', input_params)
     logger.info('Additional parameters: image_generation_params: %s log_to_console: %s', image_generation_params, log_to_console)
 
     #Predictable randomness
@@ -146,6 +144,7 @@ if __name__ == "__main__":
     logger.info('Updated image generation parameters: %s', image_generation_params)
 
     #Compute predictions
+    num_prediction_steps = ceil(len(input_data) / image_generation_params.batch_size)
     predictor = Prediction(model, input_params, image_generation_params)
     predicted_data = predictor.predict(input_data, num_prediction_steps)
 

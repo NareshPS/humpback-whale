@@ -18,7 +18,7 @@ from common import constants
 class Prediction:
     def __init__(self, model, input_params, image_generation_params):
         """It sets up the input parameters.
-        
+
         Arguments:
             model {A keras model object} -- The keras model object to use for making predictions.
             input_params {A InputParameters object} -- The input parameters.
@@ -38,7 +38,7 @@ class Prediction:
 
     def predict(self, input_data, num_prediction_steps):
         """[summary]
-    
+
         Arguments:
             input_data {A pandas DataFrame} -- The input dataframe.
             num_prediction_steps {int} -- The number of prediction steps.
