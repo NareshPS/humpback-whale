@@ -45,6 +45,10 @@ def parse_args():
         required = True, type = Path,
         help = 'It specifies the input dataset location.')
     parser.add_argument(
+        '--num_prediction_steps',
+        type = int,
+        help = 'It specifies the number of prediction steps to run.')
+    parser.add_argument(
         '--image_cols',
         required = True, nargs = '+',
         help = 'It specifies the names of the image column in the dataframe.')
@@ -67,7 +71,7 @@ def parse_args():
         help = 'It specifies dropbox parameters required to download the checkpoints.')
     parser.add_argument(
         '-b', '--batch_size',
-        default = 32, type = int,
+        default = 8, type = int,
         help = 'It specifies the prediction batch size.')
     parser.add_argument(
         '-c', '--image_cache_size',
@@ -89,6 +93,7 @@ if __name__ == "__main__":
     #Required params
     input_params = InputParameters(args)
     image_generation_params = ImageGenerationParameters(args)
+    num_prediction_steps = args.num_prediction_steps
 
     dropbox_parameters = args.dropbox_parameters
     log_to_console = args.log_to_console
@@ -144,7 +149,7 @@ if __name__ == "__main__":
     logger.info('Updated image generation parameters: %s', image_generation_params)
 
     #Compute predictions
-    num_prediction_steps = ceil(len(input_data) / image_generation_params.batch_size)
+    num_prediction_steps = num_prediction_steps or ceil(len(input_data) / image_generation_params.batch_size)
     predictor = Prediction(model, input_params, image_generation_params)
     predicted_data = predictor.predict(input_data, num_prediction_steps)
 
@@ -152,6 +157,11 @@ if __name__ == "__main__":
     num_matches = (predicted_data[constants.PANDAS_MATCH_COLUMN].to_numpy().nonzero())[0].shape[0]
     num_mismatches = len(predicted_data[constants.PANDAS_MATCH_COLUMN]) - num_matches
     accuracy = (num_matches/len(predicted_data[constants.PANDAS_MATCH_COLUMN])) * 100.
+
+    #Write-out predicted output
+    prediction_result_file = InputDataFile(constants.PREDICTION_RESULT_FILE_NAME_GUIDANCE)
+    prediction_result_file.save(predicted_data, 0, 0)
+    input_files_client.put_all([prediction_result_file.file_name(0, 0)])
 
     print_summary = """
                         Result Dataframe: {}
